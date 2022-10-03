@@ -18,15 +18,15 @@ class Ffi {
     }
 
     var libraryPath =
-        path.join(Directory.current.path, 'resources', 'libcosmian_findex.so');
+        path.join(Directory.current.path, 'resources', 'libcover_crypt.so');
     if (Platform.isMacOS) {
       libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_findex.dylib');
+          Directory.current.path, 'resources', 'libcover_crypt.dylib');
     } else if (Platform.isWindows) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_findex.dll');
+      libraryPath =
+          path.join(Directory.current.path, 'resources', 'libcover_crypt.dll');
     } else if (Platform.isAndroid) {
-      libraryPath = "libcosmian_findex.so";
+      libraryPath = "libcover_crypt.so";
     }
 
     final library = NativeLibrary(DynamicLibrary.open(libraryPath));

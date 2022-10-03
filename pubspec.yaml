@@ -23,6 +23,7 @@ dev_dependencies:
   sqlite3: ^1.9.0
   ffigen: ^6.1.2
   redis: ^3.1.0
+  benchmark: ^0.3.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
