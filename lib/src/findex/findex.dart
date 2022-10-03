@@ -125,8 +125,7 @@ class Findex {
       return _dylib as DynamicLibrary;
     }
 
-    var libraryPath =
-        path.join(Directory.current.path, 'resources', 'libcosmian_findex.so');
+    String? libraryPath;
     if (Platform.isMacOS) {
       libraryPath = path.join(
           Directory.current.path, 'resources', 'libcosmian_findex.dylib');
@@ -135,9 +134,14 @@ class Findex {
           Directory.current.path, 'resources', 'libcosmian_findex.dll');
     } else if (Platform.isAndroid) {
       libraryPath = "libcosmian_findex.so";
+    } else if (Platform.isLinux) {
+      libraryPath = path.join(
+          Directory.current.path, 'resources', 'libcosmian_findex.so');
     }
 
-    final dylib = DynamicLibrary.open(libraryPath);
+    final dylib = libraryPath != null
+        ? DynamicLibrary.open(libraryPath)
+        : DynamicLibrary.process();
     _dylib = dylib;
     return dylib;
   }
