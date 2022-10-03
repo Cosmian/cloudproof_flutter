@@ -10,6 +10,9 @@ import 'package:path/path.dart' as path;
 import 'package:ffi/ffi.dart';
 import 'package:tuple/tuple.dart';
 
+const errorMessageMaxLength = 3000;
+const defaultOutputSizeInBytes = 131072;
+
 typedef NativeUpsertFunc = Int32 Function(
   Pointer<Utf8>,
   Pointer<Uint8>,
@@ -174,6 +177,7 @@ class Findex {
         sleep(const Duration(milliseconds: 10));
       }
 
+      calloc.free(donePointer);
       return 0;
     } catch (e, stacktrace) {
       log("Exception during fetch wrapper $e $stacktrace");
@@ -207,6 +211,7 @@ class Findex {
         sleep(const Duration(milliseconds: 10));
       }
 
+      calloc.free(donePointer);
       return 0;
     } catch (e, stacktrace) {
       log("Exception during upsert wrapper $e $stacktrace");
@@ -252,29 +257,27 @@ class Findex {
   }
 
   static Future<List<IndexedValue>> search(
-    Uint8List k,
-    Uint8List label,
-    List<Word> words,
-    Pointer<NativeFunction<FetchEntriesFfiCallback>> fetchEntries,
-    Pointer<NativeFunction<FetchChainsFfiCallback>> fetchChains,
-  ) async {
+      Uint8List k,
+      Uint8List label,
+      List<Word> words,
+      Pointer<NativeFunction<FetchEntriesFfiCallback>> fetchEntries,
+      Pointer<NativeFunction<FetchChainsFfiCallback>> fetchChains,
+      {int outputSizeInBytes = defaultOutputSizeInBytes}) async {
     final HSearch hSearch =
         dylib.lookup<NativeFunction<NativeSearchFunc>>('h_search').asFunction();
 
     final wordsString = words.map((value) => value.toBase64()).toList();
 
-    const outputLength = 131072;
-    final output = calloc<Uint8>(outputLength);
-
-    final outputLengthPointer = calloc<Int32>(1);
-    outputLengthPointer.value = outputLength;
+    final output = calloc<Uint8>(outputSizeInBytes);
+    final outputSizeInBytesPointer = calloc<Int32>(1);
+    outputSizeInBytesPointer.value = outputSizeInBytes;
 
     final wordsJson = jsonEncode(wordsString);
     final Pointer<Utf8> wordsPointer = wordsJson.toNativeUtf8();
 
     final result = hSearch(
       output,
-      outputLengthPointer,
+      outputSizeInBytesPointer,
       k.allocateUint8Pointer(),
       k.length,
       label.allocateUint8Pointer(),
@@ -288,10 +291,16 @@ class Findex {
     );
 
     if (result != 0) {
+      // If Rust tells us that our buffer is too small for the search results
+      // retry with the correct buffer size.
+      if (outputSizeInBytesPointer.value > outputSizeInBytes) {
+        return search(k, label, words, fetchEntries, fetchChains,
+            outputSizeInBytes: outputSizeInBytesPointer.value);
+      }
       throw Exception("Fail to search ${getLastError()}");
     }
 
-    return Leb128.deserializeList(output.asTypedList(outputLength))
+    return Leb128.deserializeList(output.asTypedList(outputSizeInBytes))
         .map((bytes) => IndexedValue(bytes))
         .toList();
   }
@@ -311,17 +320,22 @@ class Findex {
     final getLastError = getLastErrorPointer
         .asFunction<int Function(Pointer<Char>, Pointer<Int>)>();
 
-    final errorPointer = calloc<Uint8>(3000);
+    final errorPointer = calloc<Uint8>(errorMessageMaxLength);
     final errorLength = calloc<Int>(1);
-    errorLength.value = 3000;
+    errorLength.value = errorMessageMaxLength;
 
     final result = getLastError(errorPointer.cast<Char>(), errorLength);
 
     if (result != 0) {
       return "Fail to fetch last error…";
     } else {
-      return const Utf8Decoder()
+      final message = const Utf8Decoder()
           .convert(errorPointer.asTypedList(errorLength.value));
+
+      calloc.free(errorPointer);
+      calloc.free(errorLength);
+
+      return message;
     }
   }
 }
