@@ -36,7 +36,7 @@ class Ffi {
         encryptedDataPointer, encryptedData.lengthInBytes);
   }
 
-  ClearTextHeader decryptHybridHeader(
+  ClearTextHeader decryptHeader(
       Uint8List asymetricDecryptionKey, Uint8List abeHeader) {
     final symmetricKeyPointer = calloc<Uint8>(ClearTextHeader.symmetricKeySize);
     final symmetricKeyLength = calloc<Int>(1);
@@ -55,16 +55,59 @@ class Ffi {
     final abeHeaderPointer = abeHeader.allocateInt8Pointer().cast<Char>();
 
     final result = library.h_aes_decrypt_header(
-        symmetricKeyPointer.cast<Char>(),
-        symmetricKeyLength,
-        uidPointer.cast<Char>(),
-        uidLength,
-        additionalDataPointer.cast<Char>(),
-        additionalDataLength,
-        abeHeaderPointer,
-        abeHeader.lengthInBytes,
-        asymetricDecryptionKeyPointer,
-        asymetricDecryptionKey.lengthInBytes);
+      symmetricKeyPointer.cast<Char>(),
+      symmetricKeyLength,
+      uidPointer.cast<Char>(),
+      uidLength,
+      additionalDataPointer.cast<Char>(),
+      additionalDataLength,
+      abeHeaderPointer,
+      abeHeader.lengthInBytes,
+      asymetricDecryptionKeyPointer,
+      asymetricDecryptionKey.lengthInBytes,
+    );
+
+    if (result != 0) {
+      throw Exception("Call to `h_aes_decrypt_header` fail. ${getLastError()}");
+    }
+
+    return ClearTextHeader(
+      Uint8List.fromList(
+          symmetricKeyPointer.asTypedList(symmetricKeyLength.value)),
+      Metadata(
+        Uint8List.fromList(uidPointer.asTypedList(uidLength.value)),
+        Uint8List.fromList(
+            additionalDataPointer.asTypedList(additionalDataLength.value)),
+      ),
+    );
+  }
+
+  ClearTextHeader decryptHeaderWithCache(int cacheHandle, Uint8List abeHeader) {
+    final symmetricKeyPointer = calloc<Uint8>(ClearTextHeader.symmetricKeySize);
+    final symmetricKeyLength = calloc<Int>(1);
+    symmetricKeyLength.value = ClearTextHeader.symmetricKeySize;
+
+    final uidPointer = calloc<Uint8>(3000);
+    final uidLength = calloc<Int>(1);
+    uidLength.value = 3000;
+
+    final additionalDataPointer = calloc<Uint8>(3000);
+    final additionalDataLength = calloc<Int>(1);
+    additionalDataLength.value = 3000;
+
+    final abeHeaderPointer = abeHeader.allocateInt8Pointer().cast<Char>();
+
+    final result = library.h_aes_decrypt_header_using_cache(
+      symmetricKeyPointer.cast<Char>(),
+      symmetricKeyLength,
+      uidPointer.cast<Char>(),
+      uidLength,
+      additionalDataPointer.cast<Char>(),
+      additionalDataLength,
+      abeHeaderPointer,
+      abeHeader.lengthInBytes,
+      cacheHandle,
+    );
 
     if (result != 0) {
       throw Exception("Call to `h_aes_decrypt_header` fail. ${getLastError()}");
@@ -79,7 +122,7 @@ class Ffi {
                 .asTypedList(additionalDataLength.value))));
   }
 
-  Uint8List decryptHybridBlock(Uint8List symmetricKey, Uint8List encryptedBytes,
+  Uint8List decryptBlock(Uint8List symmetricKey, Uint8List encryptedBytes,
       Uint8List uid, int blockNumber) {
     final clearTextPointer = calloc<Uint8>(3000);
     final clearTextLength = calloc<Int>(1);
@@ -107,6 +150,33 @@ class Ffi {
 
     return Uint8List.fromList(
         clearTextPointer.asTypedList(clearTextLength.value));
+  }
+
+  int createDecryptionCache(Uint8List userDecryptionKey) {
+    var userDecryptionKeyPointer =
+        userDecryptionKey.allocateInt8Pointer().cast<Char>();
+    Pointer<Int> cacheHandlePointer = calloc<Int>();
+    int result = library.h_aes_create_decryption_cache(
+        cacheHandlePointer, userDecryptionKeyPointer, userDecryptionKey.length);
+
+    if (result != 0) {
+      throw Exception("FFI create decryption cache failed");
+    }
+
+    final cacheHandle = cacheHandlePointer.value;
+
+    calloc.free(cacheHandlePointer);
+    calloc.free(userDecryptionKeyPointer);
+
+    return cacheHandle;
+  }
+
+  void destroyDecryptionCache(int cacheHandle) {
+    int result = library.h_aes_destroy_decryption_cache(cacheHandle);
+
+    if (result != 0) {
+      throw Exception("FFI create decryption cache failed");
+    }
   }
 
   String getLastError() {

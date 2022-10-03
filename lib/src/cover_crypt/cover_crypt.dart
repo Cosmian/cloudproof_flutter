@@ -4,21 +4,20 @@ import 'package:cloudproof/src/cover_crypt/clear_text_header.dart';
 
 import 'ffi.dart';
 
-class CoverCryptHybridDecryption {
+class CoverCryptDecryption {
   Uint8List asymmetricDecryptionKey;
 
-  CoverCryptHybridDecryption(this.asymmetricDecryptionKey);
+  CoverCryptDecryption(this.asymmetricDecryptionKey);
 
-  ClearTextHeader decryptHybridHeader(Uint8List abeHeader) {
+  ClearTextHeader decryptHeader(Uint8List abeHeader) {
     final ffi = Ffi();
-    return ffi.decryptHybridHeader(asymmetricDecryptionKey, abeHeader);
+    return ffi.decryptHeader(asymmetricDecryptionKey, abeHeader);
   }
 
-  Uint8List decryptHybridBlock(Uint8List symmetricKey, Uint8List encryptedBytes,
+  Uint8List decryptBlock(Uint8List symmetricKey, Uint8List encryptedBytes,
       Uint8List uid, int blockNumber) {
     final ffi = Ffi();
-    return ffi.decryptHybridBlock(
-        symmetricKey, encryptedBytes, uid, blockNumber);
+    return ffi.decryptBlock(symmetricKey, encryptedBytes, uid, blockNumber);
   }
 
   Uint8List decrypt(Uint8List encryptedData) {
@@ -30,41 +29,49 @@ class CoverCryptHybridDecryption {
     final encryptedSymmetricBytes =
         Uint8List.sublistView(encryptedData, 4 + headerSize);
 
-    final cleartextHeader = decryptHybridHeader(asymmetricHeader);
+    final cleartextHeader = decryptHeader(asymmetricHeader);
 
-    return decryptHybridBlock(cleartextHeader.symmetricKey,
-        encryptedSymmetricBytes, cleartextHeader.metadata.uid, 0);
+    return decryptBlock(cleartextHeader.symmetricKey, encryptedSymmetricBytes,
+        cleartextHeader.metadata.uid, 0);
+  }
+}
+
+class CoverCryptDecryptionWithCache {
+  late int cacheHandle;
+
+  CoverCryptDecryptionWithCache(Uint8List asymmetricDecryptionKey) {
+    final ffi = Ffi();
+    cacheHandle = ffi.createDecryptionCache(asymmetricDecryptionKey);
   }
 
-  // public decrypt(encryptedData: Uint8Array): Uint8Array {
-  //   logger.log(() => `decrypt for encryptedData: ${encryptedData.toString()}`);
+  void destroyDecryptionCache() {
+    final ffi = Ffi();
+    ffi.destroyDecryptionCache(cacheHandle);
+  }
 
-  //   // Encrypted value is composed of: HEADER_LEN | HEADER | AES_DATA
-  //   const headerSize = webassembly_get_encrypted_header_size(encryptedData);
-  //   const asymmetricHeader = encryptedData.slice(4, 4 + headerSize);
-  //   const encryptedSymmetricBytes = encryptedData.slice(
-  //     4 + headerSize,
-  //     encryptedData.length
-  //   );
+  ClearTextHeader decryptHeader(Uint8List abeHeader) {
+    final ffi = Ffi();
+    return ffi.decryptHeaderWithCache(cacheHandle, abeHeader);
+  }
 
-  //   //
-  //   logger.log(() => `decrypt for headerSize: ${headerSize}`);
-  //   logger.log(
-  //     () => `decrypt for asymmetricHeader: ${asymmetricHeader.toString()}`
-  //   );
+  Uint8List decryptBlock(Uint8List symmetricKey, Uint8List encryptedBytes,
+      Uint8List uid, int blockNumber) {
+    final ffi = Ffi();
+    return ffi.decryptBlock(symmetricKey, encryptedBytes, uid, blockNumber);
+  }
 
-  //   // HEADER decryption: asymmetric decryption
-  //   const cleartextHeader = this.decryptHybridHeader(asymmetricHeader);
-  //   logger.log(() => "decrypt for cleartextHeader: " + cleartextHeader);
+  Uint8List decrypt(Uint8List encryptedData) {
+    final ffi = Ffi();
+    final headerSize = ffi.getEncryptedHeaderSize(encryptedData);
+    final asymmetricHeader =
+        Uint8List.sublistView(encryptedData, 4, 4 + headerSize);
 
-  //   // AES_DATA: AES Symmetric part decryption
-  //   const cleartext = this.decryptHybridBlock(
-  //     cleartextHeader.symmetricKey,
-  //     encryptedSymmetricBytes,
-  //     cleartextHeader.metadata.uid,
-  //     0
-  //   );
-  //   logger.log(() => "cleartext: " + new TextDecoder().decode(cleartext));
-  //   return cleartext;
-  // }
+    final encryptedSymmetricBytes =
+        Uint8List.sublistView(encryptedData, 4 + headerSize);
+
+    final cleartextHeader = decryptHeader(asymmetricHeader);
+
+    return decryptBlock(cleartextHeader.symmetricKey, encryptedSymmetricBytes,
+        cleartextHeader.metadata.uid, 0);
+  }
 }
