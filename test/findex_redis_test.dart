@@ -279,7 +279,7 @@ class RedisFindex {
     Uint8List label,
     List<Word> words,
   ) async {
-    return await Ffi.search(
+    return await Findex.search(
       keyK,
       label,
       words,
@@ -295,7 +295,7 @@ class RedisFindex {
     Uint8List label,
     Map<IndexedValue, List<Word>> indexedValuesAndWords,
   ) async {
-    await Ffi.upsert(
+    await Findex.upsert(
       masterKeys,
       label,
       indexedValuesAndWords,
@@ -314,8 +314,12 @@ class RedisFindex {
     Pointer<Uint8> entriesUidsListPointer,
     int entriesUidsListLength,
   ) {
-    return Ffi.fetchWrapper(outputPointer, outputLength, entriesUidsListPointer,
-        entriesUidsListLength, RedisFindex.fetchEntries);
+    return Findex.fetchWrapper(
+        outputPointer,
+        outputLength,
+        entriesUidsListPointer,
+        entriesUidsListLength,
+        RedisFindex.fetchEntries);
   }
 
   static int fetchChainsCallback(
@@ -324,15 +328,15 @@ class RedisFindex {
     Pointer<Uint8> chainsUidsListPointer,
     int chainsUidsListLength,
   ) {
-    return Ffi.fetchWrapper(outputPointer, outputLength, chainsUidsListPointer,
-        chainsUidsListLength, RedisFindex.fetchChains);
+    return Findex.fetchWrapper(outputPointer, outputLength,
+        chainsUidsListPointer, chainsUidsListLength, RedisFindex.fetchChains);
   }
 
   static int upsertEntriesCallback(
     Pointer<Uint8> entriesListPointer,
     int entriesListLength,
   ) {
-    return Ffi.upsertWrapper(
+    return Findex.upsertWrapper(
         entriesListPointer, entriesListLength, RedisFindex.upsertEntries);
   }
 
@@ -340,7 +344,7 @@ class RedisFindex {
     Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
-    return Ffi.upsertWrapper(
+    return Findex.upsertWrapper(
         chainsListPointer, chainsListLength, RedisFindex.upsertChains);
   }
 }
