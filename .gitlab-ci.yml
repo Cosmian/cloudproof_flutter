@@ -3,9 +3,12 @@ image: ubuntu:22.04
 test:
   script:
     - apt-get update
-    - apt-get install -y sqlite3 libsqlite3-dev redis-server snapd
-    - systemctl start snapd.service
-    - snap install flutter --classic
+    - apt-get install -y sqlite3 libsqlite3-dev redis-server wget xz-utils git
+    - git config --global --add safe.directory /builds/core/cloudproof-dart/flutter
+    - wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.3.3-stable.tar.xz -O /tmp/flutter_linux_3.3.3-stable.tar.xz
+    - tar xf /tmp/flutter_linux_3.3.3-stable.tar.xz --directory /tmp
+    - export PATH="$PATH:/tmp/flutter/bin"
+    - flutter doctor
     - flutter pub get
     - flutter analyze .
     - redis-server&
