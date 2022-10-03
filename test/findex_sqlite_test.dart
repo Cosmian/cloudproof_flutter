@@ -60,11 +60,11 @@ void main() {
       expect(await SqliteFindex.count('entry_table'), equals(583));
       expect(await SqliteFindex.count('chain_table'), equals(800));
 
-      final usersIdsAsBytes = await SqliteFindex.search(
+      final indexedValues = await SqliteFindex.search(
           masterKeys.k, label, [Word.fromString("France")]);
 
-      final usersIds = usersIdsAsBytes.map((bytes) {
-        return IndexedValue(bytes).location.bytes[0];
+      final usersIds = indexedValues.map((indexedValue) {
+        return indexedValue.location.bytes[0];
       }).toList();
       usersIds.sort();
 
@@ -227,7 +227,7 @@ class SqliteFindex {
   // Auto-Generated stuff.
   // ---------------------
 
-  static Future<List<Uint8List>> search(
+  static Future<List<IndexedValue>> search(
     Uint8List keyK,
     Uint8List label,
     List<Word> words,

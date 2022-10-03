@@ -21,6 +21,8 @@ class Ffi {
     } else if (Platform.isWindows) {
       libraryPath =
           path.join(Directory.current.path, 'resources', 'libcover_crypt.dll');
+    } else if (Platform.isAndroid) {
+      libraryPath = "libcover_crypt.so";
     }
 
     library = NativeLibrary(DynamicLibrary.open(libraryPath));

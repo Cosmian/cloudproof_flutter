@@ -118,6 +118,8 @@ class Ffi {
     } else if (Platform.isWindows) {
       libraryPath = path.join(
           Directory.current.path, 'resources', 'libcosmian_findex.dll');
+    } else if (Platform.isAndroid) {
+      libraryPath = "libcosmian_findex.so";
     }
 
     final dylib = DynamicLibrary.open(libraryPath);
@@ -237,7 +239,7 @@ class Ffi {
     }
   }
 
-  static Future<List<Uint8List>> search(
+  static Future<List<IndexedValue>> search(
     Uint8List k,
     Uint8List label,
     List<Word> words,
@@ -276,7 +278,9 @@ class Ffi {
       throw Exception("Fail to search ${getLastError()}");
     }
 
-    return Leb128.deserializeList(output.asTypedList(outputLength));
+    return Leb128.deserializeList(output.asTypedList(outputLength))
+        .map((bytes) => IndexedValue(bytes))
+        .toList();
   }
 
   static String getLastError() {

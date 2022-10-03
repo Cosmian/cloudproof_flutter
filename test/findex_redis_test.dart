@@ -58,11 +58,11 @@ void main() {
       expect(await RedisFindex.count(RedisTable.entries), equals(583));
       expect(await RedisFindex.count(RedisTable.chains), equals(800));
 
-      final usersIdsAsBytes = await RedisFindex.search(
+      final indexedValues = await RedisFindex.search(
           masterKeys.k, label, [Word.fromString("France")]);
 
-      final usersIds = usersIdsAsBytes.map((bytes) {
-        return IndexedValue(bytes).location.bytes[0];
+      final usersIds = indexedValues.map((indexedValue) {
+        return indexedValue.location.bytes[0];
       }).toList();
       usersIds.sort();
 
@@ -88,11 +88,11 @@ void main() {
 
       final label = Uint8List.fromList(utf8.encode("label"));
 
-      final usersIdsAsBytes = await RedisFindex.search(
+      final indexedValues = await RedisFindex.search(
           masterKeys.k, label, [Word.fromString("martinos")]);
 
-      final usersIds = usersIdsAsBytes.map((bytes) {
-        return IndexedValue(bytes).location.bytes;
+      final usersIds = indexedValues.map((indexedValue) {
+        return indexedValue.location.bytes;
       }).toList();
 
       expect(usersIds.length, equals(1));
@@ -163,7 +163,7 @@ class RedisFindex {
     return await getWithoutPrefix(db, RedisFindex.key(table, key));
   }
 
-  static Future<dynamic> mget(
+  static Future<List<dynamic>> mget(
       Command db, RedisTable table, List<Uint8List> keys) async {
     return await mgetWithoutPrefix(
         db, keys.map((key) => RedisFindex.key(table, key)).toList());
@@ -274,7 +274,7 @@ class RedisFindex {
   // Auto-Generated stuff.
   // ---------------------
 
-  static Future<List<Uint8List>> search(
+  static Future<List<IndexedValue>> search(
     Uint8List keyK,
     Uint8List label,
     List<Word> words,
