@@ -10,25 +10,31 @@ import 'package:path/path.dart' as path;
 import 'metadata.dart';
 
 class Ffi {
-  late NativeLibrary library;
+  static NativeLibrary? _library;
 
-  Ffi() {
-    var libraryPath =
-        path.join(Directory.current.path, 'resources', 'libcover_crypt.so');
-    if (Platform.isMacOS) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcover_crypt.dylib');
-    } else if (Platform.isWindows) {
-      libraryPath =
-          path.join(Directory.current.path, 'resources', 'libcover_crypt.dll');
-    } else if (Platform.isAndroid) {
-      libraryPath = "libcover_crypt.so";
+  static NativeLibrary get library {
+    if (_library != null) {
+      return _library as NativeLibrary;
     }
 
-    library = NativeLibrary(DynamicLibrary.open(libraryPath));
+    var libraryPath =
+        path.join(Directory.current.path, 'resources', 'libcosmian_findex.so');
+    if (Platform.isMacOS) {
+      libraryPath = path.join(
+          Directory.current.path, 'resources', 'libcosmian_findex.dylib');
+    } else if (Platform.isWindows) {
+      libraryPath = path.join(
+          Directory.current.path, 'resources', 'libcosmian_findex.dll');
+    } else if (Platform.isAndroid) {
+      libraryPath = "libcosmian_findex.so";
+    }
+
+    final library = NativeLibrary(DynamicLibrary.open(libraryPath));
+    _library = library;
+    return library;
   }
 
-  int getEncryptedHeaderSize(Uint8List encryptedData) {
+  static int getEncryptedHeaderSize(Uint8List encryptedData) {
     final encryptedDataPointer =
         encryptedData.allocateUint8Pointer().cast<Char>();
 
@@ -36,7 +42,7 @@ class Ffi {
         encryptedDataPointer, encryptedData.lengthInBytes);
   }
 
-  ClearTextHeader decryptHeader(
+  static ClearTextHeader decryptHeader(
       Uint8List asymetricDecryptionKey, Uint8List abeHeader) {
     final symmetricKeyPointer = calloc<Uint8>(ClearTextHeader.symmetricKeySize);
     final symmetricKeyLength = calloc<Int>(1);
@@ -82,7 +88,8 @@ class Ffi {
     );
   }
 
-  ClearTextHeader decryptHeaderWithCache(int cacheHandle, Uint8List abeHeader) {
+  static ClearTextHeader decryptHeaderWithCache(
+      int cacheHandle, Uint8List abeHeader) {
     final symmetricKeyPointer = calloc<Uint8>(ClearTextHeader.symmetricKeySize);
     final symmetricKeyLength = calloc<Int>(1);
     symmetricKeyLength.value = ClearTextHeader.symmetricKeySize;
@@ -122,8 +129,8 @@ class Ffi {
                 .asTypedList(additionalDataLength.value))));
   }
 
-  Uint8List decryptBlock(Uint8List symmetricKey, Uint8List encryptedBytes,
-      Uint8List uid, int blockNumber) {
+  static Uint8List decryptBlock(Uint8List symmetricKey,
+      Uint8List encryptedBytes, Uint8List uid, int blockNumber) {
     final clearTextPointer = calloc<Uint8>(3000);
     final clearTextLength = calloc<Int>(1);
     clearTextLength.value = 3000;
@@ -152,7 +159,7 @@ class Ffi {
         clearTextPointer.asTypedList(clearTextLength.value));
   }
 
-  int createDecryptionCache(Uint8List userDecryptionKey) {
+  static int createDecryptionCache(Uint8List userDecryptionKey) {
     var userDecryptionKeyPointer =
         userDecryptionKey.allocateInt8Pointer().cast<Char>();
     Pointer<Int> cacheHandlePointer = calloc<Int>();
@@ -171,7 +178,7 @@ class Ffi {
     return cacheHandle;
   }
 
-  void destroyDecryptionCache(int cacheHandle) {
+  static void destroyDecryptionCache(int cacheHandle) {
     int result = library.h_aes_destroy_decryption_cache(cacheHandle);
 
     if (result != 0) {
@@ -179,7 +186,7 @@ class Ffi {
     }
   }
 
-  String getLastError() {
+  static String getLastError() {
     final errorPointer = calloc<Uint8>(3000);
     final errorLength = calloc<Int>(1);
     errorLength.value = 3000;
