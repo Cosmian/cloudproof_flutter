@@ -235,24 +235,33 @@ class Findex {
             MapEntry(key.toBase64(), value.map((e) => e.toBase64()).toList()));
 
     final masterKeysJson = jsonEncode(masterKeys.toJson());
-    final Pointer<Utf8> masterKeysPointer = masterKeysJson.toNativeUtf8();
+    final Pointer<Utf8> masterKeysPointer =
+        masterKeysJson.toNativeUtf8(allocator: malloc);
 
     final indexedValuesAndWordsJson = jsonEncode(indexedValuesAndWordsString);
     final Pointer<Utf8> indexedValuesAndWordsPointer =
-        indexedValuesAndWordsJson.toNativeUtf8();
+        indexedValuesAndWordsJson.toNativeUtf8(allocator: malloc);
 
-    final result = hUpsert(
-      masterKeysPointer,
-      label.allocateUint8Pointer(),
-      label.length,
-      indexedValuesAndWordsPointer,
-      fetchEntries,
-      upsertEntries,
-      upsertChains,
-    );
+    final labelPointer = label.allocateUint8Pointer();
 
-    if (result != 0) {
-      throw Exception("Fail to upsert");
+    try {
+      final result = hUpsert(
+        masterKeysPointer,
+        labelPointer,
+        label.length,
+        indexedValuesAndWordsPointer,
+        fetchEntries,
+        upsertEntries,
+        upsertChains,
+      );
+
+      if (result != 0) {
+        throw Exception("Fail to upsert");
+      }
+    } finally {
+      calloc.free(labelPointer);
+      malloc.free(masterKeysPointer);
+      malloc.free(indexedValuesAndWordsPointer);
     }
   }
 
@@ -275,34 +284,45 @@ class Findex {
     final wordsJson = jsonEncode(wordsString);
     final Pointer<Utf8> wordsPointer = wordsJson.toNativeUtf8();
 
-    final result = hSearch(
-      output,
-      outputSizeInBytesPointer,
-      k.allocateUint8Pointer(),
-      k.length,
-      label.allocateUint8Pointer(),
-      label.length,
-      wordsPointer,
-      0,
-      0,
-      Pointer.fromFunction(Findex.progressCallback, true),
-      fetchEntries,
-      fetchChains,
-    );
+    final kPointer = k.allocateUint8Pointer();
+    final labelPointer = label.allocateUint8Pointer();
 
-    if (result != 0) {
-      // If Rust tells us that our buffer is too small for the search results
-      // retry with the correct buffer size.
-      if (outputSizeInBytesPointer.value > outputSizeInBytes) {
-        return search(k, label, words, fetchEntries, fetchChains,
-            outputSizeInBytes: outputSizeInBytesPointer.value);
+    try {
+      final result = hSearch(
+        output,
+        outputSizeInBytesPointer,
+        kPointer,
+        k.length,
+        labelPointer,
+        label.length,
+        wordsPointer,
+        0,
+        0,
+        Pointer.fromFunction(Findex.progressCallback, true),
+        fetchEntries,
+        fetchChains,
+      );
+
+      if (result != 0) {
+        // If Rust tells us that our buffer is too small for the search results
+        // retry with the correct buffer size.
+        if (outputSizeInBytesPointer.value > outputSizeInBytes) {
+          return search(k, label, words, fetchEntries, fetchChains,
+              outputSizeInBytes: outputSizeInBytesPointer.value);
+        }
+        throw Exception("Fail to search ${getLastError()}");
       }
-      throw Exception("Fail to search ${getLastError()}");
-    }
 
-    return Leb128.deserializeList(output.asTypedList(outputSizeInBytes))
-        .map((bytes) => IndexedValue(bytes))
-        .toList();
+      return Leb128.deserializeList(output.asTypedList(outputSizeInBytes))
+          .map((bytes) => IndexedValue(bytes))
+          .toList();
+    } finally {
+      calloc.free(output);
+      calloc.free(outputSizeInBytesPointer);
+      malloc.free(wordsPointer);
+      calloc.free(kPointer);
+      calloc.free(labelPointer);
+    }
   }
 
   static bool progressCallback(
@@ -324,18 +344,20 @@ class Findex {
     final errorLength = calloc<Int>(1);
     errorLength.value = errorMessageMaxLength;
 
-    final result = getLastError(errorPointer.cast<Char>(), errorLength);
+    try {
+      final result = getLastError(errorPointer.cast<Char>(), errorLength);
 
-    if (result != 0) {
-      return "Fail to fetch last error…";
-    } else {
-      final message = const Utf8Decoder()
-          .convert(errorPointer.asTypedList(errorLength.value));
+      if (result != 0) {
+        return "Fail to fetch last error…";
+      } else {
+        final message = const Utf8Decoder()
+            .convert(errorPointer.asTypedList(errorLength.value));
 
+        return message;
+      }
+    } finally {
       calloc.free(errorPointer);
       calloc.free(errorLength);
-
-      return message;
     }
   }
 }

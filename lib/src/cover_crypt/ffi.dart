@@ -9,6 +9,10 @@ import 'package:path/path.dart' as path;
 
 import 'metadata.dart';
 
+const errorMessageMaxLength = 3000;
+const defaultUidSizeInBytes = 32;
+const defaultAdditionalDataSizeInBytes = 32;
+
 class Ffi {
   static NativeLibrary? _library;
 
@@ -36,97 +40,158 @@ class Ffi {
 
   static int getEncryptedHeaderSize(Uint8List encryptedData) {
     final encryptedDataPointer =
-        encryptedData.allocateUint8Pointer().cast<Char>();
+        encryptedData.allocateInt8Pointer().cast<Char>();
 
-    return library.h_get_encrypted_header_size(
-        encryptedDataPointer, encryptedData.lengthInBytes);
+    try {
+      return library.h_get_encrypted_header_size(
+          encryptedDataPointer.cast<Char>(), encryptedData.lengthInBytes);
+    } finally {
+      calloc.free(encryptedDataPointer);
+    }
   }
 
   static ClearTextHeader decryptHeader(
-      Uint8List asymetricDecryptionKey, Uint8List abeHeader) {
+    Uint8List asymetricDecryptionKey,
+    Uint8List abeHeader, {
+    int uidSizeInBytes = defaultUidSizeInBytes,
+    int additionalDataSizeInBytes = defaultAdditionalDataSizeInBytes,
+  }) {
     final symmetricKeyPointer = calloc<Uint8>(ClearTextHeader.symmetricKeySize);
     final symmetricKeyLength = calloc<Int>(1);
     symmetricKeyLength.value = ClearTextHeader.symmetricKeySize;
 
-    final uidPointer = calloc<Uint8>(3000);
+    final uidPointer = calloc<Uint8>(uidSizeInBytes);
     final uidLength = calloc<Int>(1);
-    uidLength.value = 3000;
+    uidLength.value = uidSizeInBytes;
 
-    final additionalDataPointer = calloc<Uint8>(3000);
+    final additionalDataPointer = calloc<Uint8>(additionalDataSizeInBytes);
     final additionalDataLength = calloc<Int>(1);
-    additionalDataLength.value = 3000;
+    additionalDataLength.value = additionalDataSizeInBytes;
 
     final asymetricDecryptionKeyPointer =
         asymetricDecryptionKey.allocateInt8Pointer().cast<Char>();
     final abeHeaderPointer = abeHeader.allocateInt8Pointer().cast<Char>();
 
-    final result = library.h_aes_decrypt_header(
-      symmetricKeyPointer.cast<Char>(),
-      symmetricKeyLength,
-      uidPointer.cast<Char>(),
-      uidLength,
-      additionalDataPointer.cast<Char>(),
-      additionalDataLength,
-      abeHeaderPointer,
-      abeHeader.lengthInBytes,
-      asymetricDecryptionKeyPointer,
-      asymetricDecryptionKey.lengthInBytes,
-    );
+    try {
+      final result = library.h_aes_decrypt_header(
+        symmetricKeyPointer.cast<Char>(),
+        symmetricKeyLength,
+        uidPointer.cast<Char>(),
+        uidLength,
+        additionalDataPointer.cast<Char>(),
+        additionalDataLength,
+        abeHeaderPointer,
+        abeHeader.lengthInBytes,
+        asymetricDecryptionKeyPointer,
+        asymetricDecryptionKey.lengthInBytes,
+      );
 
-    if (result != 0) {
-      throw Exception("Call to `h_aes_decrypt_header` fail. ${getLastError()}");
-    }
+      if (result != 0) {
+        // If FFI tells us that our buffers are too small, retry
+        // with the correct sized buffer.
+        if (uidLength.value > uidSizeInBytes ||
+            additionalDataLength.value > additionalDataSizeInBytes) {
+          return decryptHeader(
+            asymetricDecryptionKey,
+            abeHeader,
+            uidSizeInBytes: uidLength.value,
+            additionalDataSizeInBytes: additionalDataLength.value,
+          );
+        }
 
-    return ClearTextHeader(
-      Uint8List.fromList(
-          symmetricKeyPointer.asTypedList(symmetricKeyLength.value)),
-      Metadata(
-        Uint8List.fromList(uidPointer.asTypedList(uidLength.value)),
+        throw Exception(
+            "Call to `h_aes_decrypt_header` fail. ${getLastError()}");
+      }
+
+      return ClearTextHeader(
         Uint8List.fromList(
-            additionalDataPointer.asTypedList(additionalDataLength.value)),
-      ),
-    );
+            symmetricKeyPointer.asTypedList(symmetricKeyLength.value)),
+        Metadata(
+          Uint8List.fromList(uidPointer.asTypedList(uidLength.value)),
+          Uint8List.fromList(
+              additionalDataPointer.asTypedList(additionalDataLength.value)),
+        ),
+      );
+    } finally {
+      calloc.free(symmetricKeyPointer);
+      calloc.free(symmetricKeyLength);
+      calloc.free(uidPointer);
+      calloc.free(uidLength);
+      calloc.free(additionalDataPointer);
+      calloc.free(additionalDataLength);
+      calloc.free(asymetricDecryptionKeyPointer);
+      calloc.free(abeHeaderPointer);
+    }
   }
 
   static ClearTextHeader decryptHeaderWithCache(
-      int cacheHandle, Uint8List abeHeader) {
+    int cacheHandle,
+    Uint8List abeHeader, {
+    int uidSizeInBytes = defaultUidSizeInBytes,
+    int additionalDataSizeInBytes = defaultAdditionalDataSizeInBytes,
+  }) {
     final symmetricKeyPointer = calloc<Uint8>(ClearTextHeader.symmetricKeySize);
     final symmetricKeyLength = calloc<Int>(1);
     symmetricKeyLength.value = ClearTextHeader.symmetricKeySize;
 
-    final uidPointer = calloc<Uint8>(3000);
+    final uidPointer = calloc<Uint8>(uidSizeInBytes);
     final uidLength = calloc<Int>(1);
-    uidLength.value = 3000;
+    uidLength.value = uidSizeInBytes;
 
-    final additionalDataPointer = calloc<Uint8>(3000);
+    final additionalDataPointer = calloc<Uint8>(additionalDataSizeInBytes);
     final additionalDataLength = calloc<Int>(1);
-    additionalDataLength.value = 3000;
+    additionalDataLength.value = additionalDataSizeInBytes;
 
     final abeHeaderPointer = abeHeader.allocateInt8Pointer().cast<Char>();
 
-    final result = library.h_aes_decrypt_header_using_cache(
-      symmetricKeyPointer.cast<Char>(),
-      symmetricKeyLength,
-      uidPointer.cast<Char>(),
-      uidLength,
-      additionalDataPointer.cast<Char>(),
-      additionalDataLength,
-      abeHeaderPointer,
-      abeHeader.lengthInBytes,
-      cacheHandle,
-    );
+    try {
+      final result = library.h_aes_decrypt_header_using_cache(
+        symmetricKeyPointer.cast<Char>(),
+        symmetricKeyLength,
+        uidPointer.cast<Char>(),
+        uidLength,
+        additionalDataPointer.cast<Char>(),
+        additionalDataLength,
+        abeHeaderPointer,
+        abeHeader.lengthInBytes,
+        cacheHandle,
+      );
 
-    if (result != 0) {
-      throw Exception("Call to `h_aes_decrypt_header` fail. ${getLastError()}");
-    }
+      if (result != 0) {
+        // If FFI tells us that our buffers are too small, retry
+        // with the correct sized buffer.
+        if (uidLength.value > uidSizeInBytes ||
+            additionalDataLength.value > additionalDataSizeInBytes) {
+          return decryptHeaderWithCache(
+            cacheHandle,
+            abeHeader,
+            uidSizeInBytes: uidLength.value,
+            additionalDataSizeInBytes: additionalDataLength.value,
+          );
+        }
 
-    return ClearTextHeader(
+        throw Exception(
+            "Call to `h_aes_decrypt_header` fail. ${getLastError()}");
+      }
+
+      return ClearTextHeader(
         Uint8List.fromList(
             symmetricKeyPointer.asTypedList(symmetricKeyLength.value)),
         Metadata(
-            Uint8List.fromList(uidPointer.asTypedList(uidLength.value)),
-            Uint8List.fromList(additionalDataPointer
-                .asTypedList(additionalDataLength.value))));
+          Uint8List.fromList(uidPointer.asTypedList(uidLength.value)),
+          Uint8List.fromList(
+              additionalDataPointer.asTypedList(additionalDataLength.value)),
+        ),
+      );
+    } finally {
+      calloc.free(symmetricKeyPointer);
+      calloc.free(symmetricKeyLength);
+      calloc.free(uidPointer);
+      calloc.free(uidLength);
+      calloc.free(additionalDataPointer);
+      calloc.free(additionalDataLength);
+      calloc.free(abeHeaderPointer);
+    }
   }
 
   static Uint8List decryptBlock(Uint8List symmetricKey,
@@ -140,42 +205,52 @@ class Ffi {
     final encryptedBytesPointer =
         encryptedBytes.allocateInt8Pointer().cast<Char>();
 
-    final result = library.h_aes_decrypt_block(
-        clearTextPointer.cast<Char>(),
-        clearTextLength,
-        symmetricKeyPointer,
-        symmetricKey.lengthInBytes,
-        uidPointer,
-        uid.lengthInBytes,
-        blockNumber,
-        encryptedBytesPointer,
-        encryptedBytes.lengthInBytes);
+    try {
+      final result = library.h_aes_decrypt_block(
+          clearTextPointer.cast<Char>(),
+          clearTextLength,
+          symmetricKeyPointer,
+          symmetricKey.lengthInBytes,
+          uidPointer,
+          uid.lengthInBytes,
+          blockNumber,
+          encryptedBytesPointer,
+          encryptedBytes.lengthInBytes);
 
-    if (result != 0) {
-      throw Exception("Call to `h_aes_decrypt_block` fail. ${getLastError()}");
+      if (result != 0) {
+        throw Exception(
+            "Call to `h_aes_decrypt_block` fail. ${getLastError()}");
+      }
+
+      return Uint8List.fromList(
+          clearTextPointer.asTypedList(clearTextLength.value));
+    } finally {
+      calloc.free(clearTextPointer);
+      calloc.free(clearTextLength);
+      calloc.free(symmetricKeyPointer);
+      calloc.free(uidPointer);
+      calloc.free(encryptedBytesPointer);
     }
-
-    return Uint8List.fromList(
-        clearTextPointer.asTypedList(clearTextLength.value));
   }
 
   static int createDecryptionCache(Uint8List userDecryptionKey) {
     var userDecryptionKeyPointer =
         userDecryptionKey.allocateInt8Pointer().cast<Char>();
     Pointer<Int> cacheHandlePointer = calloc<Int>();
-    int result = library.h_aes_create_decryption_cache(
-        cacheHandlePointer, userDecryptionKeyPointer, userDecryptionKey.length);
 
-    if (result != 0) {
-      throw Exception("FFI create decryption cache failed");
+    try {
+      int result = library.h_aes_create_decryption_cache(cacheHandlePointer,
+          userDecryptionKeyPointer, userDecryptionKey.length);
+
+      if (result != 0) {
+        throw Exception("FFI create decryption cache failed");
+      }
+
+      return cacheHandlePointer.value;
+    } finally {
+      calloc.free(cacheHandlePointer);
+      calloc.free(userDecryptionKeyPointer);
     }
-
-    final cacheHandle = cacheHandlePointer.value;
-
-    calloc.free(cacheHandlePointer);
-    calloc.free(userDecryptionKeyPointer);
-
-    return cacheHandle;
   }
 
   static void destroyDecryptionCache(int cacheHandle) {
@@ -187,18 +262,23 @@ class Ffi {
   }
 
   static String getLastError() {
-    final errorPointer = calloc<Uint8>(3000);
+    final errorPointer = calloc<Uint8>(errorMessageMaxLength);
     final errorLength = calloc<Int>(1);
-    errorLength.value = 3000;
+    errorLength.value = errorMessageMaxLength;
 
-    final result =
-        library.get_last_error(errorPointer.cast<Char>(), errorLength);
+    try {
+      final result =
+          library.get_last_error(errorPointer.cast<Char>(), errorLength);
 
-    if (result != 0) {
-      return "Fail to fetch last error…";
-    } else {
-      return const Utf8Decoder()
-          .convert(errorPointer.asTypedList(errorLength.value));
+      if (result != 0) {
+        return "Fail to fetch last error…";
+      } else {
+        return const Utf8Decoder()
+            .convert(errorPointer.asTypedList(errorLength.value));
+      }
+    } finally {
+      calloc.free(errorPointer);
+      calloc.free(errorLength);
     }
   }
 }
@@ -207,13 +287,6 @@ extension Uint8ListBlobConversion on Uint8List {
   /// Allocates a pointer filled with the Uint8List data.
   Pointer<Int8> allocateInt8Pointer() {
     final blob = calloc<Int8>(length);
-    final blobBytes = blob.asTypedList(length);
-    blobBytes.setAll(0, this);
-    return blob;
-  }
-
-  Pointer<Uint8> allocateUint8Pointer() {
-    final blob = calloc<Uint8>(length);
     final blobBytes = blob.asTypedList(length);
     blobBytes.setAll(0, this);
     return blob;
