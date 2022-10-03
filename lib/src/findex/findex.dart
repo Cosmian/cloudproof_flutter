@@ -10,8 +10,6 @@ import 'package:path/path.dart' as path;
 import 'package:ffi/ffi.dart';
 import 'package:tuple/tuple.dart';
 
-// :Dart2.12 Replace Int32 and Uint32 to Int and UnsignedInt
-
 typedef NativeUpsertFunc = Int32 Function(
   Pointer<Utf8>,
   Pointer<Uint8>,
@@ -257,7 +255,6 @@ class Findex {
     final outputLengthPointer = calloc<Int32>(1);
     outputLengthPointer.value = outputLength;
 
-    // :Dart2.12 Switch to `.toNativeUtf8()`
     final wordsJson = jsonEncode(wordsString);
     final Pointer<Utf8> wordsPointer = wordsJson.toNativeUtf8();
 
