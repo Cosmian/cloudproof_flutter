@@ -39,6 +39,8 @@ typedef NativeSearchFunc = Int32 Function(
   Int32,
   Pointer<Utf8>,
   Int32,
+  Int32,
+  Pointer<NativeFunction<ProgressFFiCallback>>,
   Pointer<NativeFunction<FetchEntriesFfiCallback>>,
   Pointer<NativeFunction<FetchChainsFfiCallback>>,
 );
@@ -52,6 +54,8 @@ typedef HSearch = int Function(
   int,
   Pointer<Utf8>,
   int,
+  int,
+  Pointer<NativeFunction<ProgressFFiCallback>>,
   Pointer<NativeFunction<FetchEntriesFfiCallback>>,
   Pointer<NativeFunction<FetchChainsFfiCallback>>,
 );
@@ -61,6 +65,16 @@ typedef FetchEntriesFfiCallback = Int32 Function(
   Pointer<Uint32>,
   Pointer<Uint8>,
   Uint32,
+);
+
+typedef ProgressFFiCallback = Bool Function(
+  Pointer<Uint8>,
+  Uint32,
+);
+
+typedef ProgressCallback = bool Function(
+  Pointer<Uint8>,
+  int,
 );
 
 typedef FetchEntriesCallback = Future<Map<Uint8List, Uint8List>> Function(
@@ -267,6 +281,8 @@ class Findex {
       label.length,
       wordsPointer,
       0,
+      0,
+      Pointer.fromFunction(Findex.progressCallback, true),
       fetchEntries,
       fetchChains,
     );
@@ -278,6 +294,13 @@ class Findex {
     return Leb128.deserializeList(output.asTypedList(outputLength))
         .map((bytes) => IndexedValue(bytes))
         .toList();
+  }
+
+  static bool progressCallback(
+    Pointer<Uint8> uidsListPointer,
+    int uidsListLength,
+  ) {
+    return true;
   }
 
   static String getLastError() {
