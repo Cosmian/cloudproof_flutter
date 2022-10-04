@@ -10,6 +10,30 @@ flutter pub get cloudproof
 
 To run the example, you need a Redis server configured and populated with our [Java example](https://github.com/Cosmian/cosmian_java_lib) (`docker compose up` then `mvn test`). Then, update `redisHost` and `redisPort` at the top of the `example/lib/main.dart` file.
 
+## Tests
+
+To run all tests:
+
+```
+flutter test
+```
+
+Some tests require a Redis database on localhost (default port).
+
+If you ran the Java test which populate the Redis database, you can run the hidden test that read from this database.
+
+```
+RUN_JAVA_E2E_TESTS=1 flutter test --plain-name 'Search and decrypt with preallocate Redis by Java'
+```
+
+If you share the same Redis database between Java and Dart tests, `flutter test` will cleanup the Redis database (it could take some time and timeout on the first execution). So you may want to re-run `mvn test` to populate the Redis database again.
+
+You can run the benchmarks with:
+
+```
+dart benchmark/cloudproof_benchmark.dart
+```
+
 ## Usage
 
 ### CoverCrypt
@@ -195,7 +219,25 @@ We cannot
 
 ## FFI libs notes
 
+### Generating `.h`
+
+The `lib/src/cover_crypt/generated_bindings.dart` is generated with `ffigen` with the config file `./ffigen_cover_crypt.yml`. There is a custom config file (instead of using the `pubspec.yml` because we may want to generate bindings for Findex in the future). Findex bindings are hand written because they are more complex and generated bindings require some casts (in particular with `Pointer<Uint8>>` from the Dart `Uint8List` type to `Pointer<Char>>`, it's working for CoverCrypt but maybe it's better to have the bindings with the `uint8` types like in Findex?).
+
+Use cbindgen, do not forget to remove `str` type in `libcover_crypt.h` (last two lines) for iOS to compile (type `str` unknown in C headers).
+
+The two `.h` need to be inside the `ios/Classes` folder. Android doesn't need `.h` files.
+
 ### Building `.so`, `.a`…
+
+#### Linux
+
+Just copy `.so` file from the Rust projects to the `resources` folder. These `.so` are only useful to run the tests on Linux.
+
+#### Android
+
+Download artifacts from the Gitlab CI. You should get a `jniLibs` folder to copy to `android/src/main`.
+
+#### iOS
 
 If building with `cargo lipo` on Linux we only get `aarch64-apple-ios` and `x86_64-apple-ios`.
 
@@ -205,6 +247,4 @@ On codemagic.io:
 
 We need to try with `universal` native lib.
 
-### Generating `.h`
-
-Use cbindgen, do not forget to remove `str` type in `libcover_crypt.h` (last two lines).
+It may be required to add all FFI calls inside `ios/Classes/CloudproofPlugin.swift` (See :PreventTreeShaking). If it's not required please remove the test call.
