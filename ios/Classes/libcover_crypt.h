@@ -283,7 +283,3 @@ int h_aes_decrypt_block(char *clear_text_ptr,
                         int block_number,
                         const char *encrypted_bytes_ptr,
                         int encrypted_bytes_len);
-
-extern void log(const str *s);
-
-extern void alert(const str *s);
