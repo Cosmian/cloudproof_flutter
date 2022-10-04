@@ -48,6 +48,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late Uint8List label;
   late CoverCryptDecryptionWithCache coverCryptDecryptionWithCache;
 
+  String? error;
+
   List<String?> results = [];
   Duration? searchDuration;
   Duration? decryptDuration;
@@ -73,19 +75,25 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   void fetchDemoDataFromRedis() async {
-    // final db = await RedisFindex.db;
-    // final Uint8List sseKeys = Uint8List.fromList(
-    //     await RedisFindex.get(db, RedisTable.others, Uint8List.fromList([0])));
-    // masterKeys = MasterKeys.fromJson(jsonDecode(utf8.decode(sseKeys)));
+    try {
+      final db = await RedisFindex.db;
+      final Uint8List sseKeys = Uint8List.fromList(await RedisFindex.get(
+          db, RedisTable.others, Uint8List.fromList([0])));
+      masterKeys = MasterKeys.fromJson(jsonDecode(utf8.decode(sseKeys)));
 
-    // userDecryptionKey = Uint8List.fromList(
-    //     await RedisFindex.get(db, RedisTable.others, Uint8List.fromList([3])));
+      userDecryptionKey = Uint8List.fromList(await RedisFindex.get(
+          db, RedisTable.others, Uint8List.fromList([3])));
 
-    // label = Uint8List.fromList(utf8.encode("label"));
-    // coverCryptDecryptionWithCache =
-    //     CoverCryptDecryptionWithCache(userDecryptionKey);
+      label = Uint8List.fromList(utf8.encode("label"));
+      coverCryptDecryptionWithCache =
+          CoverCryptDecryptionWithCache(userDecryptionKey);
+      setState(() => loading = false);
 
-    setState(() => loading = false);
+      log("Inited");
+    } catch (e) {
+      error = "Problem during Redis initialisation $e";
+      log("Problem during Redis initialisation $e");
+    }
   }
 
   @override
@@ -148,6 +156,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           decryptDuration = newDecryptDuration;
         });
       } catch (e, stacktrace) {
+        error = "Exception during search $e $stacktrace";
         log("Exception during search $e $stacktrace");
       }
     });
@@ -206,9 +215,10 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   ),
                 ),
               ),
+            if (error != null) Text(error as String),
             if (!loading && searchDuration != null && decryptDuration != null)
               Text(
-                  "Search took ${searchDuration!.inMilliseconds}ms. Decrypt took ${decryptDuration!.inMilliseconds}ms"),
+                  "${results.length} results. Search took ${searchDuration!.inMilliseconds}ms. Decrypt took ${decryptDuration!.inMilliseconds}ms"),
             if (!loading)
               Expanded(
                   child: ListView.separated(
