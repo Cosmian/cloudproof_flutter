@@ -5,6 +5,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:redis/redis.dart';
 
@@ -91,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
       log("Inited");
     } catch (e) {
-      error = "Problem during Redis initialisation $e";
+      setState(() => error = "Problem during Redis initialisation $e");
       log("Problem during Redis initialisation $e");
     }
   }
@@ -121,6 +122,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             results = [];
             searchDuration = null;
             decryptDuration = null;
+            error = "No resuts";
           });
           return;
         }
@@ -156,7 +158,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           decryptDuration = newDecryptDuration;
         });
       } catch (e, stacktrace) {
-        error = "Exception during search $e $stacktrace";
+        setState(() => error = "Exception during search $e $stacktrace");
         log("Exception during search $e $stacktrace");
       }
     });
