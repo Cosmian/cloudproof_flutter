@@ -1,6 +1,6 @@
 {
-    "name": "flutter_new",
-    "short_name": "flutter_new",
+    "name": "cloudproof_demo",
+    "short_name": "cloudproof_demo",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -73,17 +73,17 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   void fetchDemoDataFromRedis() async {
-    final db = await RedisFindex.db;
-    final Uint8List sseKeys = Uint8List.fromList(
-        await RedisFindex.get(db, RedisTable.others, Uint8List.fromList([0])));
-    masterKeys = MasterKeys.fromJson(jsonDecode(utf8.decode(sseKeys)));
+    // final db = await RedisFindex.db;
+    // final Uint8List sseKeys = Uint8List.fromList(
+    //     await RedisFindex.get(db, RedisTable.others, Uint8List.fromList([0])));
+    // masterKeys = MasterKeys.fromJson(jsonDecode(utf8.decode(sseKeys)));
 
-    userDecryptionKey = Uint8List.fromList(
-        await RedisFindex.get(db, RedisTable.others, Uint8List.fromList([3])));
+    // userDecryptionKey = Uint8List.fromList(
+    //     await RedisFindex.get(db, RedisTable.others, Uint8List.fromList([3])));
 
-    label = Uint8List.fromList(utf8.encode("label"));
-    coverCryptDecryptionWithCache =
-        CoverCryptDecryptionWithCache(userDecryptionKey);
+    // label = Uint8List.fromList(utf8.encode("label"));
+    // coverCryptDecryptionWithCache =
+    //     CoverCryptDecryptionWithCache(userDecryptionKey);
 
     setState(() => loading = false);
   }

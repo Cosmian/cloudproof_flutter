@@ -1,4 +1,4 @@
-package com.example.flutter_new
+package com.example.cloudproof_demo
 
 import io.flutter.embedding.android.FlutterActivity
 

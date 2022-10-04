@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.flutter_new">
+    package="com.example.cloudproof_demo">
    <application
-        android:label="flutter_new"
+        android:label="cloudproof_demo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
