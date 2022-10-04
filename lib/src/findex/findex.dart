@@ -88,6 +88,8 @@ typedef FetchCallback = Future<Map<Uint8List, Uint8List>> Function(
   List<Uint8List>,
 );
 
+typedef FetchCallbackSync = Map<Uint8List, Uint8List> Function(List<Uint8List>);
+
 typedef FetchChainsFfiCallback = Int32 Function(
   Pointer<Uint8>,
   Pointer<Uint32>,
@@ -106,6 +108,7 @@ typedef UpsertEntriesCallback = Future<void> Function(
   Map<Uint8List, Uint8List>,
 );
 typedef UpsertCallback = Future<void> Function(Map<Uint8List, Uint8List>);
+typedef UpsertCallbackSync = void Function(Map<Uint8List, Uint8List>);
 
 typedef UpsertChainsFfiCallback = Int32 Function(
   Pointer<Uint8>,
@@ -153,35 +156,67 @@ class Findex {
     int uidsListLength,
     FetchCallback callback,
   ) {
+    final donePointer = calloc<Bool>(1);
+    donePointer.value = false;
+
     try {
-      final donePointer = calloc<Bool>(1);
+      Isolate.spawn(
+        (message) async {
+          try {
+            final uids = Leb128.deserializeList(
+                Pointer<Uint8>.fromAddress(message.item3)
+                    .asTypedList(uidsListLength));
 
-      Isolate.spawn((message) async {
-        try {
-          final uids = Leb128.deserializeList(
-              Pointer<Uint8>.fromAddress(message.item3)
-                  .asTypedList(uidsListLength));
+            final values = await callback(uids);
 
-          final values = await callback(uids);
+            final output = Pointer<Uint8>.fromAddress(message.item1)
+                .asTypedList(Pointer<Int32>.fromAddress(message.item2).value);
 
-          final output = Pointer<Uint8>.fromAddress(message.item1)
-              .asTypedList(Pointer<Int32>.fromAddress(message.item2).value);
-
-          Leb128.serializeHashMap(output, values);
-        } catch (e) {
-          log("Excepting in fetch isolate. $e");
-        } finally {
-          Pointer<Bool>.fromAddress(message.item4).value = true;
-        }
-      },
-          Tuple4(outputPointer.address, outputLength.address,
-              uidsListPointer.address, donePointer.address));
+            Leb128.serializeHashMap(output, values);
+          } catch (e) {
+            log("Excepting in fetch isolate. $e");
+          } finally {
+            Pointer<Bool>.fromAddress(message.item4).value = true;
+          }
+        },
+        Tuple4(
+          outputPointer.address,
+          outputLength.address,
+          uidsListPointer.address,
+          donePointer.address,
+        ),
+      );
 
       while (!donePointer.value) {
         sleep(const Duration(milliseconds: 10));
       }
 
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during fetch wrapper $e $stacktrace");
+      rethrow;
+    } finally {
       calloc.free(donePointer);
+    }
+  }
+
+  static int fetchWrapperWithoutIsolate(
+    Pointer<Uint8> outputPointer,
+    Pointer<Uint32> outputLength,
+    Pointer<Uint8> uidsListPointer,
+    int uidsListLength,
+    FetchCallbackSync callback,
+  ) {
+    try {
+      final uids =
+          Leb128.deserializeList(uidsListPointer.asTypedList(uidsListLength));
+
+      final values = callback(uids);
+
+      final output = outputPointer.asTypedList(outputLength.value);
+
+      Leb128.serializeHashMap(output, values);
+
       return 0;
     } catch (e, stacktrace) {
       log("Exception during fetch wrapper $e $stacktrace");
@@ -194,28 +229,55 @@ class Findex {
     int valuesByUidsLength,
     UpsertCallback callback,
   ) {
+    final donePointer = calloc<Bool>(1);
+    donePointer.value = false;
+
     try {
-      final donePointer = calloc<Bool>(1);
+      Isolate.spawn(
+        (message) async {
+          try {
+            final valuesByUids = Leb128.deserializeHashMap(
+                Pointer<Uint8>.fromAddress(message.item1)
+                    .asTypedList(valuesByUidsLength));
 
-      Isolate.spawn((message) async {
-        try {
-          final valuesByUids = Leb128.deserializeHashMap(
-              Pointer<Uint8>.fromAddress(message.item1)
-                  .asTypedList(valuesByUidsLength));
-
-          await callback(valuesByUids);
-        } catch (e) {
-          log("Excepting in upsert isolate. $e");
-        } finally {
-          Pointer<Bool>.fromAddress(message.item2).value = true;
-        }
-      }, Tuple2(valuesByUidsPointer.address, donePointer.address));
+            await callback(valuesByUids);
+          } catch (e) {
+            log("Excepting in upsert isolate. $e");
+          } finally {
+            Pointer<Bool>.fromAddress(message.item2).value = true;
+          }
+        },
+        Tuple2(
+          valuesByUidsPointer.address,
+          donePointer.address,
+        ),
+      );
 
       while (!donePointer.value) {
         sleep(const Duration(milliseconds: 10));
       }
 
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during upsert wrapper $e $stacktrace");
+      rethrow;
+    } finally {
       calloc.free(donePointer);
+    }
+  }
+
+  static int upsertWrapperWithoutIsolate(
+    Pointer<Uint8> valuesByUidsPointer,
+    int valuesByUidsLength,
+    UpsertCallbackSync callback,
+  ) {
+    try {
+      final valuesByUids = Leb128.deserializeHashMap(
+        valuesByUidsPointer.asTypedList(valuesByUidsLength),
+      );
+
+      callback(valuesByUids);
+
       return 0;
     } catch (e, stacktrace) {
       log("Exception during upsert wrapper $e $stacktrace");

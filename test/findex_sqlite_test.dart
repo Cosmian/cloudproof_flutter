@@ -130,7 +130,7 @@ Future<Database> initDb() async {
 class SqliteFindex {
   static Database? singletonDb;
 
-  static Future<Database> get db async {
+  static Database get db {
     if (singletonDb != null) {
       return singletonDb as Database;
     }
@@ -141,7 +141,7 @@ class SqliteFindex {
   }
 
   static Future<void> indexAll(MasterKeys masterKeys, Uint8List label) async {
-    final users = await allUsers();
+    final users = allUsers();
 
     final indexedValuesAndWords = {
       for (final user in users)
@@ -151,8 +151,8 @@ class SqliteFindex {
     await upsert(masterKeys, label, indexedValuesAndWords);
   }
 
-  static Future<List<User>> allUsers() async {
-    final ResultSet resultSet = (await db).select('SELECT * FROM users');
+  static List<User> allUsers() {
+    final ResultSet resultSet = db.select('SELECT * FROM users');
     List<User> users = [];
 
     for (final Row row in resultSet) {
@@ -162,20 +162,18 @@ class SqliteFindex {
     return users;
   }
 
-  static Future<int> count(String table) async {
-    final ResultSet resultSet =
-        (await db).select('SELECT COUNT(*) FROM $table');
+  static int count(String table) {
+    final ResultSet resultSet = db.select('SELECT COUNT(*) FROM $table');
 
     return resultSet.first.values.first;
   }
 
-  static Future<Map<Uint8List, Uint8List>> fetchEntries(
-      List<Uint8List> uids) async {
+  static Map<Uint8List, Uint8List> fetchEntries(List<Uint8List> uids) {
     var questions = ("?," * uids.length);
     questions = questions.substring(0, questions.length - 1);
 
-    final ResultSet resultSet = (await db)
-        .select('SELECT * FROM entry_table WHERE uid IN ($questions)', uids);
+    final ResultSet resultSet =
+        db.select('SELECT * FROM entry_table WHERE uid IN ($questions)', uids);
     Map<Uint8List, Uint8List> entries = {};
 
     for (final Row row in resultSet) {
@@ -185,13 +183,12 @@ class SqliteFindex {
     return entries;
   }
 
-  static Future<Map<Uint8List, Uint8List>> fetchChains(
-      List<Uint8List> uids) async {
+  static Map<Uint8List, Uint8List> fetchChains(List<Uint8List> uids) {
     var questions = ("?," * uids.length);
     questions = questions.substring(0, questions.length - 1);
 
-    final ResultSet resultSet = (await db)
-        .select('SELECT * FROM chain_table WHERE uid IN ($questions)', uids);
+    final ResultSet resultSet =
+        db.select('SELECT * FROM chain_table WHERE uid IN ($questions)', uids);
     Map<Uint8List, Uint8List> entries = {};
 
     for (final Row row in resultSet) {
@@ -201,8 +198,8 @@ class SqliteFindex {
     return entries;
   }
 
-  static Future<void> upsertEntries(Map<Uint8List, Uint8List> entries) async {
-    final stmt = (await db).prepare(
+  static void upsertEntries(Map<Uint8List, Uint8List> entries) {
+    final stmt = db.prepare(
         'INSERT OR REPLACE INTO entry_table (uid, value) VALUES (?, ?)');
     for (final entry in entries.entries) {
       stmt.execute([
@@ -212,8 +209,8 @@ class SqliteFindex {
     }
   }
 
-  static Future<void> upsertChains(Map<Uint8List, Uint8List> chains) async {
-    final stmt = (await db).prepare(
+  static void upsertChains(Map<Uint8List, Uint8List> chains) {
+    final stmt = db.prepare(
         'INSERT OR REPLACE INTO chain_table (uid, value) VALUES (?, ?)');
     for (final chain in chains.entries) {
       stmt.execute([
@@ -277,7 +274,7 @@ class SqliteFindex {
     Pointer<Uint8> entriesUidsListPointer,
     int entriesUidsListLength,
   ) {
-    return Findex.fetchWrapper(
+    return Findex.fetchWrapperWithoutIsolate(
       outputPointer,
       outputLength,
       entriesUidsListPointer,
@@ -292,7 +289,7 @@ class SqliteFindex {
     Pointer<Uint8> chainsUidsListPointer,
     int chainsUidsListLength,
   ) {
-    return Findex.fetchWrapper(
+    return Findex.fetchWrapperWithoutIsolate(
       outputPointer,
       outputLength,
       chainsUidsListPointer,
@@ -305,7 +302,7 @@ class SqliteFindex {
     Pointer<Uint8> entriesListPointer,
     int entriesListLength,
   ) {
-    return Findex.upsertWrapper(
+    return Findex.upsertWrapperWithoutIsolate(
       entriesListPointer,
       entriesListLength,
       SqliteFindex.upsertEntries,
@@ -316,7 +313,7 @@ class SqliteFindex {
     Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
-    return Findex.upsertWrapper(
+    return Findex.upsertWrapperWithoutIsolate(
       chainsListPointer,
       chainsListLength,
       SqliteFindex.upsertChains,

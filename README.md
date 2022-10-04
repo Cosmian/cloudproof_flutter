@@ -20,7 +20,7 @@ Two classes are available: `CoverCryptDecryption` and `CoverCryptDecryptionWithC
 
 ### Findex
 
-Findex allows to do encrypted search queries on an encrypted index. To use Findex you need a driver which is able to store and update indexes (it could be SQLite, Redis, or any other storage method).
+Findex allows to do encrypted search queries on an encrypted index. To use Findex you need a driver which is able to store and update indexes (it could be SQLite, Redis, or any other storage method). You can find in `test/findex_redis_test.dart` and `test/findex_sqlite_test.dart` two example of implementation.
 
 To search, you need:
 1. copy/paste the following lines
@@ -175,10 +175,22 @@ To upsert, you need:
   }
 ```
 
+Note that if you `search` and `upsert`, the two implementation can share the same callback for `fetchEntries`.
+
+Note that the copy/paste code could be removed in a future version when Dart implements https://github.com/dart-lang/language/issues/1482.
+
 #### ⚠️⚠️⚠️ WARNINGS ⚠️⚠️⚠️
 
 - `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` can be static methods in a class or raw functions but should be static! You cannot put classic methods of an instance here.
-- `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` cannot access the state of the program, they will run in a separate `Isolate` with no data from the main thread (for example static/global variables populated during an initialisation phase of your program will not exist).
+- `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` cannot access the state of the program, they will run in a separate `Isolate` with no data from the main thread (for example static/global variables populated during an initialisation phase of your program will not exist). If you need to access some data from the main thread, the only way we think we'll work is to save this information inside a file or a database and read it from the callback. This pattern will slow down the `search` process. If you don't need async in the callbacks (for example the `sqlite` library has sync functions, you can call `*WrapperWithoutIsolate` and keep all the process in the same thread, so you can use your global variables).
+
+### Implementation details
+
+- The `search` and `upsert` methods will call the Rust FFI via native bindings synchronously. If you want to not stop your main thread, please call `compute` to run the search in a different Isolate.
+- The `Findex.fetchWrapper` and `Findex.upsertWrapper` will wrap your callback inside an isolate to allow you to use asynchronous callbacks.
+- The `Findex.fetchWrapperWithoutIsolate` and `Findex.upsertWrapperWithoutIsolate` will wrap juste call your callback so you will not have access to `async` but your callbacks are executed inside the main isolate (so you have access to your global data)
+
+We cannot 
 
 
 ## FFI libs notes
