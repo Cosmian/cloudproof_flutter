@@ -41,6 +41,10 @@ const expectedUsersIdsForFrance = [
 
 void main() {
   group('Findex Redis', () {
+    if (Platform.environment.containsKey("RUN_JAVA_E2E_TESTS")) {
+      return;
+    }
+
     test('search/upsert', () async {
       final masterKeys = MasterKeys.fromJson(jsonDecode(
           await File('test/resources/master_keys.json').readAsString()));
