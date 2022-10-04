@@ -52,13 +52,13 @@ void main() {
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
 
-      expect(await SqliteFindex.count('entry_table'), equals(0));
-      expect(await SqliteFindex.count('chain_table'), equals(0));
+      expect(SqliteFindex.count('entry_table'), equals(0));
+      expect(SqliteFindex.count('chain_table'), equals(0));
 
       await SqliteFindex.indexAll(masterKeys, label);
 
-      expect(await SqliteFindex.count('entry_table'), equals(583));
-      expect(await SqliteFindex.count('chain_table'), equals(800));
+      expect(SqliteFindex.count('entry_table'), equals(583));
+      expect(SqliteFindex.count('chain_table'), equals(800));
 
       final indexedValues = await SqliteFindex.search(
           masterKeys.k, label, [Word.fromString("France")]);
