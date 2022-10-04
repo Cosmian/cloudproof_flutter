@@ -21,8 +21,7 @@ class Ffi {
       return _library as NativeLibrary;
     }
 
-    var libraryPath =
-        path.join(Directory.current.path, 'resources', 'libcover_crypt.so');
+    String? libraryPath;
     if (Platform.isMacOS) {
       libraryPath = path.join(
           Directory.current.path, 'resources', 'libcover_crypt.dylib');
@@ -31,9 +30,14 @@ class Ffi {
           path.join(Directory.current.path, 'resources', 'libcover_crypt.dll');
     } else if (Platform.isAndroid) {
       libraryPath = "libcover_crypt.so";
+    } else if (Platform.isLinux) {
+      libraryPath =
+          path.join(Directory.current.path, 'resources', 'libcover_crypt.so');
     }
 
-    final library = NativeLibrary(DynamicLibrary.open(libraryPath));
+    final library = NativeLibrary(libraryPath == null
+        ? DynamicLibrary.process()
+        : DynamicLibrary.open(libraryPath));
     _library = library;
     return library;
   }
