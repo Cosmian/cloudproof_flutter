@@ -90,7 +90,7 @@ void main() {
           await RedisFindex.get(
               db, RedisTable.others, Uint8List.fromList([3])));
 
-      final label = Uint8List.fromList(utf8.encode("label"));
+      final label = Uint8List.fromList(utf8.encode("NewLabel"));
 
       final indexedValues = await RedisFindex.search(
           masterKeys.k, label, [Word.fromString("martinos")]);
