@@ -1,5 +1,8 @@
 # Cloudproof
 
+
+
+
 ## Installation
 
 ```
@@ -11,6 +14,19 @@ flutter pub get cloudproof
 To run the example, you need a Redis server configured and populated with our [Java example](https://github.com/Cosmian/cosmian_java_lib) (`docker compose up` then `mvn test`). Then, update `redisHost` and `redisPort` at the top of the `example/lib/main.dart` file.
 
 ## Tests
+
+### Supported versions
+
+
+| Linux        | Flutter | Dart   | Android SDK       | NDK | Glibc | LLVM     | Smartphone Virtual Device |
+|--------------|---------|--------|-------------------|-----|-------|----------|---------------------------|
+| Ubuntu 22.04 | 3.3.2   | 2.18.1 | Chipmunk 2021.2.1 | r22 | 2.35  | 14.0.0-1 | Pixel 5 API 30            |
+| Centos 7     | 3.3.2   | 2.18.1 | Chipmunk 2021.2.1 | r22 | 2.17  | -        | -                         |
+
+
+| Mac      | Flutter | Dart   | OS       | LLVM   | Xcode | Smartphone Virtual Device |
+|----------|---------|--------|----------|--------|-------|---------------------------|
+| Catalina | 3.3.2   | 2.18.1 | Catalina | 12.0.0 |       | iPhone 12 PRO MAX         |
 
 To run all tests:
 
@@ -40,7 +56,7 @@ dart benchmark/cloudproof_benchmark.dart
 
 CoverCrypt allows to decrypt data previously encrypted with one of our libraries (Java, Python, Rust…).
 
-Two classes are available: `CoverCryptDecryption` and `CoverCryptDecryptionWithCache` which is a little bit faster (omit the initialisation phase during decryption). See `test/covercrypt_test.dart`.
+Two classes are available: `CoverCryptDecryption` and `CoverCryptDecryptionWithCache` which is a little bit faster (omit the initialization phase during decryption). See `test/covercrypt_test.dart`.
 
 ### Findex
 
@@ -206,15 +222,13 @@ Note that the copy/paste code could be removed in a future version when Dart imp
 #### ⚠️⚠️⚠️ WARNINGS ⚠️⚠️⚠️
 
 - `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` can be static methods in a class or raw functions but should be static! You cannot put classic methods of an instance here.
-- `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` cannot access the state of the program, they will run in a separate `Isolate` with no data from the main thread (for example static/global variables populated during an initialisation phase of your program will not exist). If you need to access some data from the main thread, the only way we think we'll work is to save this information inside a file or a database and read it from the callback. This pattern will slow down the `search` process. If you don't need async in the callbacks (for example the `sqlite` library has sync functions, you can call `*WrapperWithoutIsolate` and keep all the process in the same thread, so you can use your global variables).
+- `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` cannot access the state of the program, they will run in a separate `Isolate` with no data from the main thread (for example static/global variables populated during an initialization phase of your program will not exist). If you need to access some data from the main thread, the only way we think we'll work is to save this information inside a file or a database and read it from the callback. This pattern will slow down the `search` process. If you don't need async in the callbacks (for example the `sqlite` library has sync functions, you can call `*WrapperWithoutIsolate` and keep all the process in the same thread, so you can use your global variables).
 
 ### Implementation details
 
 - The `search` and `upsert` methods will call the Rust FFI via native bindings synchronously. If you want to not stop your main thread, please call `compute` to run the search in a different Isolate.
 - The `Findex.fetchWrapper` and `Findex.upsertWrapper` will wrap your callback inside an isolate to allow you to use asynchronous callbacks.
 - The `Findex.fetchWrapperWithoutIsolate` and `Findex.upsertWrapperWithoutIsolate` will wrap juste call your callback so you will not have access to `async` but your callbacks are executed inside the main isolate (so you have access to your global data)
-
-We cannot 
 
 
 ## FFI libs notes
