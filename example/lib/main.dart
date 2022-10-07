@@ -84,7 +84,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       userDecryptionKey = Uint8List.fromList(await RedisFindex.get(
           db, RedisTable.others, Uint8List.fromList([3])));
 
-      label = Uint8List.fromList(utf8.encode("label"));
+      label = Uint8List.fromList(utf8.encode("NewLabel"));
       coverCryptDecryptionWithCache =
           CoverCryptDecryptionWithCache(userDecryptionKey);
       setState(() => loading = false);
@@ -121,7 +121,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             results = [];
             searchDuration = null;
             decryptDuration = null;
-            error = "No resuts";
+            error = "No result";
           });
           return;
         }

@@ -237,7 +237,7 @@ Note that the copy/paste code could be removed in a future version when Dart imp
 
 The `lib/src/cover_crypt/generated_bindings.dart` is generated with `ffigen` with the config file `./ffigen_cover_crypt.yml`. There is a custom config file (instead of using the `pubspec.yml` because we may want to generate bindings for Findex in the future). Findex bindings are hand written because they are more complex and generated bindings require some casts (in particular with `Pointer<Uint8>>` from the Dart `Uint8List` type to `Pointer<Char>>`, it's working for CoverCrypt but maybe it's better to have the bindings with the `uint8` types like in Findex?).
 
-Use cbindgen, do not forget to remove `str` type in `libcover_crypt.h` (last two lines) for iOS to compile (type `str` unknown in C headers).
+Use cbindgen, do not forget to remove `str` type in `libcosmian_cover_crypt.h` (last two lines) for iOS to compile (type `str` unknown in C headers).
 
 The two `.h` need to be inside the `ios/Classes` folder. Android doesn't need `.h` files.
 
@@ -256,9 +256,10 @@ Download artifacts from the Gitlab CI. You should get a `jniLibs` folder to copy
 If building with `cargo lipo` on Linux we only get `aarch64-apple-ios` and `x86_64-apple-ios`.
 
 On codemagic.io:
-- `aarch64-apple-ios` is failing with "ld: in /Users/builder/clone/ios/libcover_crypt.a(cover_crypt.cover_crypt.aea4b2d2-cgu.0.rcgu.o), building for iOS Simulator, but linking in object file built for iOS, file '/Users/builder/clone/ios/libcover_crypt.a' for architecture arm64"
-- `x86_64-apple-ios` is failing with "ld: warning: ignoring file /Users/builder/clone/ios/libcover_crypt.a, building for iOS Simulator-arm64 but attempting to link with file built for iOS Simulator-x86_64"
+- `aarch64-apple-ios` is failing with "ld: in /Users/builder/clone/ios/libcosmian_cover_crypt.a(cover_crypt.cover_crypt.aea4b2d2-cgu.0.rcgu.o), building for iOS Simulator, but linking in object file built for iOS, file '/Users/builder/clone/ios/libcosmian_cover_crypt.a' for architecture arm64"
+- `x86_64-apple-ios` is failing with "ld: warning: ignoring file /Users/builder/clone/ios/libcosmian_cover_crypt.a, building for iOS Simulator-arm64 but attempting to link with file built for iOS Simulator-x86_64"
 
-We need to try with `universal` native lib.
-
-It may be required to add all FFI calls inside `ios/Classes/CloudproofPlugin.swift` (See :PreventTreeShaking). If it's not required please remove the test call.
+To make the flutter build succeed, 3 prerequisites are needed:
+- declaring headers (CoverCrypt and Findex) in CloudproofPlugin.h (concat both headers)
+- call artificially 1 function of each native library in SwiftCloudproofPlugin.swift
+- use universal ios build: copy both .a in `cloudproof_flutter/ios`

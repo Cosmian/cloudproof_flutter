@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:cloudproof/src/cover_crypt/clear_text_header.dart';
 import 'package:cloudproof/src/cover_crypt/generated_bindings.dart';
 import 'package:ffi/ffi.dart';
@@ -24,15 +25,15 @@ class Ffi {
     String? libraryPath;
     if (Platform.isMacOS) {
       libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcover_crypt.dylib');
+          Directory.current.path, 'resources', 'libcosmian_cover_crypt.dylib');
     } else if (Platform.isWindows) {
-      libraryPath =
-          path.join(Directory.current.path, 'resources', 'libcover_crypt.dll');
+      libraryPath = path.join(
+          Directory.current.path, 'resources', 'libcosmian_cover_crypt.dll');
     } else if (Platform.isAndroid) {
-      libraryPath = "libcover_crypt.so";
+      libraryPath = "libcosmian_cover_crypt.so";
     } else if (Platform.isLinux) {
-      libraryPath =
-          path.join(Directory.current.path, 'resources', 'libcover_crypt.so');
+      libraryPath = path.join(
+          Directory.current.path, 'resources', 'libcosmian_cover_crypt.so');
     }
 
     final library = NativeLibrary(libraryPath == null
