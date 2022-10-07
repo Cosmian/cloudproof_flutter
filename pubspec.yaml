@@ -2,10 +2,10 @@ name: cloudproof
 description: Cloudproof Encryption provides libraries and tools to encrypt large repositories of data – Big Data – with high performance and advanced secure techniques in zero trust environments. It also provides encrypted indexing and encrypted searches to quickly and securely find and retrieve encrypted data.
 version: 0.0.1
 homepage: https://cosmian.com/cloudproof-encryption/
-repository: https://github.com/Cosmian/cloudproof_dart
+repository: https://github.com/Cosmian/cloudproof_flutter
 
 environment:
-  sdk: '>=2.18.1 <3.0.0'
+  sdk: ">=2.18.1 <3.0.0"
   flutter: ">=2.5.0"
 
 dependencies:

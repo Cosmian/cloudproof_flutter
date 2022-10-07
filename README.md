@@ -11,7 +11,7 @@ flutter pub get cloudproof
 
 ## Example
 
-To run the example, you need a Redis server configured and populated with our [Java example](https://github.com/Cosmian/cosmian_java_lib) (`docker compose up` then `mvn test`). Then, update `redisHost` and `redisPort` at the top of the `example/lib/main.dart` file.
+To run the example, you need a Redis server configured and populated with our [Java example](https://github.com/Cosmian/cloudproof_java) (`docker compose up` then `mvn test`). Then, update `redisHost` and `redisPort` at the top of the `example/lib/main.dart` file.
 
 ## Tests
 
