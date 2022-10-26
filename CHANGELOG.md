@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 
 ---
+## [1.0.1] - 2022-10-26
+### Added
+### Changed
+### Fixed
+- `count` function of SQLite test
+### Removed
+
+---
 ## [1.0.0] - 2022-10-12
 ### Added
 ### Changed

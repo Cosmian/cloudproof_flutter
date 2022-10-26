@@ -165,7 +165,7 @@ class SqliteFindex {
   static int count(String table) {
     final ResultSet resultSet = db.select('SELECT COUNT(*) FROM $table');
 
-    return resultSet.first.values.first;
+    return int.parse(resultSet.first.values.first.toString());
   }
 
   static Map<Uint8List, Uint8List> fetchEntries(List<Uint8List> uids) {
