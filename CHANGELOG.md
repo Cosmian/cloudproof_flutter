@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 
 ---
+## [2.0.0] - 2022-11-17
+### Added
+### Changed
+- update to cover_crypt 7.1.0, findex 0.10.0 and cloudproof_java 2.0.0
+
+### Fixed
+### Removed
+
+---
 ## [1.0.1] - 2022-10-26
 ### Added
 ### Changed

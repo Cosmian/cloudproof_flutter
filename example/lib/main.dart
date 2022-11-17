@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:redis/redis.dart';
 
-const redisHost = "192.168.1.18";
+const redisHost = "192.168.1.95";
 const redisPort = 6379;
 
 void main() {
@@ -46,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late MasterKeys masterKeys;
   late Uint8List userDecryptionKey;
   late Uint8List label;
-  late CoverCryptDecryptionWithCache coverCryptDecryptionWithCache;
+  late CoverCryptDecryption coverCryptDecryption;
 
   String? error;
 
@@ -85,14 +85,13 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           db, RedisTable.others, Uint8List.fromList([3])));
 
       label = Uint8List.fromList(utf8.encode("NewLabel"));
-      coverCryptDecryptionWithCache =
-          CoverCryptDecryptionWithCache(userDecryptionKey);
+      coverCryptDecryption = CoverCryptDecryption(userDecryptionKey);
       setState(() => loading = false);
 
-      log("Inited");
+      log("Initialized");
     } catch (e) {
-      setState(() => error = "Problem during Redis initialisation $e");
-      log("Problem during Redis initialisation $e");
+      setState(() => error = "Problem during Redis initialization $e");
+      log("Problem during Redis initialization $e");
     }
   }
 
@@ -140,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         final clearTextUsersBytes = encryptedUsersFromRedis.map((userBytes) {
           // Try to decrypt user information.
           try {
-            return coverCryptDecryptionWithCache.decrypt(userBytes);
+            return coverCryptDecryption.decrypt(userBytes);
           } catch (e) {
             return null;
           }
