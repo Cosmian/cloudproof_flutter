@@ -40,40 +40,6 @@ const expectedUsersIdsForFrance = [
 ];
 
 void main() {
-  group('Findex Redis', () {
-    if (Platform.environment.containsKey("RUN_JAVA_E2E_TESTS")) {
-      return;
-    }
-
-    test('search/upsert', () async {
-      final masterKeys = MasterKeys.fromJson(jsonDecode(
-          await File('test/resources/master_keys.json').readAsString()));
-
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      await RedisFindex.init();
-
-      expect(await RedisFindex.count(RedisTable.users), equals(100));
-      expect(await RedisFindex.count(RedisTable.entries), equals(0));
-      expect(await RedisFindex.count(RedisTable.chains), equals(0));
-
-      await RedisFindex.indexAll(masterKeys, label);
-
-      expect(await RedisFindex.count(RedisTable.entries), equals(583));
-      expect(await RedisFindex.count(RedisTable.chains), equals(800));
-
-      final indexedValues = await RedisFindex.search(
-          masterKeys.k, label, [Word.fromString("France")]);
-
-      final usersIds = indexedValues.map((indexedValue) {
-        return indexedValue.location.bytes[0];
-      }).toList();
-      usersIds.sort();
-
-      expect(usersIds, equals(expectedUsersIdsForFrance));
-    });
-  });
-
   group('Cloudproof', () {
     if (!Platform.environment.containsKey("RUN_JAVA_E2E_TESTS")) {
       return;
@@ -111,6 +77,40 @@ void main() {
           utf8.decode(result),
           equals(
               '{"Sn":"_5N9ljQ@oS","givenName":"Martinos","departmentNumber":"377","title":"_4\\\\CWV9Qth","caYellowPagesCategory":"1:435SP2VM","uid":"FL2NMLWrw^","employeeNumber":"GItkZba]r9","Mail":"Ylcp^eugZT","TelephoneNumber":"UFvr>>zS0T","Mobile":";e_jUYXZL?","facsimileTelephoneNumber":"0QB0nOjC5I","caPersonLocalisation":"bm5n8LtdcZ","Cn":"jYTLrOls11","caUnitdn":"OIwUIa`Ih2","department":"p_>NtZd\\\\w9","co":"France"}'));
+    });
+  });
+
+  group('Findex Redis', () {
+    if (Platform.environment.containsKey("RUN_JAVA_E2E_TESTS")) {
+      return;
+    }
+
+    test('search/upsert', () async {
+      final masterKeys = MasterKeys.fromJson(jsonDecode(
+          await File('test/resources/master_keys.json').readAsString()));
+
+      final label = Uint8List.fromList(utf8.encode("Some Label"));
+
+      await RedisFindex.init();
+
+      expect(await RedisFindex.count(RedisTable.users), equals(100));
+      expect(await RedisFindex.count(RedisTable.entries), equals(0));
+      expect(await RedisFindex.count(RedisTable.chains), equals(0));
+
+      await RedisFindex.indexAll(masterKeys, label);
+
+      expect(await RedisFindex.count(RedisTable.entries), equals(583));
+      expect(await RedisFindex.count(RedisTable.chains), equals(800));
+
+      final indexedValues = await RedisFindex.search(
+          masterKeys.k, label, [Word.fromString("France")]);
+
+      final usersIds = indexedValues.map((indexedValue) {
+        return indexedValue.location.bytes[0];
+      }).toList();
+      usersIds.sort();
+
+      expect(usersIds, equals(expectedUsersIdsForFrance));
     });
   });
 }
