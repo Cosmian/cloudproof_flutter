@@ -1,12 +1,15 @@
+---
 name: cloudproof
-description: Cloudproof Encryption provides libraries and tools to encrypt large repositories of data – Big Data – with high performance and advanced secure techniques in zero trust environments. It also provides encrypted indexing and encrypted searches to quickly and securely find and retrieve encrypted data.
-version: 1.0.1
+description: Cloudproof Encryption provides libraries and tools to encrypt large repositories of data – Big Data – with high performance and advanced secure
+  techniques in zero trust environments. It also provides encrypted indexing and encrypted searches to quickly and securely find and retrieve encrypted
+  data.
+version: 2.0.0
 homepage: https://cosmian.com/cloudproof-encryption/
 repository: https://github.com/Cosmian/cloudproof_flutter
 
 environment:
-  sdk: ">=2.18.1 <3.0.0"
-  flutter: ">=2.5.0"
+  sdk: '>=2.18.1 <3.0.0'
+  flutter: '>=2.5.0'
 
 dependencies:
   flutter:
@@ -81,3 +84,13 @@ flutter:
   #
   # For details regarding fonts in packages, see
   # https://flutter.dev/custom-fonts/#from-packages
+
+ffigen:
+  preamble: |
+    // ignore_for_file: constant_identifier_names, non_constant_identifier_names
+  output: lib/src/cover_crypt/generated_bindings.dart
+  headers:
+    entry-points:
+      - resources/cover_crypt.h
+  name: NativeLibrary
+  description: Dart bindings to call CoverCrypt functions
