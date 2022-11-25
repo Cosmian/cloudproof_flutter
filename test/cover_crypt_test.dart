@@ -1,11 +1,14 @@
 // Dart imports:
 import 'dart:convert';
+import 'dart:io';
 
 // Package imports:
 import 'package:flutter_test/flutter_test.dart';
 
 // Project imports:
 import 'package:cloudproof/cloudproof.dart';
+
+import 'resources/test_vector/non_regression_test_vectors.dart';
 
 final ciphertext = base64Decode(
     "eDrJ+GpP63RFedSHqmIqoT2gAH9PA7y13u22bWQ1+XxuJZeHzanQAKk9Y/TxlNfrIShTvvyGBEYFryVu/FpBNQK0+yO++Uqau2tHcmxjSX8kRZieMfHD9CF42lIVK1PNUjadmMoxFeF4WoH4qjmJa2uiViWCCatYkZjvYjpvnnzi6FGVeIpRJCIQ+pT9wafg0iY3HDugISqoY7d9Xb7PIuzwgQPASU9lPyaoce6nSRiqinDGmwos0uQXu8pL8z3ydSC+Fwq5uGGmtwAvxGqAkgzEMKwIIIYJVwE0rT0dom11A7LkYqAgDi7MTUdZHKtHLe7qS0aH2DJHAGMqkheQvIERrU7z19DHyT7aDsGkZg==");
@@ -20,14 +23,26 @@ void main() {
     test('CoverCryptDecryption.decrypt', () async {
       final result = CoverCryptDecryption(key).decrypt(ciphertext);
 
-      expect(result, equals(cleartext));
+      expect(result.cleartext, equals(cleartext));
     });
+
     test('coverCryptDecryptionWithCache.decrypt', () async {
       final coverCryptDecryptionWithCache = CoverCryptDecryption(key);
 
       final result = coverCryptDecryptionWithCache.decrypt(ciphertext);
 
-      expect(result, equals(cleartext));
+      expect(result.cleartext, equals(cleartext));
+    });
+
+    test('nonRegressionTest', () async {
+      NonRegressionTestVectors.fromJson(jsonDecode(await File(
+                  'test/resources/cover_crypt/rust_non_regression_vector.json')
+              .readAsString()))
+          .verify();
+      NonRegressionTestVectors.fromJson(jsonDecode(await File(
+                  'test/resources/cover_crypt/java_non_regression_vector.json')
+              .readAsString()))
+          .verify();
     });
   });
 }

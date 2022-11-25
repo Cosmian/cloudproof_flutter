@@ -1,13 +1,12 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sqlite3/sqlite3.dart';
-
-import 'dart:ffi';
 import 'package:path/path.dart' as path;
+import 'package:sqlite3/sqlite3.dart';
 
 const expectedUsersIdsForFrance = [
   4,
@@ -48,7 +47,7 @@ void main() {
       await initDb();
 
       final masterKeys = MasterKeys.fromJson(jsonDecode(
-          await File('test/resources/master_keys.json').readAsString()));
+          await File('test/resources/findex/master_keys.json').readAsString()));
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
 
@@ -106,7 +105,7 @@ Future<Database> initDb() async {
   ''');
 
   final users =
-      jsonDecode(await File('test/resources/users.json').readAsString());
+      jsonDecode(await File('test/resources/findex/users.json').readAsString());
 
   final stmt = db.prepare(
       'INSERT INTO users (id, firstName, lastName, phone, email, country, region, employeeNumber, security) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');

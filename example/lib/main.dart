@@ -147,7 +147,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         final newDecryptDuration = stopwatch.elapsed;
 
         final clearTextUsers = clearTextUsersBytes
-            .map((e) => e == null ? null : utf8.decode(e))
+            .map((e) => e == null ? null : utf8.decode(e.cleartext))
             .toList();
 
         setState(() {

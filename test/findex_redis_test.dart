@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'dart:ffi';
 import 'package:redis/redis.dart';
 
 const expectedUsersIdsForFrance = [
@@ -74,7 +75,7 @@ void main() {
           CoverCryptDecryption(userDecryptionKey).decrypt(userEncryptedBytes);
 
       expect(
-          utf8.decode(result),
+          utf8.decode(result.cleartext),
           equals(
               '{"Sn":"_5N9ljQ@oS","givenName":"Martinos","departmentNumber":"377","title":"_4\\\\CWV9Qth","caYellowPagesCategory":"1:435SP2VM","uid":"FL2NMLWrw^","employeeNumber":"GItkZba]r9","Mail":"Ylcp^eugZT","TelephoneNumber":"UFvr>>zS0T","Mobile":";e_jUYXZL?","facsimileTelephoneNumber":"0QB0nOjC5I","caPersonLocalisation":"bm5n8LtdcZ","Cn":"jYTLrOls11","caUnitdn":"OIwUIa`Ih2","department":"p_>NtZd\\\\w9","co":"France"}'));
     });
@@ -87,7 +88,7 @@ void main() {
 
     test('search/upsert', () async {
       final masterKeys = MasterKeys.fromJson(jsonDecode(
-          await File('test/resources/master_keys.json').readAsString()));
+          await File('test/resources/findex/master_keys.json').readAsString()));
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
 
@@ -131,8 +132,8 @@ class RedisFindex {
       await RedisFindex.del(db, chainKey);
     }
 
-    final users =
-        jsonDecode(await File('test/resources/users.json').readAsString());
+    final users = jsonDecode(
+        await File('test/resources/findex/users.json').readAsString());
 
     for (final user in users) {
       await RedisFindex.set(

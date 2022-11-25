@@ -1,6 +1,9 @@
 ---
 image: gitlab.cosmian.com:5000/core/ci-flutter:latest
 
+services:
+  - redis:latest
+
 stages:
   - test
   - pack
@@ -10,7 +13,6 @@ test:
   script:
     - flutter pub get
     - flutter analyze .
-    - redis-server&
     - flutter test
 
 pack:

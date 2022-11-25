@@ -4,10 +4,21 @@ All notable changes to this project will be documented in this file.
 
 
 ---
+## [3.0.0] - 2022-11-30
+### Added
+- test vectors verification on cover_crypt
+### Changed
+- update to cover_crypt 7.1.1 and findex 1.0
+- decrypt with authentication data
+### Fixed
+### Removed
+
+
+---
 ## [2.0.0] - 2022-11-17
 ### Added
 ### Changed
-- update to cover_crypt 7.1.0, findex 0.10.0 and cloudproof_java 2.0.0
+- update to cover_crypt 7.1.0 and findex 0.10.0
 
 ### Fixed
 ### Removed
