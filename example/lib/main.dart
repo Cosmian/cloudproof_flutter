@@ -44,9 +44,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool loading = true;
 
   late MasterKeys masterKeys;
-  late Uint8List userDecryptionKey;
+  late Uint8List userSecretKey;
   late Uint8List label;
-  late CoverCryptDecryption coverCryptDecryption;
 
   String? error;
 
@@ -81,11 +80,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           db, RedisTable.others, Uint8List.fromList([0])));
       masterKeys = MasterKeys.fromJson(jsonDecode(utf8.decode(sseKeys)));
 
-      userDecryptionKey = Uint8List.fromList(await RedisFindex.get(
+      userSecretKey = Uint8List.fromList(await RedisFindex.get(
           db, RedisTable.others, Uint8List.fromList([3])));
 
       label = Uint8List.fromList(utf8.encode("NewLabel"));
-      coverCryptDecryption = CoverCryptDecryption(userDecryptionKey);
+
       setState(() => loading = false);
 
       log("Initialized");
@@ -139,7 +138,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         final plaintextUsersBytes = encryptedUsersFromRedis.map((userBytes) {
           // Try to decrypt user information.
           try {
-            return coverCryptDecryption.decrypt(userBytes);
+            return CoverCrypt.decrypt(userSecretKey, userBytes);
           } catch (e) {
             return null;
           }

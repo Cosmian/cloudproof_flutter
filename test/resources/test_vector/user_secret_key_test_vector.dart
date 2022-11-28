@@ -7,6 +7,15 @@ class UserSecretKeyTestVector {
 
   UserSecretKeyTestVector(this.accessPolicy, this.key);
 
+  // UserSecretKeyTestVector generate(
+  //     Uint8List masterSecretKey, String policy, String accessPolicy) {
+
+  //    Ffi.h
+  //   UserSecretKeyTestVector output =
+  //       new UserSecretKeyTestVector(accessPolicy, key);
+  //   return output;
+  // }
+
   UserSecretKeyTestVector.fromJson(Map<String, dynamic> json)
       : accessPolicy = json['access_policy'],
         key = base64Decode(json['key']);

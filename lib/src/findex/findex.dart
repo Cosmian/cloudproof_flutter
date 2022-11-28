@@ -10,7 +10,7 @@ import 'package:path/path.dart' as path;
 import 'package:ffi/ffi.dart';
 import 'package:tuple/tuple.dart';
 
-const errorMessageMaxLength = 3000;
+const findexErrorMessageMaxLength = 3000;
 const defaultOutputSizeInBytes = 131072;
 
 typedef NativeUpsertFunc = Int32 Function(
@@ -406,9 +406,9 @@ class Findex {
     final getLastError = getLastErrorPointer
         .asFunction<int Function(Pointer<Char>, Pointer<Int>)>();
 
-    final errorPointer = calloc<Uint8>(errorMessageMaxLength);
+    final errorPointer = calloc<Uint8>(findexErrorMessageMaxLength);
     final errorLength = calloc<Int>(1);
-    errorLength.value = errorMessageMaxLength;
+    errorLength.value = findexErrorMessageMaxLength;
 
     try {
       final result = getLastError(errorPointer.cast<Char>(), errorLength);

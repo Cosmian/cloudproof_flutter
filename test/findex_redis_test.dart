@@ -71,8 +71,7 @@ void main() {
       final Uint8List userEncryptedBytes = Uint8List.fromList(
           await RedisFindex.get(db, RedisTable.users, usersIds[0]));
 
-      final result =
-          CoverCryptDecryption(userDecryptionKey).decrypt(userEncryptedBytes);
+      final result = CoverCrypt.decrypt(userDecryptionKey, userEncryptedBytes);
 
       expect(
           utf8.decode(result.plaintext),

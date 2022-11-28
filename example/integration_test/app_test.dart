@@ -22,7 +22,7 @@ void main() {
       final plaintext = base64Decode(
           "eyJTbiI6Il81TjlsalFAb1MiLCJnaXZlbk5hbWUiOiJNYXJ0aW5vcyIsImRlcGFydG1lbnROdW1iZXIiOiIzNzciLCJ0aXRsZSI6Il80XFxDV1Y5UXRoIiwiY2FZZWxsb3dQYWdlc0NhdGVnb3J5IjoiMTo0MzVTUDJWTSIsInVpZCI6IkZMMk5NTFdyd14iLCJlbXBsb3llZU51bWJlciI6IkdJdGtaYmFdcjkiLCJNYWlsIjoiWWxjcF5ldWdaVCIsIlRlbGVwaG9uZU51bWJlciI6IlVGdnI+PnpTMFQiLCJNb2JpbGUiOiI7ZV9qVVlYWkw/IiwiZmFjc2ltaWxlVGVsZXBob25lTnVtYmVyIjoiMFFCMG5PakM1SSIsImNhUGVyc29uTG9jYWxpc2F0aW9uIjoiYm01bjhMdGRjWiIsIkNuIjoiallUTHJPbHMxMSIsImNhVW5pdGRuIjoiT0l3VUlhYEloMiIsImRlcGFydG1lbnQiOiJwXz5OdFpkXFx3OSIsImNvIjoiRnJhbmNlIn0=");
 
-      final result = CoverCryptDecryption(key).decrypt(encrypted);
+      final result = CoverCrypt.decrypt(key, encrypted);
 
       expect(result, equals(plaintext));
     });

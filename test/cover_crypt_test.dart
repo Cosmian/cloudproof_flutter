@@ -4,6 +4,7 @@ import 'dart:io';
 
 // Project imports:
 import 'package:cloudproof/cloudproof.dart';
+import 'package:cloudproof/src/cover_crypt/cover_crypt.dart';
 // Package imports:
 import 'package:flutter_test/flutter_test.dart';
 
@@ -20,15 +21,7 @@ final plaintext = base64Decode("TXkgc2VjcmV0IG1lc3NhZ2U=");
 void main() {
   group('CoverCrypt', () {
     test('CoverCryptDecryption.decrypt', () async {
-      final result = CoverCryptDecryption(key).decrypt(ciphertext);
-
-      expect(result.plaintext, equals(plaintext));
-    });
-
-    test('coverCryptDecryptionWithCache.decrypt', () async {
-      final coverCryptDecryptionWithCache = CoverCryptDecryption(key);
-
-      final result = coverCryptDecryptionWithCache.decrypt(ciphertext);
+      final result = CoverCrypt.decrypt(key, ciphertext);
 
       expect(result.plaintext, equals(plaintext));
     });

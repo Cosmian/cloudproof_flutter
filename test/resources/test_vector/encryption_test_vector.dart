@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
+import 'package:cloudproof/src/cover_crypt/cover_crypt.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class EncryptionTestVector {
@@ -20,9 +21,8 @@ class EncryptionTestVector {
   );
 
   void decrypt(Uint8List key) {
-    final cc = CoverCryptDecryption(key);
-    final decrypted =
-        cc.decryptWithAuthenticationData(ciphertext, authenticationData);
+    final decrypted = CoverCrypt.decryptWithAuthenticationData(
+        key, ciphertext, authenticationData);
 
     expect(decrypted.plaintext, plaintext);
     expect(decrypted.headerMetadata, headerMetadata);
