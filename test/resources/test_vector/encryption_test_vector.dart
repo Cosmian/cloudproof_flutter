@@ -21,11 +21,11 @@ class EncryptionTestVector {
 
   void decrypt(Uint8List key) {
     final cc = CoverCryptDecryption(key);
-    final cleartext =
+    final decrypted =
         cc.decryptWithAuthenticationData(ciphertext, authenticationData);
 
-    expect(cleartext.cleartext, plaintext);
-    expect(cleartext.metadata, headerMetadata);
+    expect(decrypted.plaintext, plaintext);
+    expect(decrypted.headerMetadata, headerMetadata);
   }
 
   EncryptionTestVector.fromJson(Map<String, dynamic> json)

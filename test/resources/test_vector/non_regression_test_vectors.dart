@@ -40,12 +40,12 @@ class NonRegressionTestVectors {
       // failing expected
     }
 
-// top_secret_mkg_fin_key
+    // top_secret_mkg_fin_key
     lowSecretFinTestVector.decrypt(topSecretMkgFinKey.key);
     lowSecretMkgTestVector.decrypt(topSecretMkgFinKey.key);
     topSecretMkgTestVector.decrypt(topSecretMkgFinKey.key);
 
-// medium_secret_mkg_fin_key
+    // medium_secret_mkg_fin_key
     try {
       lowSecretFinTestVector.decrypt(mediumSecretMkgKey.key);
     } catch (e) {
@@ -58,6 +58,11 @@ class NonRegressionTestVectors {
       // failing expected
     }
   }
+
+  // NonRegressionTestVectors generate() {
+  //   NonRegressionTestVectors output = new NonRegressionTestVectors();
+  //   return output;
+  // }
 
   NonRegressionTestVectors.fromJson(Map<String, dynamic> json)
       : publicKey = base64Decode(json['public_key']),

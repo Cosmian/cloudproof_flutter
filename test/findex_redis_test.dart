@@ -75,7 +75,7 @@ void main() {
           CoverCryptDecryption(userDecryptionKey).decrypt(userEncryptedBytes);
 
       expect(
-          utf8.decode(result.cleartext),
+          utf8.decode(result.plaintext),
           equals(
               '{"Sn":"_5N9ljQ@oS","givenName":"Martinos","departmentNumber":"377","title":"_4\\\\CWV9Qth","caYellowPagesCategory":"1:435SP2VM","uid":"FL2NMLWrw^","employeeNumber":"GItkZba]r9","Mail":"Ylcp^eugZT","TelephoneNumber":"UFvr>>zS0T","Mobile":";e_jUYXZL?","facsimileTelephoneNumber":"0QB0nOjC5I","caPersonLocalisation":"bm5n8LtdcZ","Cn":"jYTLrOls11","caUnitdn":"OIwUIa`Ih2","department":"p_>NtZd\\\\w9","co":"France"}'));
     });

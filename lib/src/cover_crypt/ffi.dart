@@ -7,7 +7,7 @@ import 'package:cloudproof/src/cover_crypt/generated_bindings.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
 
-import 'cleartext_header.dart';
+import 'plaintext_header.dart';
 
 const errorMessageMaxLength = 3000;
 const defaultHeaderMetadataSizeInBytes = 4096;
@@ -41,63 +41,116 @@ class Ffi {
     return library;
   }
 
-  static CleartextHeader decryptWithAuthenticationData(
-      Uint8List asymmetricDecryptionKey,
-      Uint8List ciphertextBytes,
-      Uint8List authenticationDataBytes) {
-    final cleartextPointer = calloc<Uint8>(ciphertextBytes.length);
-    final cleartextLength = calloc<Int>(1);
-    cleartextLength.value = ciphertextBytes.length;
+  static PlaintextHeader decryptWithAuthenticationData(Uint8List userSecretKey,
+      Uint8List ciphertextBytes, Uint8List authenticationDataBytes) {
+    // FFI INPUT parameters
+    final authenticationDataPointer =
+        authenticationDataBytes.allocateInt8Pointer().cast<Char>();
+    final userSecretKeyPointer =
+        userSecretKey.allocateInt8Pointer().cast<Char>();
+    final ciphertextPointer =
+        ciphertextBytes.allocateInt8Pointer().cast<Char>();
 
+    // FFI OUTPUT parameters
+    final plaintextPointer = calloc<Uint8>(ciphertextBytes.length);
+    final plaintextLength = calloc<Int>(1);
+    plaintextLength.value = ciphertextBytes.length;
     final headerMetadataPointer =
         calloc<Uint8>(defaultHeaderMetadataSizeInBytes);
     final headerMetadataLength = calloc<Int>(1);
     headerMetadataLength.value = defaultHeaderMetadataSizeInBytes;
 
-    final ciphertextPointer =
-        ciphertextBytes.allocateInt8Pointer().cast<Char>();
-
-    final authenticationDataPointer =
-        authenticationDataBytes.allocateInt8Pointer().cast<Char>();
-
-    final asymmetricDecryptionKeyPointer =
-        asymmetricDecryptionKey.allocateInt8Pointer().cast<Char>();
-
     try {
       final result = library.h_aes_decrypt(
-          cleartextPointer.cast<Char>(),
-          cleartextLength,
+          plaintextPointer.cast<Char>(),
+          plaintextLength,
           headerMetadataPointer.cast<Char>(),
           headerMetadataLength,
           ciphertextPointer,
           ciphertextBytes.length,
           authenticationDataPointer,
           authenticationDataBytes.length,
-          asymmetricDecryptionKeyPointer,
-          asymmetricDecryptionKey.length);
+          userSecretKeyPointer,
+          userSecretKey.length);
       if (result != 0) {
         throw Exception("Call to `h_aes_decrypt` fail. ${getLastError()}");
       }
 
-      final cleartext = CleartextHeader(
-        Uint8List.fromList(cleartextPointer.asTypedList(cleartextLength.value)),
+      final plaintext = PlaintextHeader(
+        Uint8List.fromList(plaintextPointer.asTypedList(plaintextLength.value)),
         Uint8List.fromList(
             headerMetadataPointer.asTypedList(headerMetadataLength.value)),
       );
-      return cleartext;
+      return plaintext;
     } finally {
-      calloc.free(cleartextPointer);
-      calloc.free(cleartextLength);
+      calloc.free(plaintextPointer);
+      calloc.free(plaintextLength);
       calloc.free(headerMetadataPointer);
       calloc.free(headerMetadataLength);
       calloc.free(authenticationDataPointer);
     }
   }
 
-  static CleartextHeader decrypt(
+  static PlaintextHeader decrypt(
       Uint8List asymmetricDecryptionKey, Uint8List ciphertextBytes) {
     return decryptWithAuthenticationData(
         asymmetricDecryptionKey, ciphertextBytes, Uint8List.fromList([]));
+  }
+
+  static Uint8List encryptWithAuthenticationData(
+      String policy,
+      Uint8List publicKey,
+      String encryptionPolicy,
+      Uint8List plaintextBytes,
+      Uint8List additionalData,
+      Uint8List authenticationData) {
+    // FFI INPUT parameters
+    final policyPointer = policy.toNativeUtf8().cast<Char>();
+    final encryptionPolicyPointer =
+        encryptionPolicy.toNativeUtf8().cast<Char>();
+    final publicKeyPointer = publicKey.allocateInt8Pointer().cast<Char>();
+    final plaintextPointer = plaintextBytes.allocateInt8Pointer().cast<Char>();
+    final additionalDataPointer =
+        additionalData.allocateInt8Pointer().cast<Char>();
+    final authenticationDataPointer =
+        authenticationData.allocateInt8Pointer().cast<Char>();
+
+    // FFI OUTPUT parameters
+    final ciphertextPointer = calloc<Uint8>(8192 + plaintextBytes.length);
+    final ciphertextLength = calloc<Int>(1);
+    ciphertextLength.value = plaintextBytes.length;
+
+    try {
+      final result = library.h_aes_encrypt(
+          ciphertextPointer.cast<Char>(),
+          ciphertextLength,
+          policyPointer,
+          publicKeyPointer,
+          publicKey.length,
+          encryptionPolicyPointer,
+          plaintextPointer,
+          plaintextBytes.length,
+          additionalDataPointer,
+          additionalData.length,
+          authenticationDataPointer,
+          authenticationData.length);
+      if (result != 0) {
+        throw Exception("Call to `h_aes_encrypt` fail. ${getLastError()}");
+      }
+
+      final ciphertext = Uint8List.fromList(
+          ciphertextPointer.asTypedList(ciphertextLength.value));
+      return ciphertext;
+    } finally {
+      calloc.free(ciphertextPointer);
+      calloc.free(ciphertextLength);
+    }
+  }
+
+  static Uint8List encrypt(String policy, Uint8List publicKey,
+      String encryptionPolicy, Uint8List plaintextBytes) {
+    return encryptWithAuthenticationData(policy, publicKey, encryptionPolicy,
+        plaintextBytes, Uint8List.fromList([]), Uint8List.fromList([]));
   }
 
   static String getLastError() {

@@ -136,7 +136,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
             .toList();
 
         stopwatch.reset();
-        final clearTextUsersBytes = encryptedUsersFromRedis.map((userBytes) {
+        final plaintextUsersBytes = encryptedUsersFromRedis.map((userBytes) {
           // Try to decrypt user information.
           try {
             return coverCryptDecryption.decrypt(userBytes);
@@ -146,12 +146,12 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         }).toList();
         final newDecryptDuration = stopwatch.elapsed;
 
-        final clearTextUsers = clearTextUsersBytes
-            .map((e) => e == null ? null : utf8.decode(e.cleartext))
+        final plaintextUsers = plaintextUsersBytes
+            .map((e) => e == null ? null : utf8.decode(e.plaintext))
             .toList();
 
         setState(() {
-          results = clearTextUsers;
+          results = plaintextUsers;
           searchDuration = newSearchDuration;
           decryptDuration = newDecryptDuration;
         });
