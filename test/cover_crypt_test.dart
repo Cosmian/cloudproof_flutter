@@ -35,6 +35,18 @@ void main() {
                   'test/resources/cover_crypt/java_non_regression_vector.json')
               .readAsString()))
           .verify();
+      NonRegressionTestVectors.fromJson(jsonDecode(await File(
+                  'test/resources/cover_crypt/non_regression_test_vector.json')
+              .readAsString()))
+          .verify();
+    });
+
+    test('generateNonRegressionTest', () async {
+      final json = NonRegressionTestVectors.generate().toJson();
+      final file = File('build/non_regression_test_vector.json');
+
+      // Write the file
+      return file.writeAsString(jsonEncode(json));
     });
   });
 }

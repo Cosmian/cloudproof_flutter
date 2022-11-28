@@ -4,10 +4,11 @@ import 'dart:ffi';
 import 'dart:io' show Directory, Platform, sleep;
 import 'dart:isolate';
 import 'dart:typed_data';
+
 import 'package:cloudproof/cloudproof.dart';
 import 'package:cloudproof/src/utils/leb128.dart';
-import 'package:path/path.dart' as path;
 import 'package:ffi/ffi.dart';
+import 'package:path/path.dart' as path;
 import 'package:tuple/tuple.dart';
 
 const findexErrorMessageMaxLength = 3000;
@@ -286,7 +287,7 @@ class Findex {
   }
 
   static Future<void> upsert(
-    MasterKeys masterKeys,
+    FindexMasterKeys masterKeys,
     Uint8List label,
     Map<IndexedValue, List<Word>> indexedValuesAndWords,
     Pointer<NativeFunction<FetchEntriesFfiCallback>> fetchEntries,

@@ -51,7 +51,8 @@ void main() {
 
       final Uint8List sseKeys = Uint8List.fromList(await RedisFindex.get(
           db, RedisTable.others, Uint8List.fromList([0])));
-      final masterKeys = MasterKeys.fromJson(jsonDecode(utf8.decode(sseKeys)));
+      final masterKeys =
+          FindexMasterKeys.fromJson(jsonDecode(utf8.decode(sseKeys)));
 
       final Uint8List userDecryptionKey = Uint8List.fromList(
           await RedisFindex.get(
@@ -86,7 +87,7 @@ void main() {
     }
 
     test('search/upsert', () async {
-      final masterKeys = MasterKeys.fromJson(jsonDecode(
+      final masterKeys = FindexMasterKeys.fromJson(jsonDecode(
           await File('test/resources/findex/master_keys.json').readAsString()));
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
@@ -199,7 +200,8 @@ class RedisFindex {
     ]);
   }
 
-  static Future<void> indexAll(MasterKeys masterKeys, Uint8List label) async {
+  static Future<void> indexAll(
+      FindexMasterKeys masterKeys, Uint8List label) async {
     final users = await allUsers();
 
     final indexedValuesAndWords = {
@@ -301,7 +303,7 @@ class RedisFindex {
   }
 
   static Future<void> upsert(
-    MasterKeys masterKeys,
+    FindexMasterKeys masterKeys,
     Uint8List label,
     Map<IndexedValue, List<Word>> indexedValuesAndWords,
   ) async {

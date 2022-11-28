@@ -8,6 +8,7 @@ import 'package:cloudproof/src/utils/blob_conversion.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
 
+import 'master_keys.dart';
 import 'plaintext_header.dart';
 
 const coverCryptErrorMessageMaxLength = 3000;
@@ -46,19 +47,18 @@ class CoverCrypt {
   // DECRYPTION via FFI
   //
   static PlaintextHeader decryptWithAuthenticationData(Uint8List userSecretKey,
-      Uint8List ciphertextBytes, Uint8List authenticationDataBytes) {
+      Uint8List ciphertext, Uint8List authenticationData) {
     // FFI INPUT parameters
     final authenticationDataPointer =
-        authenticationDataBytes.allocateInt8Pointer().cast<Char>();
+        authenticationData.allocateInt8Pointer().cast<Char>();
     final userSecretKeyPointer =
         userSecretKey.allocateInt8Pointer().cast<Char>();
-    final ciphertextPointer =
-        ciphertextBytes.allocateInt8Pointer().cast<Char>();
+    final ciphertextPointer = ciphertext.allocateInt8Pointer().cast<Char>();
 
     // FFI OUTPUT parameters
-    final plaintextPointer = calloc<Uint8>(ciphertextBytes.length);
+    final plaintextPointer = calloc<Uint8>(ciphertext.length);
     final plaintextLength = calloc<Int>(1);
-    plaintextLength.value = ciphertextBytes.length;
+    plaintextLength.value = ciphertext.length;
     final headerMetadataPointer =
         calloc<Uint8>(defaultHeaderMetadataSizeInBytes);
     final headerMetadataLength = calloc<Int>(1);
@@ -71,9 +71,9 @@ class CoverCrypt {
           headerMetadataPointer.cast<Char>(),
           headerMetadataLength,
           ciphertextPointer,
-          ciphertextBytes.length,
+          ciphertext.length,
           authenticationDataPointer,
-          authenticationDataBytes.length,
+          authenticationData.length,
           userSecretKeyPointer,
           userSecretKey.length);
       if (result != 0) {
@@ -108,24 +108,24 @@ class CoverCrypt {
       String policy,
       Uint8List publicKey,
       String encryptionPolicy,
-      Uint8List plaintextBytes,
-      Uint8List additionalData,
+      Uint8List plaintext,
+      Uint8List headerMetaData,
       Uint8List authenticationData) {
     // FFI INPUT parameters
     final policyPointer = policy.toNativeUtf8().cast<Char>();
     final encryptionPolicyPointer =
         encryptionPolicy.toNativeUtf8().cast<Char>();
     final publicKeyPointer = publicKey.allocateInt8Pointer().cast<Char>();
-    final plaintextPointer = plaintextBytes.allocateInt8Pointer().cast<Char>();
-    final additionalDataPointer =
-        additionalData.allocateInt8Pointer().cast<Char>();
+    final plaintextPointer = plaintext.allocateInt8Pointer().cast<Char>();
+    final headerMetaDataPointer =
+        headerMetaData.allocateInt8Pointer().cast<Char>();
     final authenticationDataPointer =
         authenticationData.allocateInt8Pointer().cast<Char>();
 
     // FFI OUTPUT parameters
-    final ciphertextPointer = calloc<Uint8>(8192 + plaintextBytes.length);
+    final ciphertextPointer = calloc<Uint8>(8192 + plaintext.length);
     final ciphertextLength = calloc<Int>(1);
-    ciphertextLength.value = plaintextBytes.length;
+    ciphertextLength.value = 8192 + plaintext.length;
 
     try {
       final result = library.h_aes_encrypt(
@@ -136,9 +136,9 @@ class CoverCrypt {
           publicKey.length,
           encryptionPolicyPointer,
           plaintextPointer,
-          plaintextBytes.length,
-          additionalDataPointer,
-          additionalData.length,
+          plaintext.length,
+          headerMetaDataPointer,
+          headerMetaData.length,
           authenticationDataPointer,
           authenticationData.length);
       if (result != 0) {
@@ -153,15 +153,15 @@ class CoverCrypt {
       calloc.free(ciphertextLength);
       calloc.free(publicKeyPointer);
       calloc.free(plaintextPointer);
-      calloc.free(additionalDataPointer);
+      calloc.free(headerMetaDataPointer);
       calloc.free(authenticationDataPointer);
     }
   }
 
   static Uint8List encrypt(String policy, Uint8List publicKey,
-      String encryptionPolicy, Uint8List plaintextBytes) {
+      String encryptionPolicy, Uint8List plaintext) {
     return encryptWithAuthenticationData(policy, publicKey, encryptionPolicy,
-        plaintextBytes, Uint8List.fromList([]), Uint8List.fromList([]));
+        plaintext, Uint8List.fromList([]), Uint8List.fromList([]));
   }
 
   static String getLastError() {
@@ -185,7 +185,94 @@ class CoverCrypt {
     }
   }
 
-  // static Uint8List generateMasterKeys(String policy){
-  //   Ffi
-  // }
+  static CoverCryptMasterKeys generateMasterKeys(String policy) {
+    // FFI INPUT parameters
+    final policyPointer = policy.toNativeUtf8().cast<Char>();
+
+    // FFI OUTPUT parameters
+    final masterKeysPointer = calloc<Uint8>(8192);
+    final masterKeysLength = calloc<Int>(1);
+    masterKeysLength.value = 8192;
+
+    try {
+      final result = library.h_generate_master_keys(
+          masterKeysPointer.cast<Char>(), masterKeysLength, policyPointer);
+      if (result != 0) {
+        throw Exception(
+            "Call to `h_generate_master_keys` fail. ${getLastError()}");
+      }
+
+      return CoverCryptMasterKeys.create(Uint8List.fromList(
+          masterKeysPointer.asTypedList(masterKeysLength.value)));
+    } finally {
+      calloc.free(masterKeysPointer);
+      calloc.free(masterKeysLength);
+    }
+  }
+
+  static Uint8List generateUserSecretKey(
+      String booleanAccessPolicy, String policy, Uint8List masterSecretKey) {
+    String json = booleanAccessPolicyToJson(booleanAccessPolicy);
+
+    // FFI INPUT parameters
+    final accessPolicyPointer = json.toNativeUtf8().cast<Char>();
+    final policyPointer = policy.toNativeUtf8().cast<Char>();
+    final masterSecretKeyPointer =
+        masterSecretKey.allocateInt8Pointer().cast<Char>();
+
+    // FFI OUTPUT parameters
+    final userPrivateKeyPointer = calloc<Uint8>(8192);
+    final userPrivateKeyLength = calloc<Int>(1);
+    userPrivateKeyLength.value = 8192;
+
+    try {
+      final result = library.h_generate_user_secret_key(
+          userPrivateKeyPointer.cast<Char>(),
+          userPrivateKeyLength,
+          masterSecretKeyPointer,
+          masterSecretKey.length,
+          accessPolicyPointer,
+          policyPointer);
+      if (result != 0) {
+        throw Exception(
+            "Call to `h_generate_user_secret_key` fail. ${getLastError()}");
+      }
+
+      return Uint8List.fromList(
+          userPrivateKeyPointer.asTypedList(userPrivateKeyLength.value));
+    } finally {
+      calloc.free(userPrivateKeyPointer);
+      calloc.free(userPrivateKeyLength);
+      calloc.free(masterSecretKeyPointer);
+    }
+  }
+
+  static String booleanAccessPolicyToJson(String booleanExpression) {
+    // FFI INPUT parameters
+    final booleanExpressionPointer =
+        booleanExpression.toNativeUtf8().cast<Char>();
+
+    // FFI OUTPUT parameters
+    final jsonAccessPolicyPointer = calloc<Uint8>(booleanExpression.length * 2);
+    final jsonAccessPolicyLength = calloc<Int>(1);
+    jsonAccessPolicyLength.value = booleanExpression.length * 2;
+
+    try {
+      final result = library.h_parse_boolean_access_policy(
+          jsonAccessPolicyPointer.cast<Char>(),
+          jsonAccessPolicyLength,
+          booleanExpressionPointer);
+      if (result != 0) {
+        throw Exception(
+            "Call to `h_parse_boolean_access_policy` fail. ${getLastError()}");
+      }
+      final jsonAccessPolicyBytes = Uint8List.fromList(
+          jsonAccessPolicyPointer.asTypedList(jsonAccessPolicyPointer.value));
+
+      return String.fromCharCodes(jsonAccessPolicyBytes);
+    } finally {
+      calloc.free(jsonAccessPolicyPointer);
+      calloc.free(jsonAccessPolicyLength);
+    }
+  }
 }

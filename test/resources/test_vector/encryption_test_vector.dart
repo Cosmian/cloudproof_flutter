@@ -28,6 +28,25 @@ class EncryptionTestVector {
     expect(decrypted.headerMetadata, headerMetadata);
   }
 
+  static EncryptionTestVector generate(
+      String policy,
+      Uint8List publicKey,
+      String encryptionPolicy,
+      String plaintext,
+      Uint8List headerMetadata,
+      Uint8List authenticationData) {
+    final plaintextBytes = Uint8List.fromList(utf8.encode(plaintext));
+    final ciphertext = CoverCrypt.encryptWithAuthenticationData(
+        policy,
+        publicKey,
+        encryptionPolicy,
+        plaintextBytes,
+        headerMetadata,
+        authenticationData);
+    return EncryptionTestVector(encryptionPolicy, plaintextBytes, ciphertext,
+        headerMetadata, authenticationData);
+  }
+
   EncryptionTestVector.fromJson(Map<String, dynamic> json)
       : encryptionPolicy = json['encryption_policy'],
         plaintext = base64Decode(json['plaintext']),
@@ -35,7 +54,7 @@ class EncryptionTestVector {
         headerMetadata = base64Decode(json['meta_data']),
         authenticationData = base64Decode(json['authentication_data']);
 
-  Map<String, dynamic> toJson(String keyId) => {
+  Map<String, dynamic> toJson() => {
         'encryption_policy': encryptionPolicy,
         'plaintext': base64Encode(plaintext),
         'ciphertext': base64Encode(ciphertext),

@@ -46,7 +46,7 @@ void main() {
     test('search/upsert', () async {
       await initDb();
 
-      final masterKeys = MasterKeys.fromJson(jsonDecode(
+      final masterKeys = FindexMasterKeys.fromJson(jsonDecode(
           await File('test/resources/findex/master_keys.json').readAsString()));
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
@@ -139,7 +139,8 @@ class SqliteFindex {
     return newDb;
   }
 
-  static Future<void> indexAll(MasterKeys masterKeys, Uint8List label) async {
+  static Future<void> indexAll(
+      FindexMasterKeys masterKeys, Uint8List label) async {
     final users = allUsers();
 
     final indexedValuesAndWords = {
@@ -244,7 +245,7 @@ class SqliteFindex {
   }
 
   static Future<void> upsert(
-    MasterKeys masterKeys,
+    FindexMasterKeys masterKeys,
     Uint8List label,
     Map<IndexedValue, List<Word>> indexedValuesAndWords,
   ) async {

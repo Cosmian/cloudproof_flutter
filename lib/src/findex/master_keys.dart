@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-class MasterKeys {
+class FindexMasterKeys {
   Uint8List k;
   Uint8List kStar;
 
-  MasterKeys(this.k, this.kStar);
+  FindexMasterKeys(this.k, this.kStar);
 
-  MasterKeys.fromJson(Map<String, dynamic> json)
+  FindexMasterKeys.fromJson(Map<String, dynamic> json)
       : k = base64Decode(json['k']),
         kStar = base64Decode(json['k_star']);
 
