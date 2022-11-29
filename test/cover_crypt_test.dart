@@ -1,5 +1,6 @@
 // Dart imports:
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 // Project imports:
@@ -22,23 +23,18 @@ void main() {
   group('CoverCrypt', () {
     test('CoverCryptDecryption.decrypt', () async {
       final result = CoverCrypt.decrypt(key, ciphertext);
-
       expect(result.plaintext, equals(plaintext));
     });
 
     test('nonRegressionTest', () async {
-      NonRegressionTestVectors.fromJson(jsonDecode(await File(
-                  'test/resources/cover_crypt/rust_non_regression_vector.json')
-              .readAsString()))
-          .verify();
-      NonRegressionTestVectors.fromJson(jsonDecode(await File(
-                  'test/resources/cover_crypt/java_non_regression_vector.json')
-              .readAsString()))
-          .verify();
-      NonRegressionTestVectors.fromJson(jsonDecode(await File(
-                  'test/resources/cover_crypt/non_regression_test_vector.json')
-              .readAsString()))
-          .verify();
+      final dir = Directory('test/resources/cover_crypt/');
+      final List<FileSystemEntity> entities = await dir.list().toList();
+      entities.whereType<File>().forEach((element) async {
+        log("Non regression test file: ${element.path}");
+        NonRegressionTestVectors.fromJson(
+                jsonDecode(await File(element.path).readAsString()))
+            .verify();
+      });
     });
 
     test('generateNonRegressionTest', () async {
