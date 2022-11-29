@@ -1,7 +1,6 @@
 ---
 # Pre-requisites:
 # pip install pre-commit conventional-pre-commit
-# pre-commit install
 # pre-commit install --install-hooks -t commit-msg
 # pre-commit autoupdate
 

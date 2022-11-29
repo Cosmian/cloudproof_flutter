@@ -877,6 +877,68 @@ class NativeLibrary {
           int,
           ffi.Pointer<ffi.Char>,
           int)>();
+
+  /// Convert a boolean access policy expression into a
+  /// json_expression that can be used to create a key using
+  /// the KMIP interface
+  ///
+  /// Returns
+  /// - 0 if success
+  /// - 1 in case of unrecoverable error
+  /// - n if the return buffer is too small and should be of size n
+  /// (including the NULL byte)
+  ///
+  /// `json_expr_len` contains the length of the JSON string on return
+  /// (including the terminating NULL byte)
+  ///
+  /// # Safety
+  int h_access_policy_expression_to_json(
+    ffi.Pointer<ffi.Char> json_expr_ptr,
+    ffi.Pointer<ffi.Int> json_expr_len,
+    ffi.Pointer<ffi.Char> boolean_expression_ptr,
+  ) {
+    return _h_access_policy_expression_to_json(
+      json_expr_ptr,
+      json_expr_len,
+      boolean_expression_ptr,
+    );
+  }
+
+  late final _h_access_policy_expression_to_jsonPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Int>,
+              ffi.Pointer<ffi.Char>)>>('h_access_policy_expression_to_json');
+  late final _h_access_policy_expression_to_json =
+      _h_access_policy_expression_to_jsonPtr.asFunction<
+          int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Int>,
+              ffi.Pointer<ffi.Char>)>();
+
+  void log(
+    ffi.Pointer<ffi.Int> s,
+  ) {
+    return _log(
+      s,
+    );
+  }
+
+  late final _logPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Int>)>>(
+          'log');
+  late final _log = _logPtr.asFunction<void Function(ffi.Pointer<ffi.Int>)>();
+
+  void alert(
+    ffi.Pointer<ffi.Int> s,
+  ) {
+    return _alert(
+      s,
+    );
+  }
+
+  late final _alertPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Int>)>>(
+          'alert');
+  late final _alert =
+      _alertPtr.asFunction<void Function(ffi.Pointer<ffi.Int>)>();
 }
 
 const int MAX_CLEAR_TEXT_SIZE = 1073741824;

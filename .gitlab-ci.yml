@@ -14,10 +14,6 @@ test:
     - flutter pub get
     - flutter analyze .
     - flutter test
-
-benchmarks:
-  stage: test
-  script:
     - dart benchmark/cloudproof_benchmark.dart
 
 pack:

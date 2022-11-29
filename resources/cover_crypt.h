@@ -316,3 +316,27 @@ int h_aes_decrypt(char *plaintext_ptr,
                   int authentication_data_len,
                   const char *usk_ptr,
                   int usk_len);
+
+/**
+ * Convert a boolean access policy expression into a
+ * json_expression that can be used to create a key using
+ * the KMIP interface
+ *
+ * Returns
+ *  - 0 if success
+ *  - 1 in case of unrecoverable error
+ *  - n if the return buffer is too small and should be of size n
+ *     (including the NULL byte)
+ *
+ * `json_expr_len` contains the length of the JSON string on return
+ *  (including the terminating NULL byte)
+ *
+ * # Safety
+ */
+int h_access_policy_expression_to_json(char *json_expr_ptr,
+                                       int *json_expr_len,
+                                       const char *boolean_expression_ptr);
+
+extern void log(const str *s);
+
+extern void alert(const str *s);

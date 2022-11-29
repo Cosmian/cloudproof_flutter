@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file.
 - add FFI call for cover_crypt encryption
 - test vectors verification on cover_crypt
 ### Changed
-- update to cover_crypt 7.1.1 and findex 1.0
+- update to cover_crypt 7.1.1 and findex 8.0
 - decrypt with authentication data
 ### Fixed
 ### Removed
