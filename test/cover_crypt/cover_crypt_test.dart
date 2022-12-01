@@ -1,6 +1,8 @@
+// ignore_for_file: avoid_print
+//
+
 // Dart imports:
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 
 // Project imports:
@@ -9,7 +11,7 @@ import 'package:cloudproof/src/cover_crypt/cover_crypt.dart';
 // Package imports:
 import 'package:flutter_test/flutter_test.dart';
 
-import 'resources/test_vector/non_regression_test_vectors.dart';
+import 'non_regression_test_vectors.dart';
 
 final ciphertext = base64Decode(
     "eDrJ+GpP63RFedSHqmIqoT2gAH9PA7y13u22bWQ1+XxuJZeHzanQAKk9Y/TxlNfrIShTvvyGBEYFryVu/FpBNQK0+yO++Uqau2tHcmxjSX8kRZieMfHD9CF42lIVK1PNUjadmMoxFeF4WoH4qjmJa2uiViWCCatYkZjvYjpvnnzi6FGVeIpRJCIQ+pT9wafg0iY3HDugISqoY7d9Xb7PIuzwgQPASU9lPyaoce6nSRiqinDGmwos0uQXu8pL8z3ydSC+Fwq5uGGmtwAvxGqAkgzEMKwIIIYJVwE0rT0dom11A7LkYqAgDi7MTUdZHKtHLe7qS0aH2DJHAGMqkheQvIERrU7z19DHyT7aDsGkZg==");
@@ -30,10 +32,10 @@ void main() {
       final dir = Directory('test/resources/cover_crypt/');
       final List<FileSystemEntity> entities = await dir.list().toList();
       entities.whereType<File>().forEach((element) async {
-        log("Non regression test file: ${element.path}");
         NonRegressionTestVectors.fromJson(
                 jsonDecode(await File(element.path).readAsString()))
             .verify();
+        print("... OK: Non regression test file: ${element.path}");
       });
     });
 

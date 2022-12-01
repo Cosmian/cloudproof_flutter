@@ -51,14 +51,14 @@ class EncryptionTestVector {
       : encryptionPolicy = json['encryption_policy'],
         plaintext = base64Decode(json['plaintext']),
         ciphertext = base64Decode(json['ciphertext']),
-        headerMetadata = base64Decode(json['meta_data']),
+        headerMetadata = base64Decode(json['header_metadata']),
         authenticationData = base64Decode(json['authentication_data']);
 
   Map<String, dynamic> toJson() => {
         'encryption_policy': encryptionPolicy,
         'plaintext': base64Encode(plaintext),
         'ciphertext': base64Encode(ciphertext),
-        'meta_data': base64Encode(headerMetadata),
+        'header_metadata': base64Encode(headerMetadata),
         'authentication_data': base64Encode(authenticationData),
       };
 }
