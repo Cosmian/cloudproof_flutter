@@ -17,11 +17,11 @@ const coverCryptErrorMessageMaxLength = 3000;
 const defaultHeaderMetadataSizeInBytes = 4096;
 
 class CoverCrypt {
-  static NativeLibrary? _library;
+  static CoverCryptNativeLibrary? _library;
 
-  static NativeLibrary get library {
+  static CoverCryptNativeLibrary get library {
     if (_library != null) {
-      return _library as NativeLibrary;
+      return _library as CoverCryptNativeLibrary;
     }
 
     String? libraryPath;
@@ -38,7 +38,7 @@ class CoverCrypt {
           Directory.current.path, 'resources', 'libcosmian_cover_crypt.so');
     }
 
-    final library = NativeLibrary(libraryPath == null
+    final library = CoverCryptNativeLibrary(libraryPath == null
         ? DynamicLibrary.process()
         : DynamicLibrary.open(libraryPath));
     _library = library;

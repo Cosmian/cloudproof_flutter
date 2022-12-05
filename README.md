@@ -7,20 +7,21 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
 <!-- toc -->
 
 - [Getting started](#getting-started)
-  * [CoverCrypt](#covercrypt)
-  * [Findex](#findex)
+  - [CoverCrypt](#covercrypt)
+  - [Findex](#findex)
 - [Installation](#installation)
 - [Example](#example)
 - [Tests](#tests)
-    + [⚠️⚠️⚠️ WARNINGS ⚠️⚠️⚠️](#%E2%9A%A0%EF%B8%8F%E2%9A%A0%EF%B8%8F%E2%9A%A0%EF%B8%8F-warnings-%E2%9A%A0%EF%B8%8F%E2%9A%A0%EF%B8%8F%E2%9A%A0%EF%B8%8F)
-  * [Implementation details](#implementation-details)
+  - [WARNINGS](#warnings)
+  - [Implementation details](#implementation-details)
 - [FFI libs notes](#ffi-libs-notes)
-  * [Generating `.h`](#generating-h)
-  * [Building `.so`, `.a`…](#building-so-a)
-    + [Linux](#linux)
-    + [Android](#android)
-    + [iOS](#ios)
-  * [Supported versions](#supported-versions)
+  - [Generating `.h`](#generating-h)
+    - [iOS WARNING](#ios-warning)
+  - [Building `.so`, `.a`…](#building-so-a)
+    - [Linux](#linux)
+    - [Android](#android)
+    - [iOS](#ios)
+  - [Supported versions](#supported-versions)
 - [Cloudproof versions Correspondence](#cloudproof-versions-correspondence)
 
 <!-- tocstop -->
@@ -131,12 +132,12 @@ To upsert, you need:
   // --------------------------------------------------
 
   static Future<void> upsert(
-    MasterKeys masterKeys,
+    MasterKey masterKey,
     Uint8List label,
     Map<IndexedValue, List<Word>> indexedValuesAndWords,
   ) async {
     await Findex.upsert(
-      masterKeys,
+      masterKey,
       label,
       indexedValuesAndWords,
       Pointer.fromFunction(
@@ -194,11 +195,11 @@ To upsert, you need:
 
 Note that if you `search` and `upsert`, the two implementation can share the same callback for `fetchEntries`.
 
-Note that the copy/paste code could be removed in a future version when Dart implements https://github.com/dart-lang/language/issues/1482.
+Note that the copy/paste code could be removed in a future version when Dart implements <https://github.com/dart-lang/language/issues/1482>.
 
 ## Installation
 
-```
+```bash
 flutter pub get cloudproof
 ```
 
@@ -210,7 +211,7 @@ To run the example, you need a Redis server configured. Then, update `redisHost`
 
 To run all tests:
 
-```
+```bash
 flutter test
 ```
 
@@ -218,7 +219,7 @@ Some tests require a Redis database on localhost (default port).
 
 If you ran the Java test which populate the Redis database, you can run the hidden test that read from this database.
 
-```
+```bash
 RUN_JAVA_E2E_TESTS=1 flutter test --plain-name 'Search and decrypt with preallocate Redis by Java'
 ```
 
@@ -226,13 +227,13 @@ If you share the same Redis database between Java and Dart tests, `flutter test`
 
 You can run the benchmarks with:
 
-```
+```bash
 dart benchmark/cloudproof_benchmark.dart
 ```
 
-#### ⚠️⚠️⚠️ WARNINGS ⚠️⚠️⚠️
+### WARNINGS
 
-- `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` can be static methods in a class or raw functions but should be static! You cannot put classic methods of an instance here.
+- `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` can not be static methods in a class or raw functions but should be static! You cannot put classic methods of an instance here.
 - `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` cannot access the state of the program, they will run in a separate `Isolate` with no data from the main thread (for example static/global variables populated during an initialization phase of your program will not exist). If you need to access some data from the main thread, the only way we think we'll work is to save this information inside a file or a database and read it from the callback. This pattern will slow down the `search` process. If you don't need async in the callbacks (for example the `sqlite` library has sync functions, you can call `*WrapperWithoutIsolate` and keep all the process in the same thread, so you can use your global variables).
 
 ### Implementation details
@@ -245,7 +246,14 @@ dart benchmark/cloudproof_benchmark.dart
 
 ### Generating `.h`
 
-The `lib/src/cover_crypt/generated_bindings.dart` is generated with `ffigen` with the config file `./ffigen_cover_crypt.yml`. There is a custom config file (instead of using the `pubspec.yml` because we may want to generate bindings for Findex in the future). Findex bindings are hand written because they are more complex and generated bindings require some casts (in particular with `Pointer<Uint8>>` from the Dart `Uint8List` type to `Pointer<Char>>`, it's working for CoverCrypt but maybe it's better to have the bindings with the `uint8` types like in Findex?).
+The `lib/src/*/generated_bindings.dart` are generated with `ffigen` with the config file `./ffigen_*.yml`:
+
+```bash
+flutter pub run ffigen --config ffigen_cover_crypt.yaml
+flutter pub run ffigen --config ffigen_findex.yaml
+```
+
+#### iOS WARNING
 
 Use cbindgen, do not forget to remove `str` type in `libcosmian_cover_crypt.h` (last two lines) for iOS to compile (type `str` unknown in C headers).
 
@@ -287,24 +295,24 @@ To make the flutter build succeed, 3 prerequisites are needed:
 ### Supported versions
 
 | Linux        | Flutter | Dart   | Android SDK       | NDK | Glibc | LLVM     | Smartphone Virtual Device |
-| ------------ | ------- | ------ | ----------------- | --- | ----- | -------- | ------------------------- |
+|--------------|---------|--------|-------------------|-----|-------|----------|---------------------------|
 | Ubuntu 22.04 | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.35  | 14.0.0-1 | Pixel 5 API 30            |
 | Centos 7     | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.17  | -        | -                         |
 
 | Mac      | Flutter | Dart   | OS       | LLVM   | Xcode | Smartphone Virtual Device |
-| -------- | ------- | ------ | -------- | ------ | ----- | ------------------------- |
+|----------|---------|--------|----------|--------|-------|---------------------------|
 | Catalina | 3.3.4   | 2.18.2 | Catalina | 12.0.0 |       | iPhone 12 PRO MAX         |
 
 ## Cloudproof versions Correspondence
 
 When using local encryption and decryption with [CoverCrypt](https://github.com/Cosmian/cover_crypt) native libraries are required.
 
-Check the main pages of the respective projects to build the native librairies appropriate for your systems. The [test directory](./src/test/resources/linux-x86-64/) provides pre-built libraries for Linux GLIBC 2.17. These librairies should run fine on a system with a more recent GLIBC version.
+Check the main pages of the respective projects to build the native libraries appropriate for your systems. The [test directory](./src/test/resources/linux-x86-64/) provides pre-built libraries for Linux GLIBC 2.17. These libraries should run fine on a system with a more recent GLIBC version.
 
 This table shows the minimum versions correspondences between the various components
 
 | Flutter Lib | CoverCrypt lib | Findex |
-| ----------- | -------------- | ------ |
+|-------------|----------------|--------|
 | 0.1.0       | 6.0.5          | 0.7.2  |
 | 1.0.0       | 6.0.5          | 0.7.2  |
 | 2.0.0       | 7.1.0          | 0.10.0 |

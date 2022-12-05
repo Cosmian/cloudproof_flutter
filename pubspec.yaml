@@ -53,13 +53,3 @@ flutter:
       ios:
         pluginClass: CloudproofPlugin
         ffiPlugin: true
-
-ffigen:
-  preamble: |
-    // ignore_for_file: constant_identifier_names, non_constant_identifier_names
-  output: lib/src/cover_crypt/generated_bindings.dart
-  headers:
-    entry-points:
-      - resources/cover_crypt.h
-  name: NativeLibrary
-  description: Dart bindings to call CoverCrypt functions

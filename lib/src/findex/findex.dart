@@ -6,6 +6,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
+import 'package:cloudproof/src/findex/generated_bindings.dart';
 import 'package:cloudproof/src/utils/leb128.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
@@ -14,119 +15,24 @@ import 'package:tuple/tuple.dart';
 const findexErrorMessageMaxLength = 3000;
 const defaultOutputSizeInBytes = 131072;
 
-typedef NativeUpsertFunc = Int32 Function(
-  Pointer<Utf8>,
-  Pointer<Uint8>,
-  Int32,
-  Pointer<Utf8>,
-  Pointer<NativeFunction<FetchEntriesFfiCallback>>,
-  Pointer<NativeFunction<UpsertEntriesFfiCallback>>,
-  Pointer<NativeFunction<UpsertChainsFfiCallback>>,
-);
-
-typedef HUpsert = int Function(
-  Pointer<Utf8>,
-  Pointer<Uint8>,
-  int,
-  Pointer<Utf8>,
-  Pointer<NativeFunction<FetchEntriesFfiCallback>>,
-  Pointer<NativeFunction<UpsertEntriesFfiCallback>>,
-  Pointer<NativeFunction<UpsertChainsFfiCallback>>,
-);
-
-typedef NativeSearchFunc = Int32 Function(
-  Pointer<Uint8>,
-  Pointer<Int32>,
-  Pointer<Uint8>,
-  Int32,
-  Pointer<Uint8>,
-  Int32,
-  Pointer<Utf8>,
-  Int32,
-  Int32,
-  Pointer<NativeFunction<ProgressFFiCallback>>,
-  Pointer<NativeFunction<FetchEntriesFfiCallback>>,
-  Pointer<NativeFunction<FetchChainsFfiCallback>>,
-);
-
-typedef HSearch = int Function(
-  Pointer<Uint8>,
-  Pointer<Int32>,
-  Pointer<Uint8>,
-  int,
-  Pointer<Uint8>,
-  int,
-  Pointer<Utf8>,
-  int,
-  int,
-  Pointer<NativeFunction<ProgressFFiCallback>>,
-  Pointer<NativeFunction<FetchEntriesFfiCallback>>,
-  Pointer<NativeFunction<FetchChainsFfiCallback>>,
-);
-
-typedef FetchEntriesFfiCallback = Int32 Function(
-  Pointer<Uint8>,
-  Pointer<Uint32>,
-  Pointer<Uint8>,
-  Uint32,
-);
-
-typedef ProgressFFiCallback = Bool Function(
-  Pointer<Uint8>,
-  Uint32,
-);
-
-typedef ProgressCallback = bool Function(
-  Pointer<Uint8>,
-  int,
-);
-
-typedef FetchEntriesCallback = Future<Map<Uint8List, Uint8List>> Function(
-  List<Uint8List>,
-);
-
 typedef FetchCallback = Future<Map<Uint8List, Uint8List>> Function(
   List<Uint8List>,
 );
-
 typedef FetchCallbackSync = Map<Uint8List, Uint8List> Function(List<Uint8List>);
-
-typedef FetchChainsFfiCallback = Int32 Function(
-  Pointer<Uint8>,
-  Pointer<Uint32>,
-  Pointer<Uint8>,
-  Uint32,
-);
 typedef FetchChainsCallback = Future<Map<Uint8List, Uint8List>> Function(
   List<Uint8List>,
-);
-
-typedef UpsertEntriesFfiCallback = Int32 Function(
-  Pointer<Uint8>,
-  Uint32,
-);
-typedef UpsertEntriesCallback = Future<void> Function(
-  Map<Uint8List, Uint8List>,
 );
 typedef UpsertCallback = Future<void> Function(Map<Uint8List, Uint8List>);
 typedef UpsertCallbackSync = void Function(Map<Uint8List, Uint8List>);
 
-typedef UpsertChainsFfiCallback = Int32 Function(
-  Pointer<Uint8>,
-  Uint32,
-);
-typedef UpsertChainsCallback = Future<void> Function(
-  Map<Uint8List, Uint8List>,
-);
-
 const errorCodeInCaseOfCallbackException = 42;
 
 class Findex {
-  static DynamicLibrary? _dylib;
+  static FindexNativeLibrary? _library;
 
-  static DynamicLibrary get dylib {
-    if (_dylib != null) {
-      return _dylib as DynamicLibrary;
+  static FindexNativeLibrary get library {
+    if (_library != null) {
+      return _library as FindexNativeLibrary;
     }
 
     String? libraryPath;
@@ -143,17 +49,17 @@ class Findex {
           Directory.current.path, 'resources', 'libcosmian_findex.so');
     }
 
-    final dylib = libraryPath != null
-        ? DynamicLibrary.open(libraryPath)
-        : DynamicLibrary.process();
-    _dylib = dylib;
-    return dylib;
+    final library = FindexNativeLibrary(libraryPath == null
+        ? DynamicLibrary.process()
+        : DynamicLibrary.open(libraryPath));
+    _library = library;
+    return library;
   }
 
   static int fetchWrapper(
-    Pointer<Uint8> outputPointer,
-    Pointer<Uint32> outputLength,
-    Pointer<Uint8> uidsListPointer,
+    Pointer<Char> outputPointer,
+    Pointer<UnsignedInt> outputLength,
+    Pointer<UnsignedChar> uidsListPointer,
     int uidsListLength,
     FetchCallback callback,
   ) {
@@ -202,19 +108,20 @@ class Findex {
   }
 
   static int fetchWrapperWithoutIsolate(
-    Pointer<Uint8> outputPointer,
-    Pointer<Uint32> outputLength,
-    Pointer<Uint8> uidsListPointer,
+    Pointer<Char> outputPointer,
+    Pointer<UnsignedInt> outputLength,
+    Pointer<UnsignedChar> uidsListPointer,
     int uidsListLength,
     FetchCallbackSync callback,
   ) {
     try {
-      final uids =
-          Leb128.deserializeList(uidsListPointer.asTypedList(uidsListLength));
+      final uids = Leb128.deserializeList(
+          uidsListPointer.cast<Uint8>().asTypedList(uidsListLength));
 
       final values = callback(uids);
 
-      final output = outputPointer.asTypedList(outputLength.value);
+      final output =
+          outputPointer.cast<Uint8>().asTypedList(outputLength.value);
 
       Leb128.serializeHashMap(output, values);
 
@@ -225,8 +132,8 @@ class Findex {
     }
   }
 
-  static int upsertWrapper(
-    Pointer<Uint8> valuesByUidsPointer,
+  static void upsertWrapper(
+    Pointer<UnsignedChar> valuesByUidsPointer,
     int valuesByUidsLength,
     UpsertCallback callback,
   ) {
@@ -257,8 +164,6 @@ class Findex {
       while (!donePointer.value) {
         sleep(const Duration(milliseconds: 10));
       }
-
-      return 0;
     } catch (e, stacktrace) {
       log("Exception during upsert wrapper $e $stacktrace");
       rethrow;
@@ -267,19 +172,17 @@ class Findex {
     }
   }
 
-  static int upsertWrapperWithoutIsolate(
-    Pointer<Uint8> valuesByUidsPointer,
+  static void upsertWrapperWithoutIsolate(
+    Pointer<UnsignedChar> valuesByUidsPointer,
     int valuesByUidsLength,
     UpsertCallbackSync callback,
   ) {
     try {
       final valuesByUids = Leb128.deserializeHashMap(
-        valuesByUidsPointer.asTypedList(valuesByUidsLength),
+        valuesByUidsPointer.cast<Uint8>().asTypedList(valuesByUidsLength),
       );
 
       callback(valuesByUids);
-
-      return 0;
     } catch (e, stacktrace) {
       log("Exception during upsert wrapper $e $stacktrace");
       rethrow;
@@ -290,13 +193,10 @@ class Findex {
     FindexMasterKeys masterKeys,
     Uint8List label,
     Map<IndexedValue, List<Word>> indexedValuesAndWords,
-    Pointer<NativeFunction<FetchEntriesFfiCallback>> fetchEntries,
-    Pointer<NativeFunction<UpsertEntriesFfiCallback>> upsertEntries,
-    Pointer<NativeFunction<UpsertChainsFfiCallback>> upsertChains,
+    FetchEntryTableCallback fetchEntries,
+    UpdateEntryTableCallback upsertEntries,
+    UpdateChainTableCallback upsertChains,
   ) async {
-    final HUpsert hUpsert =
-        dylib.lookup<NativeFunction<NativeUpsertFunc>>('h_upsert').asFunction();
-
     final indexedValuesAndWordsString = indexedValuesAndWords.map(
         (key, value) =>
             MapEntry(key.toBase64(), value.map((e) => e.toBase64()).toList()));
@@ -312,11 +212,11 @@ class Findex {
     final labelPointer = label.allocateUint8Pointer();
 
     try {
-      final result = hUpsert(
-        masterKeysPointer,
-        labelPointer,
+      final result = library.h_upsert(
+        masterKeysPointer.cast<Char>(),
+        labelPointer.cast<Int>(),
         label.length,
-        indexedValuesAndWordsPointer,
+        indexedValuesAndWordsPointer.cast<Char>(),
         fetchEntries,
         upsertEntries,
         upsertChains,
@@ -336,12 +236,9 @@ class Findex {
       Uint8List k,
       Uint8List label,
       List<Word> words,
-      Pointer<NativeFunction<FetchEntriesFfiCallback>> fetchEntries,
-      Pointer<NativeFunction<FetchChainsFfiCallback>> fetchChains,
+      FetchEntryTableCallback fetchEntries,
+      FetchChainTableCallback fetchChains,
       {int outputSizeInBytes = defaultOutputSizeInBytes}) async {
-    final HSearch hSearch =
-        dylib.lookup<NativeFunction<NativeSearchFunc>>('h_search').asFunction();
-
     final wordsString = words.map((value) => value.toBase64()).toList();
 
     final output = calloc<Uint8>(outputSizeInBytes);
@@ -355,17 +252,17 @@ class Findex {
     final labelPointer = label.allocateUint8Pointer();
 
     try {
-      final result = hSearch(
-        output,
-        outputSizeInBytesPointer,
-        kPointer,
+      final result = library.h_search(
+        output.cast<Char>(),
+        outputSizeInBytesPointer.cast<Int>(),
+        kPointer.cast<Char>(),
         k.length,
-        labelPointer,
+        labelPointer.cast<Int>(),
         label.length,
-        wordsPointer,
+        wordsPointer.cast<Char>(),
         0,
         0,
-        Pointer.fromFunction(Findex.progressCallback, true),
+        0, // Progress callback is not used for now.
         fetchEntries,
         fetchChains,
       );
@@ -400,19 +297,13 @@ class Findex {
   }
 
   static String getLastError() {
-    late final getLastErrorPointer =
-        dylib.lookup<NativeFunction<Int Function(Pointer<Char>, Pointer<Int>)>>(
-            'get_last_error');
-
-    final getLastError = getLastErrorPointer
-        .asFunction<int Function(Pointer<Char>, Pointer<Int>)>();
-
     final errorPointer = calloc<Uint8>(findexErrorMessageMaxLength);
     final errorLength = calloc<Int>(1);
     errorLength.value = findexErrorMessageMaxLength;
 
     try {
-      final result = getLastError(errorPointer.cast<Char>(), errorLength);
+      final result =
+          library.get_last_error(errorPointer.cast<Char>(), errorLength);
 
       if (result != 0) {
         return "Fail to fetch last error…";

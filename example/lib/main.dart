@@ -395,19 +395,17 @@ class RedisFindex {
       ),
       Pointer.fromFunction(
         upsertEntriesCallback,
-        errorCodeInCaseOfCallbackException,
       ),
       Pointer.fromFunction(
         upsertChainsCallback,
-        errorCodeInCaseOfCallbackException,
       ),
     );
   }
 
   static int fetchEntriesCallback(
-    Pointer<Uint8> outputPointer,
-    Pointer<Uint32> outputLength,
-    Pointer<Uint8> entriesUidsListPointer,
+    Pointer<Char> outputPointer,
+    Pointer<UnsignedInt> outputLength,
+    Pointer<UnsignedChar> entriesUidsListPointer,
     int entriesUidsListLength,
   ) {
     return Findex.fetchWrapper(
@@ -420,9 +418,9 @@ class RedisFindex {
   }
 
   static int fetchChainsCallback(
-    Pointer<Uint8> outputPointer,
-    Pointer<Uint32> outputLength,
-    Pointer<Uint8> chainsUidsListPointer,
+    Pointer<Char> outputPointer,
+    Pointer<UnsignedInt> outputLength,
+    Pointer<UnsignedChar> chainsUidsListPointer,
     int chainsUidsListLength,
   ) {
     return Findex.fetchWrapper(
@@ -434,8 +432,8 @@ class RedisFindex {
     );
   }
 
-  static int upsertEntriesCallback(
-    Pointer<Uint8> entriesListPointer,
+  static void upsertEntriesCallback(
+    Pointer<UnsignedChar> entriesListPointer,
     int entriesListLength,
   ) {
     return Findex.upsertWrapper(
@@ -445,8 +443,8 @@ class RedisFindex {
     );
   }
 
-  static int upsertChainsCallback(
-    Pointer<Uint8> chainsListPointer,
+  static void upsertChainsCallback(
+    Pointer<UnsignedChar> chainsListPointer,
     int chainsListLength,
   ) {
     return Findex.upsertWrapper(

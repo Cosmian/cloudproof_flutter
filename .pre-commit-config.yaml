@@ -36,7 +36,7 @@ repos:
       - id: htmlhint
       - id: dockerfile_lint
       - id: markdown-toc
-        args: [--bullets="-"]
+        args: [--bullets="-"] # comment this to refresh TOC
 
   - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
     rev: 0.2.2

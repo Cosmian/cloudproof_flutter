@@ -6,17 +6,17 @@
 import 'dart:ffi' as ffi;
 
 /// Dart bindings to call CoverCrypt functions
-class NativeLibrary {
+class CoverCryptNativeLibrary {
   /// Holds the symbol lookup function.
   final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
       _lookup;
 
   /// The symbols are looked up in [dynamicLibrary].
-  NativeLibrary(ffi.DynamicLibrary dynamicLibrary)
+  CoverCryptNativeLibrary(ffi.DynamicLibrary dynamicLibrary)
       : _lookup = dynamicLibrary.lookup;
 
   /// The symbols are looked up with [lookup].
-  NativeLibrary.fromLookup(
+  CoverCryptNativeLibrary.fromLookup(
       ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
           lookup)
       : _lookup = lookup;
@@ -231,18 +231,24 @@ class NativeLibrary {
 
   /// Refresh the user key according to the given master key and access policy.
   ///
-  /// The user key will be granted access to the current partitions, as determined by its access policy.
-  /// If preserve_old_partitions is set, the user access to rotated partitions will be preserved
+  /// The user key will be granted access to the current partitions, as determined
+  /// by its access policy. If `preserve_old_partitions` is set, the user access to
+  /// rotated partitions will be preserved
   ///
-  /// - `updated_usk_ptr`                 : Output buffer containing the updated user secret key
-  /// - `updated_usk_len`                 : Size of the updated user secret key output buffer
+  /// - `updated_usk_ptr`                 : Output buffer containing the updated
+  /// user secret key
+  /// - `updated_usk_len`                 : Size of the updated user secret key
+  /// output buffer
   /// - `msk_ptr`                         : master secret key
   /// - `msk_len`                         : master secret key length
   /// - `current_usk_ptr`                 : current user secret key
   /// - `current_usk_len`                 : current user secret key length
-  /// - `access_policy_ptr`               : Access policy of the user secret key (JSON)
-  /// - `policy_ptr`                      : Policy to use to update the master keys (JSON)
-  /// - `preserve_old_partitions_access`  : set to 1 to preserve the user access to the rotated partitions
+  /// - `access_policy_ptr`               : Access policy of the user secret key
+  /// (JSON)
+  /// - `policy_ptr`                      : Policy to use to update the master
+  /// keys (JSON)
+  /// - `preserve_old_partitions_access`  : set to 1 to preserve the user access
+  /// to the rotated partitions
   /// # Safety
   int h_refresh_user_secret_key(
     ffi.Pointer<ffi.Char> updated_usk_ptr,
@@ -298,7 +304,8 @@ class NativeLibrary {
   ///
   /// Note: the return string is NULL terminated
   ///
-  /// - `json_access_policy_ptr`: Output buffer containing a null terminated string with the JSON access policy
+  /// - `json_access_policy_ptr`: Output buffer containing a null terminated
+  /// string with the JSON access policy
   /// - `json_access_policy_len`: Size of the output buffer
   /// - `boolean_access_policy_ptr`: boolean access policy string
   /// # Safety
@@ -328,9 +335,9 @@ class NativeLibrary {
   /// the public key on the Rust side on every encryption which is costly.
   ///
   /// This method is to be used in conjunction with
-  /// h_aes_encrypt_header_using_cache
+  /// `h_aes_encrypt_header_using_cache`
   ///
-  /// WARN: h_aes_destroy_encrypt_cache() should be called
+  /// WARN: `h_aes_destroy_encrypt_cache`() should be called
   /// to reclaim the memory of the cache when done
   /// # Safety
   int h_aes_create_encryption_cache(
@@ -360,7 +367,7 @@ class NativeLibrary {
               ffi.Pointer<ffi.Char>, int)>();
 
   /// The function should be called to reclaim memory
-  /// of the cache created using h_aes_create_encrypt_cache()
+  /// of the cache created using `h_aes_create_encrypt_cache`()
   /// # Safety
   int h_aes_destroy_encryption_cache(
     int cache_handle,
@@ -502,9 +509,9 @@ class NativeLibrary {
   /// the user key on the Rust side on every decryption which is costly.
   ///
   /// This method is to be used in conjunction with
-  /// h_aes_decrypt_header_using_cache()
+  /// `h_aes_decrypt_header_using_cache`()
   ///
-  /// WARN: h_aes_destroy_decryption_cache() should be called
+  /// WARN: `h_aes_destroy_decryption_cache`() should be called
   /// to reclaim the memory of the cache when done
   /// # Safety
   int h_aes_create_decryption_cache(
@@ -528,7 +535,7 @@ class NativeLibrary {
           int Function(ffi.Pointer<ffi.Int>, ffi.Pointer<ffi.Char>, int)>();
 
   /// The function should be called to reclaim memory
-  /// of the cache created using h_aes_create_decryption_cache()
+  /// of the cache created using `h_aes_create_decryption_cache`()
   /// # Safety
   int h_aes_destroy_decryption_cache(
     int cache_handle,
@@ -718,8 +725,8 @@ class NativeLibrary {
 
   /// # Safety
   int h_aes_decrypt_block(
-    ffi.Pointer<ffi.Char> cleartext_ptr,
-    ffi.Pointer<ffi.Int> cleartext_len,
+    ffi.Pointer<ffi.Char> plaintext_ptr,
+    ffi.Pointer<ffi.Int> plaintext_len,
     ffi.Pointer<ffi.Char> symmetric_key_ptr,
     int symmetric_key_len,
     ffi.Pointer<ffi.Char> authentication_data_ptr,
@@ -728,8 +735,8 @@ class NativeLibrary {
     int encrypted_bytes_len,
   ) {
     return _h_aes_decrypt_block(
-      cleartext_ptr,
-      cleartext_len,
+      plaintext_ptr,
+      plaintext_len,
       symmetric_key_ptr,
       symmetric_key_len,
       authentication_data_ptr,
@@ -879,14 +886,14 @@ class NativeLibrary {
           int)>();
 
   /// Convert a boolean access policy expression into a
-  /// json_expression that can be used to create a key using
+  /// json expression that can be used to create a key using
   /// the KMIP interface
   ///
   /// Returns
   /// - 0 if success
   /// - 1 in case of unrecoverable error
-  /// - n if the return buffer is too small and should be of size n
-  /// (including the NULL byte)
+  /// - n if the return buffer is too small and should be of size n (including
+  /// the NULL byte)
   ///
   /// `json_expr_len` contains the length of the JSON string on return
   /// (including the terminating NULL byte)
