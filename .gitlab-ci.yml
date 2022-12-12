@@ -8,13 +8,21 @@ stages:
   - test
   - pack
 
-test:
+.test:
   stage: test
   script:
     - flutter pub get
     - flutter analyze .
     - flutter test
     - dart benchmark/cloudproof_benchmark.dart
+
+test_linux:
+  extends: .test
+
+test_mac:
+  extends: .test
+  tags:
+    - mac
 
 pack:
   stage: pack
