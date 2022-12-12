@@ -2,61 +2,88 @@
 
 All notable changes to this project will be documented in this file.
 
-
 ---
+
 ## [3.0.0] - 2022-11-30
+
 ### Added
+
 - add FFI call for cover_crypt encryption
 - test vectors verification on cover_crypt
+
 ### Changed
-- update to cover_crypt 7.1.1 and findex 8.0
+
+- update to cover_crypt 8.0 and findex 0.11
 - decrypt with authentication data
+
 ### Fixed
+
 ### Removed
 
-
 ---
+
 ## [2.0.0] - 2022-11-17
+
 ### Added
+
 ### Changed
+
 - update to cover_crypt 7.1.0 and findex 0.10.0
 
 ### Fixed
+
 ### Removed
 
 ---
+
 ## [1.0.1] - 2022-10-26
+
 ### Added
+
 ### Changed
+
 ### Fixed
+
 - `count` function of SQLite test
+
 ### Removed
 
 ---
+
 ## [1.0.0] - 2022-10-12
+
 ### Added
+
 ### Changed
+
 - Create first major semver version
+
 ### Fixed
+
 ### Removed
 
 ---
-## [0.1.0] - 2022-10-10
-### Added
-### Changed
-- Update Android libs, iOS, MacOS and Windows
-### Fixed
-### Removed
 
+## [0.1.0] - 2022-10-10
+
+### Added
+
+### Changed
+
+- Update Android libs, iOS, MacOS and Windows
+
+### Fixed
+
+### Removed
 
 ## [0.0.1] - 2022-10-03
 
 ### CoverCrypt
 
-* Decryption with `CoverCryptDecryption`
-* Decryption with `CoverCryptDecryptionWithCache`
+- Decryption with `CoverCryptDecryption`
+- Decryption with `CoverCryptDecryptionWithCache`
 
 ### Findex
 
-* Search
-* Upsert
+- Search
+- Upsert

@@ -1,13 +1,17 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:typed_data';
 
-class Word {
+import '../utils/leb128.dart';
+import '../utils/ser_de.dart';
+
+class Keyword {
   Uint8List bytes;
 
-  Word(this.bytes);
+  Keyword(this.bytes);
 
-  factory Word.fromString(String value) {
-    return Word(Uint8List.fromList(utf8.encode(value)));
+  factory Keyword.fromString(String value) {
+    return Keyword(Uint8List.fromList(utf8.encode(value)));
   }
 
   String toBase64() {
@@ -28,6 +32,7 @@ class IndexedValue {
   Uint8List bytes;
 
   IndexedValue(this.bytes) {
+    log("IndexedValue: this.bytes: $bytes");
     if (bytes.first != lPrefix && bytes.first != wPrefix) {
       throw Exception("`IndexedValue` must be prefixed by 'l' or 'w' in byte");
     }
@@ -38,7 +43,7 @@ class IndexedValue {
         Uint8List.fromList(Uint8List.fromList([lPrefix]) + location.bytes));
   }
 
-  factory IndexedValue.fromWord(Word word) {
+  factory IndexedValue.fromWord(Keyword word) {
     return IndexedValue(
         Uint8List.fromList(Uint8List.fromList([wPrefix]) + word.bytes));
   }
@@ -51,9 +56,9 @@ class IndexedValue {
     throw Exception("`IndexedValue` is not a `Location`");
   }
 
-  Word get word {
+  Keyword get word {
     if (bytes.first == wPrefix) {
-      return Word(bytes.sublist(1));
+      return Keyword(bytes.sublist(1));
     }
 
     throw Exception("`IndexedValue` is not a `Word`");
@@ -61,5 +66,30 @@ class IndexedValue {
 
   String toBase64() {
     return base64Encode(bytes);
+  }
+
+  static List<IndexedValue> deserialize(Uint8List bytes) {
+    log("deserializeList: start: bytes: $bytes");
+    List<IndexedValue> indexedValues = [];
+
+    Iterator<int> iterator = bytes.iterator;
+    final length = Leb128.decodeUnsigned(iterator);
+    if (length == 0) {
+      return [];
+    }
+
+    for (int idx = 0; idx < length; idx++) {
+      // Get fixed-size UID
+      final indexedValue =
+          SerDe.copyFromIterator(iterator, Leb128.decodeUnsigned(iterator));
+      final iv = IndexedValue(indexedValue);
+      if (!indexedValues.contains(iv)) {
+        indexedValues.add(iv);
+      }
+      log("deserialize: add element: $indexedValue");
+    }
+    log("deserialize: $indexedValues");
+
+    return indexedValues;
   }
 }
