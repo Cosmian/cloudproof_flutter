@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- update to cover_crypt 8.0 and findex 0.11
+- update to cover_crypt 8.0.0 and findex 0.12.0
 - decrypt with authentication data
 
 ### Fixed
