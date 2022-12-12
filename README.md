@@ -45,15 +45,11 @@ To search, you need:
 3. implement `fetchEntries` and `fetchChains`
 
 ```dart
-  static Future<Map<Uint8List, Uint8List>> fetchEntries(
-    List<Uint8List> uids,
-  ) async {
+  static Future<List<IndexRow>> fetchEntries(Uids uids) async {
     // Implement me!
   }
 
-  static Future<Map<Uint8List, Uint8List>> fetchChains(
-    List<Uint8List> uids,
-  ) async {
+  static Future<List<IndexRow>> fetchChains(Uids uids) async {
     // Implement me!
   }
 
@@ -64,7 +60,7 @@ To search, you need:
   static Future<List<IndexedValue>> search(
     Uint8List keyK,
     Uint8List label,
-    List<Word> words,
+    List<Keyword> words,
   ) async {
     return await Findex.search(
       keyK,
@@ -82,34 +78,44 @@ To search, you need:
   }
 
   static int fetchEntriesCallback(
-    Pointer<Uint8> outputPointer,
-    Pointer<Uint32> outputLength,
-    Pointer<Uint8> entriesUidsListPointer,
-    int entriesUidsListLength,
+    Pointer<Char> outputEntryTableLinesPointer,
+    Pointer<UnsignedInt> outputEntryTableLinesLength,
+    Pointer<UnsignedChar> uidsPointer,
+    int uidsNumber,
   ) {
-    return Findex.fetchWrapper(
-      outputPointer,
-      outputLength,
-      entriesUidsListPointer,
-      entriesUidsListLength,
-      TODO_ReplaceThisByTheNameOfYourClassOrTheRawFunction.fetchEntries,
-    );
+    try {
+      final uids =
+          Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
+      final entryTableLines = SqliteFindex.fetchEntries(uids);
+      IndexRow.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
+          outputEntryTableLinesLength, entryTableLines);
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during fetchEntriesCallback $e $stacktrace");
+      rethrow;
+    }
   }
 
   static int fetchChainsCallback(
-    Pointer<Uint8> outputPointer,
-    Pointer<Uint32> outputLength,
-    Pointer<Uint8> chainsUidsListPointer,
-    int chainsUidsListLength,
+    Pointer<Char> outputChainTableLinesPointer,
+    Pointer<UnsignedInt> outputChainTableLinesLength,
+    Pointer<UnsignedChar> uidsPointer,
+    int uidsNumber,
   ) {
-    return Findex.fetchWrapper(
-      outputPointer,
-      outputLength,
-      chainsUidsListPointer,
-      chainsUidsListLength,
-      TODO_ReplaceThisByTheNameOfYourClassOrTheRawFunction.fetchChains,
-    );
+    try {
+      final uids =
+          Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
+      final entryTableLines = SqliteFindex.fetchChains(uids);
+      IndexRow.serialize(outputChainTableLinesPointer.cast<UnsignedChar>(),
+          outputChainTableLinesLength, entryTableLines);
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during fetchChainsCallback $e $stacktrace");
+      rethrow;
+    }
   }
+
+
 ```
 
 To upsert, you need:
@@ -119,11 +125,11 @@ To upsert, you need:
 3. implement `fetchEntries`, `upsertEntries` and `upsertChains`
 
 ```dart
-  static Future<void> upsertEntries(Map<Uint8List, Uint8List> entries) async {
+  static Future<List<IndexRow>> upsertEntries(List<UpsertData> entries) async {
     // Implement me!
   }
 
-  static Future<void> upsertChains(Map<Uint8List, Uint8List> chains) async {
+  static Future<List<IndexRow>> upsertChains(List<UpsertData> entries) async {
     // Implement me!
   }
 
@@ -155,41 +161,40 @@ To upsert, you need:
     );
   }
 
-  static int fetchEntriesCallback(
-    Pointer<Uint8> outputPointer,
-    Pointer<Uint32> outputLength,
-    Pointer<Uint8> entriesUidsListPointer,
-    int entriesUidsListLength,
-  ) {
-    return Findex.fetchWrapper(
-      outputPointer,
-      outputLength,
-      entriesUidsListPointer,
-      entriesUidsListLength,
-      TODO_ReplaceThisByTheNameOfYourClassOrTheRawFunction.fetchEntries,
-    );
-  }
-
-  static int upsertEntriesCallback(
-    Pointer<Uint8> entriesListPointer,
+  static void upsertEntriesCallback(
+    Pointer<UnsignedChar> entriesListPointer,
     int entriesListLength,
+    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
+    Pointer<UnsignedInt> outputRejectedEntriesListLength,
   ) {
-    return Findex.upsertWrapper(
-      entriesListPointer,
-      entriesListLength,
-      TODO_ReplaceThisByTheNameOfYourClassOrTheRawFunction.upsertEntries,
-    );
+    try {
+      // Deserialize uids and values
+      final uidsAndValues = UpsertData.deserialize(
+          entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
+
+      final rejectedEntries = SqliteFindex.upsertEntries(uidsAndValues);
+      IndexRow.serialize(outputRejectedEntriesListPointer,
+          outputRejectedEntriesListLength, rejectedEntries);
+    } catch (e, stacktrace) {
+      log("Exception during upsertEntriesCallback $e $stacktrace");
+      rethrow;
+    }
   }
 
-  static int upsertChainsCallback(
-    Pointer<Uint8> chainsListPointer,
+  static void upsertChainsCallback(
+    Pointer<UnsignedChar> chainsListPointer,
     int chainsListLength,
   ) {
-    return Findex.upsertWrapper(
-      chainsListPointer,
-      chainsListLength,
-      TODO_ReplaceThisByTheNameOfYourClassOrTheRawFunction.upsertChains,
-    );
+    try {
+      final uidsAndValues = IndexRow.deserialize(
+          chainsListPointer.cast<Uint8>().asTypedList(chainsListLength));
+      log("upsertWrapperWithoutIsolate: uidsAndValues: $uidsAndValues");
+
+      SqliteFindex.upsertChains(uidsAndValues);
+    } catch (e, stacktrace) {
+      log("Exception during upsertChainsCallback $e $stacktrace");
+      rethrow;
+    }
   }
 ```
 

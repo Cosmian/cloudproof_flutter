@@ -43,6 +43,19 @@ class Findex {
     return library;
   }
 
+  //
+  // Callbacks implementations
+  //
+  static bool progressCallback(
+    Pointer<Uint8> uidsListPointer,
+    int uidsListLength,
+  ) {
+    return true;
+  }
+
+  //
+  // FFI functions
+  //
   static Future<void> upsert(
     FindexMasterKey masterKey,
     Uint8List label,
@@ -145,13 +158,6 @@ class Findex {
       calloc.free(kPointer);
       calloc.free(labelPointer);
     }
-  }
-
-  static bool progressCallback(
-    Pointer<Uint8> uidsListPointer,
-    int uidsListLength,
-  ) {
-    return true;
   }
 
   static String getLastError() {
