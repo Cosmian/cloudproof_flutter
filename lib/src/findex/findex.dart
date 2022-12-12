@@ -44,7 +44,7 @@ class Findex {
   }
 
   static Future<void> upsert(
-    FindexMasterKeys masterKeys,
+    FindexMasterKey masterKey,
     Uint8List label,
     Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
     FetchEntryTableCallback fetchEntries,
@@ -56,7 +56,7 @@ class Findex {
     //
     // Master key
     final Pointer<Int> masterKeyPointer =
-        masterKeys.k.allocateInt8Pointer().cast<Int>();
+        masterKey.k.allocateInt8Pointer().cast<Int>();
 
     // Label
     final labelPointer = label.allocateUint8Pointer();
@@ -70,7 +70,7 @@ class Findex {
     try {
       final result = library.h_upsert(
         masterKeyPointer,
-        masterKeys.k.length,
+        masterKey.k.length,
         labelPointer.cast<Int>(),
         label.length,
         indexedValuesAndKeywordsPointer.cast<Char>(),

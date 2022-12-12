@@ -47,7 +47,7 @@ void main() {
     test('search/upsert', () async {
       await initDb();
 
-      final masterKeys = FindexMasterKeys.fromJson(jsonDecode(
+      final masterKey = FindexMasterKey.fromJson(jsonDecode(
           await File('test/resources/findex/master_keys.json').readAsString()));
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
@@ -55,14 +55,14 @@ void main() {
       expect(SqliteFindex.count('entry_table'), equals(0));
       expect(SqliteFindex.count('chain_table'), equals(0));
 
-      await SqliteFindex.indexAll(masterKeys, label);
+      await SqliteFindex.indexAll(masterKey, label);
 
       expect(SqliteFindex.count('entry_table'), equals(583));
       expect(SqliteFindex.count('chain_table'), equals(618));
 
       log("\n\n\n### Start Searching");
       final indexedValues = await SqliteFindex.search(
-          masterKeys.k, label, [Keyword.fromString("France")]);
+          masterKey.k, label, [Keyword.fromString("France")]);
 
       final usersIds = indexedValues.map((indexedValue) {
         return indexedValue.location.bytes[0];
@@ -142,7 +142,7 @@ class SqliteFindex {
   }
 
   static Future<void> indexAll(
-      FindexMasterKeys masterKeys, Uint8List label) async {
+      FindexMasterKey masterKey, Uint8List label) async {
     final users = allUsers();
 
     final indexedValuesAndWords = {
@@ -150,7 +150,7 @@ class SqliteFindex {
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 
-    await upsert(masterKeys, label, indexedValuesAndWords);
+    await upsert(masterKey, label, indexedValuesAndWords);
   }
 
   static List<User> allUsers() {
@@ -284,12 +284,12 @@ class SqliteFindex {
   }
 
   static Future<void> upsert(
-    FindexMasterKeys masterKeys,
+    FindexMasterKey masterKey,
     Uint8List label,
     Map<IndexedValue, List<Keyword>> indexedValuesAndWords,
   ) async {
     await Findex.upsert(
-      masterKeys,
+      masterKey,
       label,
       indexedValuesAndWords,
       Pointer.fromFunction(

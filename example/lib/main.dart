@@ -43,7 +43,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool loading = true;
 
-  late FindexMasterKeys masterKeys;
+  late FindexMasterKey masterKey;
   late Uint8List userSecretKey;
   late Uint8List label;
 
@@ -79,7 +79,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       final Uint8List sseKeys = Uint8List.fromList(
           await FindexRedisImplementation.get(
               db, RedisTable.others, Uint8List.fromList([0])));
-      masterKeys = FindexMasterKeys.fromJson(jsonDecode(utf8.decode(sseKeys)));
+      masterKey = FindexMasterKey.fromJson(jsonDecode(utf8.decode(sseKeys)));
 
       userSecretKey = Uint8List.fromList(await FindexRedisImplementation.get(
           db, RedisTable.others, Uint8List.fromList([3])));
@@ -108,7 +108,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       try {
         final stopwatch = Stopwatch()..start();
         final indexedValues = await FindexRedisImplementation.search(
-          masterKeys.k,
+          masterKey.k,
           label,
           [Keyword.fromString(query)],
         );

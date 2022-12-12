@@ -52,8 +52,8 @@ void main() {
       final Uint8List sseKeys = Uint8List.fromList(
           await FindexRedisImplementation.get(
               db, RedisTable.others, Uint8List.fromList([0])));
-      final masterKeys =
-          FindexMasterKeys.fromJson(jsonDecode(utf8.decode(sseKeys)));
+      final masterKey =
+          FindexMasterKey.fromJson(jsonDecode(utf8.decode(sseKeys)));
 
       final Uint8List userDecryptionKey = Uint8List.fromList(
           await FindexRedisImplementation.get(
@@ -62,7 +62,7 @@ void main() {
       final label = Uint8List.fromList(utf8.encode("NewLabel"));
 
       final indexedValues = await FindexRedisImplementation.search(
-          masterKeys.k, label, [Keyword.fromString("martinos")]);
+          masterKey.k, label, [Keyword.fromString("martinos")]);
 
       final usersIds = indexedValues.map((indexedValue) {
         return indexedValue.location.bytes;
@@ -89,7 +89,7 @@ void main() {
     }
 
     test('search/upsert', () async {
-      final masterKeys = FindexMasterKeys.fromJson(jsonDecode(
+      final masterKey = FindexMasterKey.fromJson(jsonDecode(
           await File('test/resources/findex/master_keys.json').readAsString()));
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
@@ -103,7 +103,7 @@ void main() {
       expect(
           await FindexRedisImplementation.count(RedisTable.chains), equals(0));
 
-      await FindexRedisImplementation.indexAll(masterKeys, label);
+      await FindexRedisImplementation.indexAll(masterKey, label);
 
       expect(await FindexRedisImplementation.count(RedisTable.entries),
           equals(583));
@@ -111,7 +111,7 @@ void main() {
           equals(618));
 
       final indexedValues = await FindexRedisImplementation.search(
-          masterKeys.k, label, [Keyword.fromString("France")]);
+          masterKey.k, label, [Keyword.fromString("France")]);
 
       final usersIds = indexedValues.map((indexedValue) {
         return indexedValue.location.bytes[0];
