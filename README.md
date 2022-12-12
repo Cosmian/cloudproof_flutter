@@ -321,3 +321,4 @@ This table shows the minimum versions correspondences between the various compon
 | 0.1.0       | 6.0.5          | 0.7.2  |
 | 1.0.0       | 6.0.5          | 0.7.2  |
 | 2.0.0       | 7.1.0          | 0.10.0 |
+| 3.0.0       | 8.0.0          | 0.12.0 |
