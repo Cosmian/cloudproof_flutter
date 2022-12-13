@@ -519,4 +519,4 @@ int h_compact(int num_reindexing_before_full_set,
  * # Safety
  * - `error_msg`: must be pre-allocated with a sufficient size
  */
-int get_last_error(char *error_msg_ptr, int *error_len);
+// int get_last_error(char *error_msg_ptr, int *error_len);

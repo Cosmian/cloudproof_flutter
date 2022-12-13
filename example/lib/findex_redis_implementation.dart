@@ -6,14 +6,18 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
+import 'package:cloudproof_demo/users.dart';
 import 'package:ffi/ffi.dart';
 import 'package:redis/redis.dart';
 import 'package:tuple/tuple.dart';
 
-import 'user.dart';
+import 'cover_crypt_helper.dart';
+
+const redisHost = "192.168.1.95";
+const redisPort = 6379;
 
 class FindexRedisImplementation {
-  static Future<void> init() async {
+  static Future<void> init(CoverCryptHelper coverCryptHelper) async {
     final db = await FindexRedisImplementation.db;
 
     for (final userKey
@@ -31,21 +35,23 @@ class FindexRedisImplementation {
       await FindexRedisImplementation.del(db, chainKey);
     }
 
-    final users = jsonDecode(
-        await File('test/resources/findex/users.json').readAsString());
+    for (final user in Users.getUsers()) {
+      final userBytes =
+          Uint8List.fromList(utf8.encode(jsonEncode(user.toString())));
+      final ciphertext = CoverCrypt.encrypt(
+          coverCryptHelper.policy,
+          coverCryptHelper.masterKeys.publicKey,
+          "Department::MKG && Security Level::Top Secret",
+          userBytes);
 
-    for (final user in users) {
       await FindexRedisImplementation.set(
-          db,
-          RedisTable.users,
-          Uint8List.fromList([0, 0, 0, user['id']]),
-          Uint8List.fromList(utf8.encode(jsonEncode(user))));
+          db, RedisTable.users, Uint8List.fromList([user.id]), ciphertext);
     }
   }
 
   static Future<Command> get db async {
     final conn = RedisConnection();
-    return await conn.connect('localhost', 6379);
+    return await conn.connect(redisHost, redisPort);
   }
 
   static Future<dynamic> execute(Command db, List<dynamic> params) async {
@@ -115,10 +121,8 @@ class FindexRedisImplementation {
 
   static Future<void> indexAll(
       FindexMasterKey masterKey, Uint8List label) async {
-    final users = await allUsers();
-
     final indexedValuesAndWords = {
-      for (final user in users)
+      for (final user in Users.getUsers())
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 

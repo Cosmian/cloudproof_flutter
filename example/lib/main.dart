@@ -6,10 +6,8 @@ import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'cover_crypt_helper.dart';
 import 'findex_redis_implementation.dart';
-
-const redisHost = "192.168.1.95";
-const redisPort = 6379;
 
 void main() {
   runApp(const MyApp());
@@ -44,8 +42,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool loading = true;
 
   late FindexMasterKey masterKey;
-  late Uint8List userSecretKey;
   late Uint8List label;
+  late CoverCryptHelper coverCryptHelper;
 
   String? error;
 
@@ -69,29 +67,24 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         setState(() {});
       });
     controller.repeat(reverse: true);
-    fetchDemoDataFromRedis();
+    coverCryptHelper = CoverCryptHelper();
+    indexDataForDemo();
     super.initState();
   }
 
-  void fetchDemoDataFromRedis() async {
+  void indexDataForDemo() async {
     try {
-      final db = await FindexRedisImplementation.db;
-      final Uint8List sseKeys = Uint8List.fromList(
-          await FindexRedisImplementation.get(
-              db, RedisTable.others, Uint8List.fromList([0])));
-      masterKey = FindexMasterKey.fromJson(jsonDecode(utf8.decode(sseKeys)));
-
-      userSecretKey = Uint8List.fromList(await FindexRedisImplementation.get(
-          db, RedisTable.others, Uint8List.fromList([3])));
-
       label = Uint8List.fromList(utf8.encode("NewLabel"));
+      masterKey = FindexMasterKey(Uint8List(32));
+      await FindexRedisImplementation.init(coverCryptHelper);
+      await FindexRedisImplementation.indexAll(masterKey, label);
 
       setState(() => loading = false);
 
       log("Initialized");
     } catch (e) {
-      setState(() => error = "Problem during Redis initialization $e");
-      log("Problem during Redis initialization $e");
+      setState(() => error = "Problem during indexation $e");
+      log("Problem during indexation $e");
     }
   }
 
@@ -139,7 +132,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         final plaintextUsersBytes = encryptedUsersFromRedis.map((userBytes) {
           // Try to decrypt user information.
           try {
-            return CoverCrypt.decrypt(userSecretKey, userBytes);
+            return CoverCrypt.decrypt(
+                coverCryptHelper.userSecretKey, userBytes);
           } catch (e) {
             return null;
           }
@@ -154,6 +148,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           results = plaintextUsers;
           searchDuration = newSearchDuration;
           decryptDuration = newDecryptDuration;
+          error = "";
         });
       } catch (e, stacktrace) {
         setState(() => error = "Exception during search $e $stacktrace");

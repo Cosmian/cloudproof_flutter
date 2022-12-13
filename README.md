@@ -210,7 +210,7 @@ flutter pub get cloudproof
 
 ## Example
 
-To run the example, you need a Redis server configured. Then, update `redisHost` and `redisPort` at the top of the `example/lib/main.dart` file.
+To run the example, you need a Redis server configured. Then, update `redisHost` and `redisPort` at the top of the `example/lib/findex_redis_implementation.dart` file.
 
 ## Tests
 
