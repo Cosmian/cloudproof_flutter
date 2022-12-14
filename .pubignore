@@ -1,0 +1,4 @@
+build
+example
+resources/*.dylib
+resources/*.dll

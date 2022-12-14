@@ -15,9 +15,8 @@ const numIteration = 10000;
 void main() {
   {
     Stopwatch stopwatch = Stopwatch()..start();
-    final coverCryptDecryption = CoverCryptDecryption(key);
     for (var i = 0; i < numIteration; i++) {
-      coverCryptDecryption.decrypt(ciphertext);
+      CoverCrypt.decrypt(key, ciphertext);
     }
     print(
         'CoverCryptDecryption() executed in ${stopwatch.elapsed ~/ numIteration} (mean on $numIteration iterations)');

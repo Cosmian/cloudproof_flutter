@@ -1,10 +1,9 @@
 import 'dart:convert';
 
 import 'package:cloudproof/cloudproof.dart';
+import 'package:cloudproof_demo/main.dart' as app;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-
-import 'package:cloudproof_demo/main.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -20,12 +19,12 @@ void main() {
       final key = base64Decode(
           "7F4indGmKCsQbfLHHiyH0n19acuqI8NU33S56oAREgQ7+yX/bsaCQQMeKkPoftF2pAEvH7bVDAPXQMSsss9vCQECAQR+WA+2Z7Y+BPGV0norPeSMFTPASyUXH6pn6VDlEfFkDw==");
 
-      final cleartext = base64Decode(
+      final plaintext = base64Decode(
           "eyJTbiI6Il81TjlsalFAb1MiLCJnaXZlbk5hbWUiOiJNYXJ0aW5vcyIsImRlcGFydG1lbnROdW1iZXIiOiIzNzciLCJ0aXRsZSI6Il80XFxDV1Y5UXRoIiwiY2FZZWxsb3dQYWdlc0NhdGVnb3J5IjoiMTo0MzVTUDJWTSIsInVpZCI6IkZMMk5NTFdyd14iLCJlbXBsb3llZU51bWJlciI6IkdJdGtaYmFdcjkiLCJNYWlsIjoiWWxjcF5ldWdaVCIsIlRlbGVwaG9uZU51bWJlciI6IlVGdnI+PnpTMFQiLCJNb2JpbGUiOiI7ZV9qVVlYWkw/IiwiZmFjc2ltaWxlVGVsZXBob25lTnVtYmVyIjoiMFFCMG5PakM1SSIsImNhUGVyc29uTG9jYWxpc2F0aW9uIjoiYm01bjhMdGRjWiIsIkNuIjoiallUTHJPbHMxMSIsImNhVW5pdGRuIjoiT0l3VUlhYEloMiIsImRlcGFydG1lbnQiOiJwXz5OdFpkXFx3OSIsImNvIjoiRnJhbmNlIn0=");
 
-      final result = CoverCryptDecryption(key).decrypt(encrypted);
+      final result = CoverCrypt.decrypt(key, encrypted);
 
-      expect(result, equals(cleartext));
+      expect(result, equals(plaintext));
     });
   });
 }
