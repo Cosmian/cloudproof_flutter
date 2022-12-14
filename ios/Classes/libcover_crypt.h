@@ -92,18 +92,24 @@ int h_update_master_keys(char *updated_msk_ptr,
 /**
  * Refresh the user key according to the given master key and access policy.
  *
- * The user key will be granted access to the current partitions, as determined by its access policy.
- * If preserve_old_partitions is set, the user access to rotated partitions will be preserved
+ * The user key will be granted access to the current partitions, as determined
+ * by its access policy. If `preserve_old_partitions` is set, the user access to
+ * rotated partitions will be preserved
  *
- * - `updated_usk_ptr`                 : Output buffer containing the updated user secret key
- * - `updated_usk_len`                 : Size of the updated user secret key output buffer
+ * - `updated_usk_ptr`                 : Output buffer containing the updated
+ *   user secret key
+ * - `updated_usk_len`                 : Size of the updated user secret key
+ *   output buffer
  * - `msk_ptr`                         : master secret key
  * - `msk_len`                         : master secret key length
  * - `current_usk_ptr`                 : current user secret key
  * - `current_usk_len`                 : current user secret key length
- * - `access_policy_ptr`               : Access policy of the user secret key (JSON)
- * - `policy_ptr`                      : Policy to use to update the master keys (JSON)
- * - `preserve_old_partitions_access`  : set to 1 to preserve the user access to the rotated partitions
+ * - `access_policy_ptr`               : Access policy of the user secret key
+ *   (JSON)
+ * - `policy_ptr`                      : Policy to use to update the master
+ *   keys (JSON)
+ * - `preserve_old_partitions_access`  : set to 1 to preserve the user access
+ *   to the rotated partitions
  * # Safety
  */
 int h_refresh_user_secret_key(char *updated_usk_ptr,
@@ -122,7 +128,8 @@ int h_refresh_user_secret_key(char *updated_usk_ptr,
  *
  * Note: the return string is NULL terminated
  *
- * - `json_access_policy_ptr`: Output buffer containing a null terminated string with the JSON access policy
+ * - `json_access_policy_ptr`: Output buffer containing a null terminated
+ *   string with the JSON access policy
  * - `json_access_policy_len`: Size of the output buffer
  * - `boolean_access_policy_ptr`: boolean access policy string
  * # Safety
@@ -137,9 +144,9 @@ int h_parse_boolean_access_policy(char *json_access_policy_ptr,
  * the public key on the Rust side on every encryption which is costly.
  *
  * This method is to be used in conjunction with
- *     h_aes_encrypt_header_using_cache
+ *     `h_aes_encrypt_header_using_cache`
  *
- * WARN: h_aes_destroy_encrypt_cache() should be called
+ * WARN: `h_aes_destroy_encrypt_cache`() should be called
  * to reclaim the memory of the cache when done
  * # Safety
  */
@@ -150,7 +157,7 @@ int32_t h_aes_create_encryption_cache(int *cache_handle,
 
 /**
  * The function should be called to reclaim memory
- * of the cache created using h_aes_create_encrypt_cache()
+ * of the cache created using `h_aes_create_encrypt_cache`()
  * # Safety
  */
 int h_aes_destroy_encryption_cache(int cache_handle);
@@ -197,9 +204,9 @@ int h_aes_encrypt_header(char *symmetric_key_ptr,
  * the user key on the Rust side on every decryption which is costly.
  *
  * This method is to be used in conjunction with
- *     h_aes_decrypt_header_using_cache()
+ *     `h_aes_decrypt_header_using_cache`()
  *
- * WARN: h_aes_destroy_decryption_cache() should be called
+ * WARN: `h_aes_destroy_decryption_cache`() should be called
  * to reclaim the memory of the cache when done
  * # Safety
  */
@@ -207,7 +214,7 @@ int32_t h_aes_create_decryption_cache(int *cache_handle, const char *usk_ptr, in
 
 /**
  * The function should be called to reclaim memory
- * of the cache created using h_aes_create_decryption_cache()
+ * of the cache created using `h_aes_create_decryption_cache`()
  * # Safety
  */
 int h_aes_destroy_decryption_cache(int cache_handle);
@@ -275,8 +282,8 @@ int h_aes_encrypt_block(char *ciphertext_ptr,
  *
  * # Safety
  */
-int h_aes_decrypt_block(char *cleartext_ptr,
-                        int *cleartext_len,
+int h_aes_decrypt_block(char *plaintext_ptr,
+                        int *plaintext_len,
                         const char *symmetric_key_ptr,
                         int symmetric_key_len,
                         const char *authentication_data_ptr,
@@ -316,3 +323,27 @@ int h_aes_decrypt(char *plaintext_ptr,
                   int authentication_data_len,
                   const char *usk_ptr,
                   int usk_len);
+
+/**
+ * Convert a boolean access policy expression into a
+ * json expression that can be used to create a key using
+ * the KMIP interface
+ *
+ * Returns
+ *  - 0 if success
+ *  - 1 in case of unrecoverable error
+ *  - n if the return buffer is too small and should be of size n (including
+ *    the NULL byte)
+ *
+ * `json_expr_len` contains the length of the JSON string on return
+ *  (including the terminating NULL byte)
+ *
+ * # Safety
+ */
+int h_access_policy_expression_to_json(char *json_expr_ptr,
+                                       int *json_expr_len,
+                                       const char *boolean_expression_ptr);
+
+extern void log(const str *s);
+
+extern void alert(const str *s);
