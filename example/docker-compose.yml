@@ -1,8 +1,9 @@
+---
 # docker-compose.yml
 
-version: "3"
+version: '3'
 services:
   redis:
     image: redis:latest
     ports:
-      - "6379:6379"
+      - 6379:6379
