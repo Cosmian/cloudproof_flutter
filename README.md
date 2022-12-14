@@ -249,6 +249,12 @@ dart benchmark/cloudproof_benchmark.dart
 
 ## FFI libs notes
 
+This project has been first created via:
+
+```bash
+flutter create --org com.example --template=plugin --platforms=android,ios -a kotlin cloudproof
+```
+
 ### Generating `.h`
 
 The `lib/src/*/generated_bindings.dart` are generated with `ffigen` with the config file `./ffigen_*.yml`:

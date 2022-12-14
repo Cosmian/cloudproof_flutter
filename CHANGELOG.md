@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [3.0.1] - 2022-12-14
+
+### Changed
+
+- fix package installation
+
+---
+
 ## [3.0.0] - 2022-12-12
 
 ### Added
