@@ -67,23 +67,5 @@ class IndexRow {
     final length = serializeToList(output, values);
     outputLength.value = length;
     return length;
-
-    // log("serialize: otuput: $output");
-    // try {
-    //   final numItems = Leb128.encodeUnsigned(values.length);
-    //   output.setAll(0, numItems);
-
-    //   var idx = numItems.length;
-    //   for (var entry in values) {
-    //     idx = SerDe.write(output, idx, entry.uid);
-    //     idx = SerDe.writeVector(output, idx, entry.value);
-    //   }
-
-    //   outputLength.value = idx;
-    //   return idx;
-    // } catch (e, stacktrace) {
-    //   log("Exception during IndexRow serialize $e $stacktrace");
-    //   return 0;
-    // }
   }
 }
