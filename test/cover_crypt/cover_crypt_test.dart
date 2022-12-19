@@ -4,9 +4,10 @@
 // Dart imports:
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 // Package imports:
-import 'package:cloudproof/src/cover_crypt/policy.dart';
+import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'non_regression_test_vectors.dart';
@@ -30,6 +31,70 @@ void main() {
 
       // Write the file
       return file.writeAsString(jsonEncode(json));
+    });
+
+    test('publicDoc', () async {
+      final policy = Policy.withMaxAttributeCreations(100)
+          .addAxis("Security Level",
+              ["Protected", "Confidential", "Top Secret"], true)
+          .addAxis("Department", ["FIN", "HR", "MKG"], false);
+
+      CoverCryptMasterKeys masterKeys = CoverCrypt.generateMasterKeys(policy);
+
+      //
+      // Generating ciphertexts
+      //
+      final protectedMkgCiphertext = CoverCrypt.encrypt(
+          policy,
+          masterKeys.publicKey,
+          "Department::MKG && Security Level::Protected",
+          Uint8List.fromList(utf8.encode("ProtectedMkgPlaintext")));
+
+      final topSecretMkgCiphertext = CoverCrypt.encrypt(
+          policy,
+          masterKeys.publicKey,
+          "Department::MKG && Security Level::Top Secret",
+          Uint8List.fromList(utf8.encode("TopSecretMkgPlaintext")));
+
+      final protectedFinCiphertext = CoverCrypt.encrypt(
+          policy,
+          masterKeys.publicKey,
+          "Department::FIN && Security Level::Protected",
+          Uint8List.fromList(utf8.encode("ProtectedFinPlaintext")));
+
+      //
+      // Generating user secret keys
+      //
+      final confidentialMkgKey = CoverCrypt.generateUserSecretKey(
+        "Security Level::Confidential && Department::MKG",
+        policy,
+        masterKeys.masterSecretKey,
+      );
+      final topSecretMkgFinKey = CoverCrypt.generateUserSecretKey(
+        "(Department::MKG || Department:: FIN) && Security Level::Top Secret",
+        policy,
+        masterKeys.masterSecretKey,
+      );
+
+      //
+      // Decrypting ciphertexts
+      //
+      // medium_secret_mkg_fin_key
+      try {
+        CoverCrypt.decrypt(confidentialMkgKey, protectedFinCiphertext);
+      } catch (e) {
+        // failing expected
+      }
+      CoverCrypt.decrypt(confidentialMkgKey, protectedMkgCiphertext);
+      try {
+        CoverCrypt.decrypt(confidentialMkgKey, topSecretMkgCiphertext);
+      } catch (e) {
+        // failing expected
+      }
+
+      CoverCrypt.decrypt(topSecretMkgFinKey, protectedFinCiphertext);
+      CoverCrypt.decrypt(topSecretMkgFinKey, protectedMkgCiphertext);
+      CoverCrypt.decrypt(topSecretMkgFinKey, topSecretMkgCiphertext);
     });
 
     test('policy', () {
