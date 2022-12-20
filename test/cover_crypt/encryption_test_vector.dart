@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
-import 'package:cloudproof/src/cover_crypt/cover_crypt.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class EncryptionTestVector {
@@ -29,7 +28,7 @@ class EncryptionTestVector {
   }
 
   static EncryptionTestVector generate(
-      String policy,
+      Policy policy,
       Uint8List publicKey,
       String encryptionPolicy,
       String plaintext,

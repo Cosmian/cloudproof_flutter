@@ -10,7 +10,7 @@ class UserSecretKeyTestVector {
   UserSecretKeyTestVector(this.accessPolicy, this.key);
 
   static UserSecretKeyTestVector generate(
-      Uint8List masterSecretKey, String policy, String accessPolicyArg) {
+      Uint8List masterSecretKey, Policy policy, String accessPolicyArg) {
     Uint8List userPrivateKey = CoverCrypt.generateUserSecretKey(
         accessPolicyArg, policy, masterSecretKey);
     return UserSecretKeyTestVector(accessPolicyArg, userPrivateKey);

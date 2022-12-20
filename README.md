@@ -45,11 +45,11 @@ To search, you need:
 3. implement `fetchEntries` and `fetchChains`
 
 ```dart
-  static Future<List<IndexRow>> fetchEntries(Uids uids) async {
+  static Future<List<UidAndValue>> fetchEntries(Uids uids) async {
     // Implement me!
   }
 
-  static Future<List<IndexRow>> fetchChains(Uids uids) async {
+  static Future<List<UidAndValue>> fetchChains(Uids uids) async {
     // Implement me!
   }
 
@@ -87,7 +87,7 @@ To search, you need:
       final uids =
           Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
       final entryTableLines = SqliteFindex.fetchEntries(uids);
-      IndexRow.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
+      UidAndValue.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
           outputEntryTableLinesLength, entryTableLines);
       return 0;
     } catch (e, stacktrace) {
@@ -106,7 +106,7 @@ To search, you need:
       final uids =
           Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
       final entryTableLines = SqliteFindex.fetchChains(uids);
-      IndexRow.serialize(outputChainTableLinesPointer.cast<UnsignedChar>(),
+      UidAndValue.serialize(outputChainTableLinesPointer.cast<UnsignedChar>(),
           outputChainTableLinesLength, entryTableLines);
       return 0;
     } catch (e, stacktrace) {
@@ -125,11 +125,11 @@ To upsert, you need:
 3. implement `fetchEntries`, `upsertEntries` and `upsertChains`
 
 ```dart
-  static Future<List<IndexRow>> upsertEntries(List<UpsertData> entries) async {
+  static Future<List<UidAndValue>> upsertEntries(List<UpsertData> entries) async {
     // Implement me!
   }
 
-  static Future<List<IndexRow>> upsertChains(List<UpsertData> entries) async {
+  static Future<List<UidAndValue>> upsertChains(List<UpsertData> entries) async {
     // Implement me!
   }
 
@@ -173,7 +173,7 @@ To upsert, you need:
           entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
 
       final rejectedEntries = SqliteFindex.upsertEntries(uidsAndValues);
-      IndexRow.serialize(outputRejectedEntriesListPointer,
+      UidAndValue.serialize(outputRejectedEntriesListPointer,
           outputRejectedEntriesListLength, rejectedEntries);
     } catch (e, stacktrace) {
       log("Exception during upsertEntriesCallback $e $stacktrace");
@@ -186,7 +186,7 @@ To upsert, you need:
     int chainsListLength,
   ) {
     try {
-      final uidsAndValues = IndexRow.deserialize(
+      final uidsAndValues = UidAndValue.deserialize(
           chainsListPointer.cast<Uint8>().asTypedList(chainsListLength));
       log("upsertWrapperWithoutIsolate: uidsAndValues: $uidsAndValues");
 
