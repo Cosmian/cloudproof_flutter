@@ -41,48 +41,6 @@ const expectedUsersIdsForFrance = [
 ];
 
 void main() {
-  group('Cloudproof', () {
-    if (!Platform.environment.containsKey("RUN_JAVA_E2E_TESTS")) {
-      return;
-    }
-
-    test('Search and decrypt with preallocate Redis by Java', () async {
-      final db = await FindexRedisImplementation.db;
-
-      final Uint8List sseKeys = Uint8List.fromList(
-          await FindexRedisImplementation.get(
-              db, RedisTable.others, Uint8List.fromList([0])));
-      final masterKey =
-          FindexMasterKey.fromJson(jsonDecode(utf8.decode(sseKeys)));
-
-      final Uint8List userDecryptionKey = Uint8List.fromList(
-          await FindexRedisImplementation.get(
-              db, RedisTable.others, Uint8List.fromList([3])));
-
-      final label = Uint8List.fromList(utf8.encode("NewLabel"));
-
-      final indexedValues = await FindexRedisImplementation.search(
-          masterKey.k, label, [Keyword.fromString("martinos")]);
-
-      final usersIds = indexedValues.map((indexedValue) {
-        return indexedValue.location.bytes;
-      }).toList();
-
-      expect(usersIds.length, equals(1));
-
-      final Uint8List userEncryptedBytes = Uint8List.fromList(
-          await FindexRedisImplementation.get(
-              db, RedisTable.users, usersIds[0]));
-
-      final result = CoverCrypt.decrypt(userDecryptionKey, userEncryptedBytes);
-
-      expect(
-          utf8.decode(result.plaintext),
-          equals(
-              '{"Sn":"_5N9ljQ@oS","givenName":"Martinos","departmentNumber":"377","title":"_4\\\\CWV9Qth","caYellowPagesCategory":"1:435SP2VM","uid":"FL2NMLWrw^","employeeNumber":"GItkZba]r9","Mail":"Ylcp^eugZT","TelephoneNumber":"UFvr>>zS0T","Mobile":";e_jUYXZL?","facsimileTelephoneNumber":"0QB0nOjC5I","caPersonLocalisation":"bm5n8LtdcZ","Cn":"jYTLrOls11","caUnitdn":"OIwUIa`Ih2","department":"p_>NtZd\\\\w9","co":"France"}'));
-    });
-  });
-
   group('Findex Redis', () {
     if (Platform.environment.containsKey("RUN_JAVA_E2E_TESTS")) {
       return;
@@ -110,14 +68,19 @@ void main() {
       expect(await FindexRedisImplementation.count(RedisTable.chains),
           equals(618));
 
-      final indexedValues = await FindexRedisImplementation.search(
+      final searchResults = await FindexRedisImplementation.search(
           masterKey.k, label, [Keyword.fromString("France")]);
 
+      expect(searchResults.length, 1);
+
+      final keyword = searchResults.entries.toList()[0].key;
+      final indexedValues = searchResults.entries.toList()[0].value;
       final usersIds = indexedValues.map((indexedValue) {
         return indexedValue.location.bytes[0];
       }).toList();
       usersIds.sort();
 
+      expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
       expect(usersIds, equals(expectedUsersIdsForFrance));
     });
   });
