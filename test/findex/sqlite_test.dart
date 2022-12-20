@@ -170,7 +170,7 @@ class SqliteFindex {
     return int.parse(resultSet.first.values.first.toString());
   }
 
-  static List<IndexRow> fetchEntries(Uids uids) {
+  static List<UidAndValue> fetchEntries(Uids uids) {
     try {
       var questions = ("?," * uids.uids.length);
       questions = questions.substring(0, questions.length - 1);
@@ -181,11 +181,11 @@ class SqliteFindex {
       final ResultSet resultSet = db.select(
           'SELECT * FROM entry_table WHERE uid IN ($questions)', uids.uids);
 
-      List<IndexRow> entries = [];
+      List<UidAndValue> entries = [];
       log("fetchEntries: entries.length : ${entries.length}");
       for (final Row row in resultSet) {
         log("fetchEntries: row: $row");
-        entries.add(IndexRow(row['uid'], row['value']));
+        entries.add(UidAndValue(row['uid'], row['value']));
       }
 
       return entries;
@@ -195,15 +195,15 @@ class SqliteFindex {
     }
   }
 
-  static List<IndexRow> fetchChains(Uids uids) {
+  static List<UidAndValue> fetchChains(Uids uids) {
     var questions = ("?," * uids.uids.length);
     questions = questions.substring(0, questions.length - 1);
     final ResultSet resultSet = db.select(
         'SELECT * FROM chain_table WHERE uid IN ($questions)', uids.uids);
 
-    List<IndexRow> entries = [];
+    List<UidAndValue> entries = [];
     for (final Row row in resultSet) {
-      entries.add(IndexRow(row['uid'], row['value']));
+      entries.add(UidAndValue(row['uid'], row['value']));
     }
 
     return entries;
@@ -218,9 +218,9 @@ class SqliteFindex {
     ]);
   }
 
-  static List<IndexRow> upsertEntries(List<UpsertData> entries) {
+  static List<UidAndValue> upsertEntries(List<UpsertData> entries) {
     log("upsertEntries: start");
-    List<IndexRow> rejectedEntries = [];
+    List<UidAndValue> rejectedEntries = [];
     for (final entry in entries) {
       List<Uint8List> uids = [entry.uid];
       final resultSet = db.select(
@@ -240,14 +240,14 @@ class SqliteFindex {
         if (actualValue == entry.oldValue) {
           upsertEntry(entry);
         } else {
-          rejectedEntries.add(IndexRow(entry.uid, actualValue));
+          rejectedEntries.add(UidAndValue(entry.uid, actualValue));
         }
       }
     }
     return rejectedEntries;
   }
 
-  static void upsertChains(List<IndexRow> chains) {
+  static void upsertChains(List<UidAndValue> chains) {
     final stmt = db.prepare(
         'INSERT OR REPLACE INTO chain_table (uid, value) VALUES (?, ?)');
     for (final chain in chains) {
@@ -315,7 +315,7 @@ class SqliteFindex {
       final uids =
           Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
       final entryTableLines = SqliteFindex.fetchEntries(uids);
-      IndexRow.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
+      UidAndValue.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
           outputEntryTableLinesLength, entryTableLines);
       return 0;
     } catch (e, stacktrace) {
@@ -334,7 +334,7 @@ class SqliteFindex {
       final uids =
           Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
       final entryTableLines = SqliteFindex.fetchChains(uids);
-      IndexRow.serialize(outputChainTableLinesPointer.cast<UnsignedChar>(),
+      UidAndValue.serialize(outputChainTableLinesPointer.cast<UnsignedChar>(),
           outputChainTableLinesLength, entryTableLines);
       return 0;
     } catch (e, stacktrace) {
@@ -355,7 +355,7 @@ class SqliteFindex {
           entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
 
       final rejectedEntries = SqliteFindex.upsertEntries(uidsAndValues);
-      IndexRow.serialize(outputRejectedEntriesListPointer,
+      UidAndValue.serialize(outputRejectedEntriesListPointer,
           outputRejectedEntriesListLength, rejectedEntries);
     } catch (e, stacktrace) {
       log("Exception during upsertEntriesCallback $e $stacktrace");
@@ -368,7 +368,7 @@ class SqliteFindex {
     int chainsListLength,
   ) {
     try {
-      final uidsAndValues = IndexRow.deserialize(
+      final uidsAndValues = UidAndValue.deserialize(
           chainsListPointer.cast<Uint8>().asTypedList(chainsListLength));
       log("upsertWrapperWithoutIsolate: uidsAndValues: $uidsAndValues");
 

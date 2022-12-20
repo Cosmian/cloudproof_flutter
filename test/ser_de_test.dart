@@ -1,7 +1,7 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:cloudproof/src/findex/index_row.dart';
+import 'package:cloudproof/src/findex/uid_and_value.dart';
 import 'package:cloudproof/src/findex/upsert_data.dart';
 import 'package:cloudproof/src/utils/leb128.dart';
 import 'package:ffi/ffi.dart';
@@ -28,10 +28,10 @@ void main() {
     expect(deserializedUpsertData.newValue, upsertData.newValue);
   });
 
-  test('IndexRow', () {
+  test('UidAndValue', () {
     final bytes = Uint8List.fromList([9, 9, 9, 9]);
-    IndexRow indexTable = IndexRow(Uint8List(32), bytes);
-    List<IndexRow> indexTableList = [];
+    UidAndValue indexTable = UidAndValue(Uint8List(32), bytes);
+    List<UidAndValue> indexTableList = [];
     indexTableList.add(indexTable);
 
     // final output = Uint8List(43);
@@ -40,7 +40,7 @@ void main() {
     final outputLength = calloc<UnsignedInt>(1);
     outputLength.value = 43;
 
-    IndexRow.serialize(outputPointer, outputLength, indexTableList);
+    UidAndValue.serialize(outputPointer, outputLength, indexTableList);
     expect(outputLength.value, expectedOutputLength);
     final output = outputPointer.cast<Uint8>().asTypedList(outputLength.value);
     final expectedSerialized = Uint8List.fromList([1]) +
@@ -48,7 +48,7 @@ void main() {
         Uint8List.fromList([4, 9, 9, 9, 9]);
     expect(output, equals(expectedSerialized));
 
-    List<IndexRow> deserialized = IndexRow.deserialize(output);
+    List<UidAndValue> deserialized = UidAndValue.deserialize(output);
     final deserializedIndexTable = deserialized[0];
     expect(deserializedIndexTable.uid, indexTable.uid);
     expect(deserializedIndexTable.value, indexTable.value);
