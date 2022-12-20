@@ -2,13 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
----
+## [3.1.0] - 2022-12-20
 
-## [3.1.0] - 2022-12-16
+### Features
 
-### Added
+- Add policy class for cover_crypt
 
-- `Policy` class for cover_crypt
+### Miscellaneous Tasks
+
+- Merge tag 'v3.0.1' into develop
+- Update version
+
+### Refactor
+
+- Rename IndexRow to UidAndValue to align with another languages
+- Rename Word to Keywords
+
+### Testing
+
+- Add public doc test
+
+### Ci
+
+- No interaction when autopublish
 
 ---
 
