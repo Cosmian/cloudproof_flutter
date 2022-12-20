@@ -100,7 +100,7 @@ class FindexRedisImplementation {
     ]);
   }
 
-  static Future<List<IndexRow>> mset(
+  static Future<List<UidAndValue>> mset(
       Command db, RedisTable table, List<UpsertData> entries) async {
     await execute(db, [
       "MSET",
@@ -111,7 +111,7 @@ class FindexRedisImplementation {
   }
 
   static Future<void> mset2(
-      Command db, RedisTable table, List<IndexRow> entries) async {
+      Command db, RedisTable table, List<UidAndValue> entries) async {
     await execute(db, [
       "MSET",
       ...entries.expand(
@@ -153,9 +153,9 @@ class FindexRedisImplementation {
     }).toList();
   }
 
-  static Future<List<IndexRow>> fetchEntriesOrChains(
+  static Future<List<UidAndValue>> fetchEntriesOrChains(
       RedisTable table, Uids uids) async {
-    List<IndexRow> results = [];
+    List<UidAndValue> results = [];
 
     final db = await FindexRedisImplementation.db;
 
@@ -168,27 +168,28 @@ class FindexRedisImplementation {
         if (value is! List<int>) {
           throw Exception("Should only store bytes in Redis for $table");
         }
-        results.add(IndexRow(entry.value, Uint8List.fromList(value)));
+        results.add(UidAndValue(entry.value, Uint8List.fromList(value)));
       }
     }
 
     return results;
   }
 
-  static Future<List<IndexRow>> fetchEntries(Uids uids) async {
+  static Future<List<UidAndValue>> fetchEntries(Uids uids) async {
     return await fetchEntriesOrChains(RedisTable.entries, uids);
   }
 
-  static Future<List<IndexRow>> fetchChains(Uids uids) async {
+  static Future<List<UidAndValue>> fetchChains(Uids uids) async {
     return await fetchEntriesOrChains(RedisTable.chains, uids);
   }
 
-  static Future<List<IndexRow>> upsertEntries(List<UpsertData> entries) async {
+  static Future<List<UidAndValue>> upsertEntries(
+      List<UpsertData> entries) async {
     //TODO: implement findex multithreaded support if required
     return await mset(await db, RedisTable.entries, entries);
   }
 
-  static Future<void> upsertChains(List<IndexRow> chains) async {
+  static Future<void> upsertChains(List<UidAndValue> chains) async {
     await mset2(await db, RedisTable.chains, chains);
   }
 
@@ -259,7 +260,7 @@ class FindexRedisImplementation {
             final entryTableLines =
                 await FindexRedisImplementation.fetchEntries(uids);
 
-            IndexRow.serialize(
+            UidAndValue.serialize(
                 Pointer<UnsignedChar>.fromAddress(message.item1),
                 Pointer<UnsignedInt>.fromAddress(message.item2),
                 entryTableLines);
@@ -308,7 +309,7 @@ class FindexRedisImplementation {
             final uids = Uids.deserialize(inputArray);
             final chainTableLines =
                 await FindexRedisImplementation.fetchChains(uids);
-            IndexRow.serialize(
+            UidAndValue.serialize(
                 Pointer<UnsignedChar>.fromAddress(message.item1),
                 Pointer<UnsignedInt>.fromAddress(message.item2),
                 chainTableLines);
@@ -360,7 +361,7 @@ class FindexRedisImplementation {
             final rejectedEntries =
                 await FindexRedisImplementation.upsertEntries(uidsAndValues);
 
-            IndexRow.serialize(
+            UidAndValue.serialize(
                 Pointer<UnsignedChar>.fromAddress(message.item4),
                 Pointer<UnsignedInt>.fromAddress(message.item3),
                 rejectedEntries);
@@ -404,7 +405,7 @@ class FindexRedisImplementation {
             final inputArray = Pointer<Uint8>.fromAddress(message.item1)
                 .asTypedList(chainsListLength);
 
-            final uidsAndValues = IndexRow.deserialize(inputArray);
+            final uidsAndValues = UidAndValue.deserialize(inputArray);
             log("upsertWrapperWithoutIsolate: uidsAndValues: $uidsAndValues");
 
             FindexRedisImplementation.upsertChains(uidsAndValues);

@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:cloudproof/src/cover_crypt/cover_crypt.dart';
-import 'package:cloudproof/src/cover_crypt/master_keys.dart';
+import 'package:cloudproof/cloudproof.dart';
 
 import 'encryption_test_vector.dart';
 import 'user_secret_key_test_vector.dart';
@@ -63,8 +62,19 @@ class NonRegressionTestVectors {
   }
 
   static NonRegressionTestVectors generate() {
-    String policy =
-        "{\"last_attribute_value\":9,\"max_attribute_creations\":100,\"axes\":{\"Department\":[[\"R&D\",\"HR\",\"MKG\",\"FIN\"],false],\"Security Level\":[[\"Protected\",\"Low Secret\",\"Medium Secret\",\"High Secret\",\"Top Secret\"],true]},\"attribute_to_int\":{\"Security Level::Medium Secret\":[3],\"Security Level::Protected\":[1],\"Security Level::High Secret\":[4],\"Department::R&D\":[6],\"Department::HR\":[7],\"Security Level::Low Secret\":[2],\"Department::MKG\":[8],\"Security Level::Top Secret\":[5],\"Department::FIN\":[9]}}";
+    final policy = Policy.withMaxAttributeCreations(100)
+        .addAxis(
+            "Security Level",
+            [
+              "Protected",
+              "Low Secret",
+              "Medium Secret",
+              "High Secret",
+              "Top Secret"
+            ],
+            true)
+        .addAxis("Department", ["R&D", "HR", "MKG", "FIN"], false);
+
     CoverCryptMasterKeys masterKeys = CoverCrypt.generateMasterKeys(policy);
 
     final topSecretMkgFinKey = UserSecretKeyTestVector.generate(
@@ -107,7 +117,7 @@ class NonRegressionTestVectors {
     return NonRegressionTestVectors(
         masterKeys.publicKey,
         masterKeys.masterSecretKey,
-        Uint8List.fromList(policy.codeUnits),
+        Uint8List.fromList(policy.toString().codeUnits),
         topSecretMkgFinKey,
         mediumSecretMkgKey,
         topSecretFinKey,

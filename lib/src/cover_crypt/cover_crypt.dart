@@ -10,8 +10,7 @@ import 'package:cloudproof/src/utils/blob_conversion.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
 
-import 'master_keys.dart';
-import 'plaintext_header.dart';
+import '../../cloudproof.dart';
 
 const coverCryptErrorMessageMaxLength = 3000;
 const defaultHeaderMetadataSizeInBytes = 4096;
@@ -107,14 +106,14 @@ class CoverCrypt {
   // ENCRYPTION via FFI
   //
   static Uint8List encryptWithAuthenticationData(
-      String policy,
+      Policy policy,
       Uint8List publicKey,
       String encryptionPolicy,
       Uint8List plaintext,
       Uint8List headerMetaData,
       Uint8List authenticationData) {
     // FFI INPUT parameters
-    final policyPointer = policy.toNativeUtf8().cast<Char>();
+    final policyPointer = policy.toString().toNativeUtf8().cast<Char>();
     final encryptionPolicyPointer =
         encryptionPolicy.toNativeUtf8().cast<Char>();
     final publicKeyPointer = publicKey.allocateInt8Pointer().cast<Char>();
@@ -160,7 +159,7 @@ class CoverCrypt {
     }
   }
 
-  static Uint8List encrypt(String policy, Uint8List publicKey,
+  static Uint8List encrypt(Policy policy, Uint8List publicKey,
       String encryptionPolicy, Uint8List plaintext) {
     return encryptWithAuthenticationData(policy, publicKey, encryptionPolicy,
         plaintext, Uint8List.fromList([]), Uint8List.fromList([]));
@@ -187,9 +186,10 @@ class CoverCrypt {
     }
   }
 
-  static CoverCryptMasterKeys generateMasterKeys(String policy) {
+  static CoverCryptMasterKeys generateMasterKeys(Policy policy) {
     // FFI INPUT parameters
-    final policyPointer = policy.toNativeUtf8().cast<Char>();
+    final policyPointer =
+        jsonEncode(policy.toJson()).toNativeUtf8().cast<Char>();
 
     // FFI OUTPUT parameters
     final masterKeysPointer = calloc<Uint8>(8192);
@@ -213,12 +213,12 @@ class CoverCrypt {
   }
 
   static Uint8List generateUserSecretKey(
-      String booleanAccessPolicy, String policy, Uint8List masterSecretKey) {
+      String booleanAccessPolicy, Policy policy, Uint8List masterSecretKey) {
     String json = booleanAccessPolicyToJson(booleanAccessPolicy);
 
     // FFI INPUT parameters
     final accessPolicyPointer = json.toNativeUtf8().cast<Char>();
-    final policyPointer = policy.toNativeUtf8().cast<Char>();
+    final policyPointer = policy.toString().toNativeUtf8().cast<Char>();
     final masterSecretKeyPointer =
         masterSecretKey.allocateInt8Pointer().cast<Char>();
 
