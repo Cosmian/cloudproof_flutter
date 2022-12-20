@@ -145,12 +145,12 @@ class SqliteFindex {
       FindexMasterKey masterKey, Uint8List label) async {
     final users = allUsers();
 
-    final indexedValuesAndWords = {
+    final indexedValuesAndKeywords = {
       for (final user in users)
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 
-    await upsert(masterKey, label, indexedValuesAndWords);
+    await upsert(masterKey, label, indexedValuesAndKeywords);
   }
 
   static List<User> allUsers() {
@@ -286,12 +286,12 @@ class SqliteFindex {
   static Future<void> upsert(
     FindexMasterKey masterKey,
     Uint8List label,
-    Map<IndexedValue, List<Keyword>> indexedValuesAndWords,
+    Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
   ) async {
     await Findex.upsert(
       masterKey,
       label,
-      indexedValuesAndWords,
+      indexedValuesAndKeywords,
       Pointer.fromFunction(
         fetchEntriesCallback,
         errorCodeInCaseOfCallbackException,
