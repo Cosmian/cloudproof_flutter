@@ -17,6 +17,22 @@ class Keyword {
   String toBase64() {
     return base64Encode(bytes);
   }
+
+  static Keyword deserialize(Iterator<int> iterator) {
+    log("Keyword::deserialize: start: bytes: $iterator ");
+
+    final length = Leb128.decodeUnsigned(iterator);
+    if (length == 0) {
+      // return [];
+      throw Exception("Unable to deserialize Keyword");
+    }
+
+    final keyword = SerDe.copyFromIterator(iterator, length);
+
+    log("Keyword::deserialize: keyword: $keyword ");
+
+    return Keyword(keyword);
+  }
 }
 
 class Location {
@@ -69,14 +85,18 @@ class IndexedValue {
   }
 
   static List<IndexedValue> deserialize(Uint8List bytes) {
-    log("deserializeList: start: bytes: $bytes");
+    return deserializeFromIterator(bytes.iterator);
+  }
+
+  static List<IndexedValue> deserializeFromIterator(Iterator<int> iterator) {
+    log("deserializeFromIterator: start: bytes: $iterator");
     List<IndexedValue> indexedValues = [];
 
-    Iterator<int> iterator = bytes.iterator;
     final length = Leb128.decodeUnsigned(iterator);
     if (length == 0) {
       return [];
     }
+    log("deserializeFromIterator: number of element: $length");
 
     for (int idx = 0; idx < length; idx++) {
       // Get fixed-size UID
@@ -86,9 +106,9 @@ class IndexedValue {
       if (!indexedValues.contains(iv)) {
         indexedValues.add(iv);
       }
-      log("deserialize: add element: $indexedValue");
+      log("deserializeFromIterator: add element: $indexedValue");
     }
-    log("deserialize: $indexedValues");
+    log("deserializeFromIterator: $indexedValues");
 
     return indexedValues;
   }
