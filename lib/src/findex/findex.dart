@@ -9,6 +9,8 @@ import 'package:cloudproof/src/utils/blob_conversion.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
 
+import '../utils/leb128.dart';
+
 const findexErrorMessageMaxLength = 3000;
 const defaultOutputSizeInBytes = 131072;
 const errorCodeInCaseOfCallbackException = 42;
@@ -101,7 +103,7 @@ class Findex {
     }
   }
 
-  static Future<List<IndexedValue>> search(
+  static Future<Map<Keyword, List<IndexedValue>>> search(
       Uint8List k,
       Uint8List label,
       List<Keyword> keywords,
@@ -149,7 +151,7 @@ class Findex {
         }
         throw Exception("Fail to search ${getLastError()}");
       }
-      return IndexedValue.deserialize(
+      return deserializeSearchResults(
           output.asTypedList(outputLengthPointer.value));
     } finally {
       calloc.free(output);
@@ -158,6 +160,29 @@ class Findex {
       calloc.free(kPointer);
       calloc.free(labelPointer);
     }
+  }
+
+  static Map<Keyword, List<IndexedValue>> deserializeSearchResults(
+      Uint8List bytes) {
+    Map<Keyword, List<IndexedValue>> result = {};
+
+    Iterator<int> iterator = bytes.iterator;
+    final length = Leb128.decodeUnsigned(iterator);
+    if (length == 0) {
+      return {};
+    }
+
+    for (int idx = 0; idx < length; idx++) {
+      // Get Keyword
+      final keyword = Keyword.deserialize(iterator);
+
+      // Get corresponding list of IndexedValue
+      final indexedValues = IndexedValue.deserializeFromIterator(iterator);
+
+      result[keyword] = indexedValues;
+    }
+
+    return result;
   }
 
   static String getLastError() {

@@ -75,7 +75,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   void indexDataForDemo() async {
     try {
       label = Uint8List.fromList(utf8.encode("NewLabel"));
-      masterKey = FindexMasterKey(Uint8List(32));
+      masterKey = FindexMasterKey(Uint8List(16));
       await FindexRedisImplementation.init(coverCryptHelper);
       await FindexRedisImplementation.indexAll(masterKey, label);
 
@@ -92,6 +92,16 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   void dispose() {
     controller.dispose();
     super.dispose();
+  }
+
+  List<Uint8List> getAllIndexedValues(Iterable<List<IndexedValue>> ivs) {
+    List<Uint8List> res = [];
+    for (final iv in ivs) {
+      for (final i in iv) {
+        res.add(i.location.bytes);
+      }
+    }
+    return res;
   }
 
   void setQuery(String query) {
@@ -119,10 +129,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         }
 
         final encryptedUsersFromRedis = (await FindexRedisImplementation.mget(
-          await FindexRedisImplementation.db,
-          RedisTable.users,
-          indexedValues.map((e) => e.location.bytes).toList(),
-        ))
+                await FindexRedisImplementation.db,
+                RedisTable.users,
+                getAllIndexedValues(indexedValues.values)))
             // Remove `null` if some location doesn't exists inside Redis
             .whereType<List<int>>()
             .map(Uint8List.fromList)

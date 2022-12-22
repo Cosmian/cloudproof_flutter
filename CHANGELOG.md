@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.0] - 2022-12-20
+
+### Features
+
+- Support findex v1.0.1
+
+### Miscellaneous Tasks
+
+- Merge tag 'v3.1.0' into develop
+- Update findex native libraries to 1.0.1
+
 ## [3.1.0] - 2022-12-20
 
 ### Features
