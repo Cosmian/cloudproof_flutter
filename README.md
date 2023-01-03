@@ -45,11 +45,11 @@ To search, you need:
 3. implement `fetchEntries` and `fetchChains`
 
 ```dart
-  static Future<List<UidAndValue>> fetchEntries(Uids uids) async {
+  static List<UidAndValue> fetchEntries(Uids uids) async {
     // Implement me!
   }
 
-  static Future<List<UidAndValue>> fetchChains(Uids uids) async {
+  static List<UidAndValue> fetchChains(Uids uids) async {
     // Implement me!
   }
 
@@ -78,58 +78,52 @@ To search, you need:
   }
 
   static int fetchEntriesCallback(
-    Pointer<Char> outputEntryTableLinesPointer,
+    Pointer<UnsignedChar> outputEntryTableLinesPointer,
     Pointer<UnsignedInt> outputEntryTableLinesLength,
     Pointer<UnsignedChar> uidsPointer,
     int uidsNumber,
   ) {
-    try {
-      final uids =
-          Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
-      final entryTableLines = SqliteFindex.fetchEntries(uids);
-      UidAndValue.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
-          outputEntryTableLinesLength, entryTableLines);
-      return 0;
-    } catch (e, stacktrace) {
-      log("Exception during fetchEntriesCallback $e $stacktrace");
-      rethrow;
-    }
+    return Findex.wrapSyncFetchCallback(
+      TODO_ReplaceThisByTheNameOfYourClassOrTheRawFunction.fetchEntries,
+      outputEntryTableLinesPointer,
+      outputEntryTableLinesLength,
+      uidsPointer,
+      uidsNumber,
+    );
   }
 
   static int fetchChainsCallback(
-    Pointer<Char> outputChainTableLinesPointer,
+    Pointer<UnsignedChar> outputChainTableLinesPointer,
     Pointer<UnsignedInt> outputChainTableLinesLength,
     Pointer<UnsignedChar> uidsPointer,
     int uidsNumber,
   ) {
-    try {
-      final uids =
-          Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
-      final entryTableLines = SqliteFindex.fetchChains(uids);
-      UidAndValue.serialize(outputChainTableLinesPointer.cast<UnsignedChar>(),
-          outputChainTableLinesLength, entryTableLines);
-      return 0;
-    } catch (e, stacktrace) {
-      log("Exception during fetchChainsCallback $e $stacktrace");
-      rethrow;
-    }
+    return Findex.wrapSyncFetchCallback(
+      TODO_ReplaceThisByTheNameOfYourClassOrTheRawFunction.fetchChains,
+      outputChainTableLinesPointer,
+      outputChainTableLinesLength,
+      uidsPointer,
+      uidsNumber,
+    );
   }
-
-
 ```
 
 To upsert, you need:
 
 1. copy/paste the following lines
 2. replace `TODO_ReplaceThisByTheNameOfYourClassOrTheRawFunction` by the name of your class
-3. implement `fetchEntries`, `upsertEntries` and `upsertChains`
+3. implement `fetchEntries`, `upsertEntries` and `insertChains`
 
 ```dart
+  static List<UidAndValue> fetchEntries(Uids uids) async {
+    // Implement me!
+  }
+
   static Future<List<UidAndValue>> upsertEntries(List<UpsertData> entries) async {
     // Implement me!
   }
 
-  static Future<List<UidAndValue>> upsertChains(List<UpsertData> entries) async {
+  static void insertChains(List<UidAndValue> entries) async {
     // Implement me!
   }
 
@@ -155,50 +149,42 @@ To upsert, you need:
         errorCodeInCaseOfCallbackException,
       ),
       Pointer.fromFunction(
-        upsertChainsCallback,
+        insertChainsCallback,
         errorCodeInCaseOfCallbackException,
       ),
     );
   }
 
-  static void upsertEntriesCallback(
-    Pointer<UnsignedChar> entriesListPointer,
-    int entriesListLength,
+  static int upsertEntriesCallback(
     Pointer<UnsignedChar> outputRejectedEntriesListPointer,
     Pointer<UnsignedInt> outputRejectedEntriesListLength,
+    Pointer<UnsignedChar> entriesListPointer,
+    int entriesListLength,
   ) {
-    try {
-      // Deserialize uids and values
-      final uidsAndValues = UpsertData.deserialize(
-          entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
-
-      final rejectedEntries = SqliteFindex.upsertEntries(uidsAndValues);
-      UidAndValue.serialize(outputRejectedEntriesListPointer,
-          outputRejectedEntriesListLength, rejectedEntries);
-    } catch (e, stacktrace) {
-      log("Exception during upsertEntriesCallback $e $stacktrace");
-      rethrow;
-    }
+    return Findex.wrapSyncUpsertEntriesCallback(
+      TODO_ReplaceThisByTheNameOfYourClassOrTheRawFunction.upsertEntries,
+      outputRejectedEntriesListPointer,
+      outputRejectedEntriesListLength,
+      entriesListPointer,
+      entriesListLength,
+    );
   }
 
-  static void upsertChainsCallback(
+  static int insertChainsCallback(
     Pointer<UnsignedChar> chainsListPointer,
     int chainsListLength,
   ) {
-    try {
-      final uidsAndValues = UidAndValue.deserialize(
-          chainsListPointer.cast<Uint8>().asTypedList(chainsListLength));
-      log("upsertWrapperWithoutIsolate: uidsAndValues: $uidsAndValues");
-
-      SqliteFindex.upsertChains(uidsAndValues);
-    } catch (e, stacktrace) {
-      log("Exception during upsertChainsCallback $e $stacktrace");
-      rethrow;
-    }
+    return Findex.wrapSyncInsertChainsCallback(
+      TODO_ReplaceThisByTheNameOfYourClassOrTheRawFunction.insertChains,
+      chainsListPointer,
+      chainsListLength,
+    );
   }
 ```
 
 Note that if you `search` and `upsert`, the two implementation can share the same callback for `fetchEntries`.
+
+Note that if your callbacks are `async`, you can use `Findex.wrapAsyncFetchCallback`, `wrapAsyncUpsertEntriesCallback` and `wrapAsyncInsertChainsCallback`.
 
 Note that the copy/paste code could be removed in a future version when Dart implements <https://github.com/dart-lang/language/issues/1482>.
 
@@ -238,14 +224,12 @@ dart benchmark/cloudproof_benchmark.dart
 
 ### WARNINGS
 
-- `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` can not be static methods in a class or raw functions but should be static! You cannot put classic methods of an instance here.
-- `fetchEntries`, `fetchChains`, `upsertEntries` and `upsertChains` cannot access the state of the program, they will run in a separate `Isolate` with no data from the main thread (for example static/global variables populated during an initialization phase of your program will not exist). If you need to access some data from the main thread, the only way we think we'll work is to save this information inside a file or a database and read it from the callback. This pattern will slow down the `search` process. If you don't need async in the callbacks (for example the `sqlite` library has sync functions, you can call `*WrapperWithoutIsolate` and keep all the process in the same thread, so you can use your global variables).
+- `fetchEntries`, `fetchChains`, `upsertEntries` and `insertChains` can not be static methods in a class or raw functions but should be static! You cannot put classic methods of an instance here.
+- `fetchEntries`, `fetchChains`, `upsertEntries` and `insertChains` (if async) cannot access the state of the program, they will run in a separate `Isolate` with no data from the main thread (for example static/global variables populated during an initialization phase of your program will not exist). If you need to access some data from the main thread, the only way we think we'll work is to save this information inside a file or a database and read it from the callback. This pattern will slow down the `search` process. If you don't need async in the callbacks (for example the `sqlite` library has sync functions, you can call `*WrapperWithoutIsolate` and keep all the process in the same thread, so you can use your global variables).
 
 ### Implementation details
 
 - The `search` and `upsert` methods will call the Rust FFI via native bindings synchronously. If you want to not stop your main thread, please call `compute` to run the search in a different Isolate.
-- The `Findex.fetchWrapper` and `Findex.upsertWrapper` will wrap your callback inside an isolate to allow you to use asynchronous callbacks.
-- The `Findex.fetchWrapperWithoutIsolate` and `Findex.upsertWrapperWithoutIsolate` will wrap just call your callback so you will not have access to `async` but your callbacks are executed inside the main isolate (so you have access to your global data)
 
 ## FFI libs notes
 
@@ -306,12 +290,12 @@ To make the flutter build succeed, 3 prerequisites are needed:
 ### Supported versions
 
 | Linux        | Flutter | Dart   | Android SDK       | NDK | Glibc | LLVM     | Smartphone Virtual Device |
-|--------------|---------|--------|-------------------|-----|-------|----------|---------------------------|
+| ------------ | ------- | ------ | ----------------- | --- | ----- | -------- | ------------------------- |
 | Ubuntu 22.04 | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.35  | 14.0.0-1 | Pixel 5 API 30            |
 | Centos 7     | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.17  | -        | -                         |
 
 | Mac      | Flutter | Dart   | OS       | LLVM   | Xcode | Smartphone Virtual Device |
-|----------|---------|--------|----------|--------|-------|---------------------------|
+| -------- | ------- | ------ | -------- | ------ | ----- | ------------------------- |
 | Catalina | 3.3.4   | 2.18.2 | Catalina | 12.0.0 |       | iPhone 12 PRO MAX         |
 
 ## Cloudproof versions Correspondence
@@ -323,7 +307,7 @@ Check the main pages of the respective projects to build the native libraries ap
 This table shows the minimum versions correspondences between the various components
 
 | Flutter Lib | CoverCrypt lib | Findex |
-|-------------|----------------|--------|
+| ----------- | -------------- | ------ |
 | 0.1.0       | 6.0.5          | 0.7.2  |
 | 1.0.0       | 6.0.5          | 0.7.2  |
 | 2.0.0       | 7.1.0          | 0.10.0 |

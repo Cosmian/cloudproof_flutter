@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Features
+
+- Add wrapping functions for callbacks in `Findex` to help simplify implementation of callbacks
+
 ## [4.0.0] - 2022-12-20
 
 ### Features

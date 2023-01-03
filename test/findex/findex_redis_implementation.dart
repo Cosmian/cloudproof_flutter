@@ -1,14 +1,10 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
-import 'package:ffi/ffi.dart';
 import 'package:redis/redis.dart';
-import 'package:tuple/tuple.dart';
 
 import 'sqlite_test.dart';
 
@@ -243,48 +239,13 @@ class FindexRedisImplementation {
     Pointer<UnsignedChar> uidsPointer,
     int uidsNumber,
   ) {
-    final donePointer = calloc<Bool>(1);
-    donePointer.value = false;
-
-    try {
-      Isolate.spawn(
-        (message) async {
-          try {
-            // Cast to list
-            final inputArray = Pointer<Uint8>.fromAddress(message.item3)
-                .asTypedList(uidsNumber);
-
-            final uids = Uids.deserialize(inputArray);
-            final entryTableLines =
-                await FindexRedisImplementation.fetchEntries(uids);
-
-            UidAndValue.serialize(
-                Pointer<UnsignedChar>.fromAddress(message.item1),
-                Pointer<UnsignedInt>.fromAddress(message.item2),
-                entryTableLines);
-          } catch (e) {
-            log("Excepting in fetch isolate. $e");
-          } finally {
-            Pointer<Bool>.fromAddress(message.item4).value = true;
-          }
-        },
-        Tuple4(
-          outputEntryTableLinesPointer.address,
-          outputEntryTableLinesLength.address,
-          uidsPointer.address,
-          donePointer.address,
-        ),
-      );
-      while (!donePointer.value) {
-        sleep(const Duration(milliseconds: 10));
-      }
-      return 0;
-    } catch (e, stacktrace) {
-      log("Exception during fetchEntriesCallback $e $stacktrace");
-      rethrow;
-    } finally {
-      calloc.free(donePointer);
-    }
+    return Findex.wrapAsyncFetchCallback(
+      FindexRedisImplementation.fetchEntries,
+      outputEntryTableLinesPointer,
+      outputEntryTableLinesLength,
+      uidsPointer,
+      uidsNumber,
+    );
   }
 
   static int fetchChainsCallback(
@@ -293,48 +254,13 @@ class FindexRedisImplementation {
     Pointer<UnsignedChar> uidsPointer,
     int uidsNumber,
   ) {
-    final donePointer = calloc<Bool>(1);
-    donePointer.value = false;
-
-    try {
-      Isolate.spawn(
-        (message) async {
-          try {
-            // Cast to list
-            final inputArray = Pointer<Uint8>.fromAddress(message.item3)
-                .asTypedList(uidsNumber);
-
-            final uids = Uids.deserialize(inputArray);
-            final chainTableLines =
-                await FindexRedisImplementation.fetchChains(uids);
-            UidAndValue.serialize(
-                Pointer<UnsignedChar>.fromAddress(message.item1),
-                Pointer<UnsignedInt>.fromAddress(message.item2),
-                chainTableLines);
-          } catch (e) {
-            log("Excepting in fetch isolate. $e");
-          } finally {
-            Pointer<Bool>.fromAddress(message.item4).value = true;
-          }
-        },
-        Tuple4(
-          outputChainTableLinesPointer.address,
-          outputChainTableLinesLength.address,
-          uidsPointer.address,
-          donePointer.address,
-        ),
-      );
-      while (!donePointer.value) {
-        sleep(const Duration(milliseconds: 10));
-      }
-
-      return 0;
-    } catch (e, stacktrace) {
-      log("Exception during fetchChainsCallback $e $stacktrace");
-      rethrow;
-    } finally {
-      calloc.free(donePointer);
-    }
+    return Findex.wrapAsyncFetchCallback(
+      FindexRedisImplementation.fetchChains,
+      outputChainTableLinesPointer,
+      outputChainTableLinesLength,
+      uidsPointer,
+      uidsNumber,
+    );
   }
 
   static int upsertEntriesCallback(
@@ -343,93 +269,24 @@ class FindexRedisImplementation {
     Pointer<UnsignedChar> entriesListPointer,
     int entriesListLength,
   ) {
-    final donePointer = calloc<Bool>(1);
-    donePointer.value = false;
-
-    try {
-      Isolate.spawn(
-        (message) async {
-          try {
-            // Cast to list
-            final inputArray = Pointer<Uint8>.fromAddress(message.item1)
-                .asTypedList(entriesListLength);
-
-            final uidsAndValues = UpsertData.deserialize(inputArray);
-
-            final rejectedEntries =
-                await FindexRedisImplementation.upsertEntries(uidsAndValues);
-
-            UidAndValue.serialize(
-                Pointer<UnsignedChar>.fromAddress(message.item4),
-                Pointer<UnsignedInt>.fromAddress(message.item3),
-                rejectedEntries);
-          } catch (e) {
-            log("Excepting in upsert isolate. $e");
-          } finally {
-            Pointer<Bool>.fromAddress(message.item4).value = true;
-          }
-        },
-        Tuple4(
-          entriesListPointer.address,
-          outputRejectedEntriesListPointer.address,
-          outputRejectedEntriesListLength.address,
-          donePointer.address,
-        ),
-      );
-
-      while (!donePointer.value) {
-        sleep(const Duration(milliseconds: 10));
-      }
-      return 0;
-    } catch (e, stacktrace) {
-      log("Exception during upsertEntriesCallback $e $stacktrace");
-      rethrow;
-    } finally {
-      calloc.free(donePointer);
-    }
+    return Findex.wrapAsyncUpsertEntriesCallback(
+      FindexRedisImplementation.upsertEntries,
+      outputRejectedEntriesListPointer,
+      outputRejectedEntriesListLength,
+      entriesListPointer,
+      entriesListLength,
+    );
   }
 
   static int upsertChainsCallback(
     Pointer<UnsignedChar> chainsListPointer,
     int chainsListLength,
   ) {
-    final donePointer = calloc<Bool>(1);
-    donePointer.value = false;
-
-    try {
-      Isolate.spawn(
-        (message) async {
-          try {
-            // Cast to list
-            final inputArray = Pointer<Uint8>.fromAddress(message.item1)
-                .asTypedList(chainsListLength);
-
-            final uidsAndValues = UidAndValue.deserialize(inputArray);
-            log("upsertWrapperWithoutIsolate: uidsAndValues: $uidsAndValues");
-
-            FindexRedisImplementation.upsertChains(uidsAndValues);
-          } catch (e) {
-            log("Excepting in upsert isolate. $e");
-          } finally {
-            Pointer<Bool>.fromAddress(message.item2).value = true;
-          }
-        },
-        Tuple2(
-          chainsListPointer.address,
-          donePointer.address,
-        ),
-      );
-
-      while (!donePointer.value) {
-        sleep(const Duration(milliseconds: 10));
-      }
-      return 0;
-    } catch (e, stacktrace) {
-      log("Exception during upsertChainsCallback $e $stacktrace");
-      rethrow;
-    } finally {
-      calloc.free(donePointer);
-    }
+    return Findex.wrapAsyncInsertChainsCallback(
+      FindexRedisImplementation.upsertChains,
+      chainsListPointer,
+      chainsListLength,
+    );
   }
 }
 
