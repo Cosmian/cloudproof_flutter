@@ -252,7 +252,7 @@ class SqliteFindex {
     return rejectedEntries;
   }
 
-  static void upsertChains(List<UidAndValue> chains) {
+  static void insertChains(List<UidAndValue> chains) {
     final stmt = db.prepare(
         'INSERT OR REPLACE INTO chain_table (uid, value) VALUES (?, ?)');
     for (final chain in chains) {
@@ -260,7 +260,7 @@ class SqliteFindex {
         chain.uid,
         chain.value,
       ]);
-      log("upsertChains: \nuid (len: ${chain.uid.length}): ${chain.uid}, \noldValue (len: ${chain.value.length}): ${chain.value}");
+      log("insertChains: \nuid (len: ${chain.uid.length}): ${chain.uid}, \noldValue (len: ${chain.value.length}): ${chain.value}");
     }
   }
 
@@ -306,7 +306,7 @@ class SqliteFindex {
         errorCodeInCaseOfCallbackException,
       ),
       Pointer.fromFunction(
-        upsertChainsCallback,
+        insertChainsCallback,
         errorCodeInCaseOfCallbackException,
       ),
     );
@@ -318,17 +318,13 @@ class SqliteFindex {
     Pointer<UnsignedChar> uidsPointer,
     int uidsNumber,
   ) {
-    try {
-      final uids =
-          Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
-      final entryTableLines = SqliteFindex.fetchEntries(uids);
-      UidAndValue.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
-          outputEntryTableLinesLength, entryTableLines);
-      return 0;
-    } catch (e, stacktrace) {
-      log("Exception during fetchEntriesCallback $e $stacktrace");
-      rethrow;
-    }
+    return Findex.wrapSyncFetchCallback(
+      SqliteFindex.fetchEntries,
+      outputEntryTableLinesPointer,
+      outputEntryTableLinesLength,
+      uidsPointer,
+      uidsNumber,
+    );
   }
 
   static int fetchChainsCallback(
@@ -337,17 +333,13 @@ class SqliteFindex {
     Pointer<UnsignedChar> uidsPointer,
     int uidsNumber,
   ) {
-    try {
-      final uids =
-          Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
-      final entryTableLines = SqliteFindex.fetchChains(uids);
-      UidAndValue.serialize(outputChainTableLinesPointer.cast<UnsignedChar>(),
-          outputChainTableLinesLength, entryTableLines);
-      return 0;
-    } catch (e, stacktrace) {
-      log("Exception during fetchChainsCallback $e $stacktrace");
-      rethrow;
-    }
+    return Findex.wrapSyncFetchCallback(
+      SqliteFindex.fetchChains,
+      outputChainTableLinesPointer,
+      outputChainTableLinesLength,
+      uidsPointer,
+      uidsNumber,
+    );
   }
 
   static int upsertEntriesCallback(
@@ -356,36 +348,24 @@ class SqliteFindex {
     Pointer<UnsignedChar> entriesListPointer,
     int entriesListLength,
   ) {
-    try {
-      // Deserialize uids and values
-      final uidsAndValues = UpsertData.deserialize(
-          entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
-
-      final rejectedEntries = SqliteFindex.upsertEntries(uidsAndValues);
-      UidAndValue.serialize(outputRejectedEntriesListPointer,
-          outputRejectedEntriesListLength, rejectedEntries);
-      return 0;
-    } catch (e, stacktrace) {
-      log("Exception during upsertEntriesCallback $e $stacktrace");
-      rethrow;
-    }
+    return Findex.wrapSyncUpsertEntriesCallback(
+      SqliteFindex.upsertEntries,
+      outputRejectedEntriesListPointer,
+      outputRejectedEntriesListLength,
+      entriesListPointer,
+      entriesListLength,
+    );
   }
 
-  static int upsertChainsCallback(
+  static int insertChainsCallback(
     Pointer<UnsignedChar> chainsListPointer,
     int chainsListLength,
   ) {
-    try {
-      final uidsAndValues = UidAndValue.deserialize(
-          chainsListPointer.cast<Uint8>().asTypedList(chainsListLength));
-      log("upsertWrapperWithoutIsolate: uidsAndValues: $uidsAndValues");
-
-      SqliteFindex.upsertChains(uidsAndValues);
-      return 0;
-    } catch (e, stacktrace) {
-      log("Exception during upsertChainsCallback $e $stacktrace");
-      rethrow;
-    }
+    return Findex.wrapSyncInsertChainsCallback(
+      SqliteFindex.insertChains,
+      chainsListPointer,
+      chainsListLength,
+    );
   }
 }
 

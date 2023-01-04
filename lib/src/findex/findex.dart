@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:ffi';
-import 'dart:io' show Directory, Platform;
+import 'dart:io' show Directory, Platform, sleep;
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
@@ -8,6 +10,7 @@ import 'package:cloudproof/src/findex/generated_bindings.dart';
 import 'package:cloudproof/src/utils/blob_conversion.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
+import 'package:tuple/tuple.dart';
 
 import '../utils/leb128.dart';
 
@@ -17,11 +20,11 @@ const errorCodeInCaseOfCallbackException = 42;
 const uidLength = 32;
 
 class Findex {
-  static FindexNativeLibrary? _library;
+  static FindexNativeLibrary? cachedLibrary;
 
   static FindexNativeLibrary get library {
-    if (_library != null) {
-      return _library as FindexNativeLibrary;
+    if (cachedLibrary != null) {
+      return cachedLibrary as FindexNativeLibrary;
     }
 
     String? libraryPath;
@@ -41,7 +44,7 @@ class Findex {
     final library = FindexNativeLibrary(libraryPath == null
         ? DynamicLibrary.process()
         : DynamicLibrary.open(libraryPath));
-    _library = library;
+    cachedLibrary = library;
     return library;
   }
 
@@ -64,7 +67,7 @@ class Findex {
     Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
     FetchEntryTableCallback fetchEntries,
     UpsertEntryTableCallback upsertEntries,
-    InsertChainTableCallback upsertChains,
+    InsertChainTableCallback insertChains,
   ) async {
     //
     // FFI INPUT parameters
@@ -91,7 +94,7 @@ class Findex {
         indexedValuesAndKeywordsPointer.cast<Char>(),
         fetchEntries,
         upsertEntries,
-        upsertChains,
+        insertChains,
       );
 
       if (result != 0) {
@@ -205,6 +208,210 @@ class Findex {
     } finally {
       calloc.free(errorPointer);
       calloc.free(errorLength);
+    }
+  }
+
+  static int wrapAsyncFetchCallback(
+    Future<List<UidAndValue>> Function(Uids uids) callback,
+    Pointer<UnsignedChar> outputEntryTableLinesPointer,
+    Pointer<UnsignedInt> outputEntryTableLinesLength,
+    Pointer<UnsignedChar> uidsPointer,
+    int uidsNumber,
+  ) {
+    final donePointer = calloc<Bool>(1);
+    donePointer.value = false;
+
+    try {
+      Isolate.spawn(
+        (message) async {
+          try {
+            // Cast to list
+            final inputArray = Pointer<Uint8>.fromAddress(message.item3)
+                .asTypedList(uidsNumber);
+
+            final uids = Uids.deserialize(inputArray);
+            final entryTableLines = await callback(uids);
+
+            UidAndValue.serialize(
+                Pointer<UnsignedChar>.fromAddress(message.item1),
+                Pointer<UnsignedInt>.fromAddress(message.item2),
+                entryTableLines);
+          } catch (e) {
+            log("Excepting in fetch isolate. $e");
+          } finally {
+            Pointer<Bool>.fromAddress(message.item4).value = true;
+          }
+        },
+        Tuple4(
+          outputEntryTableLinesPointer.address,
+          outputEntryTableLinesLength.address,
+          uidsPointer.address,
+          donePointer.address,
+        ),
+      );
+      while (!donePointer.value) {
+        sleep(const Duration(milliseconds: 10));
+      }
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during fetch callback ($callback) $e $stacktrace");
+      rethrow;
+    } finally {
+      calloc.free(donePointer);
+    }
+  }
+
+  static int wrapAsyncUpsertEntriesCallback(
+    Future<List<UidAndValue>> Function(List<UpsertData>) callback,
+    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
+    Pointer<UnsignedInt> outputRejectedEntriesListLength,
+    Pointer<UnsignedChar> entriesListPointer,
+    int entriesListLength,
+  ) {
+    final donePointer = calloc<Bool>(1);
+    donePointer.value = false;
+
+    try {
+      Isolate.spawn(
+        (message) async {
+          try {
+            // Cast to list
+            final inputArray = Pointer<Uint8>.fromAddress(message.item1)
+                .asTypedList(entriesListLength);
+
+            final uidsAndValues = UpsertData.deserialize(inputArray);
+
+            final rejectedEntries = await callback(uidsAndValues);
+
+            UidAndValue.serialize(
+                Pointer<UnsignedChar>.fromAddress(message.item4),
+                Pointer<UnsignedInt>.fromAddress(message.item3),
+                rejectedEntries);
+          } catch (e) {
+            log("Excepting in upsert isolate. $e");
+          } finally {
+            Pointer<Bool>.fromAddress(message.item4).value = true;
+          }
+        },
+        Tuple4(
+          entriesListPointer.address,
+          outputRejectedEntriesListPointer.address,
+          outputRejectedEntriesListLength.address,
+          donePointer.address,
+        ),
+      );
+
+      while (!donePointer.value) {
+        sleep(const Duration(milliseconds: 10));
+      }
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during upsertEntriesCallback $e $stacktrace");
+      rethrow;
+    } finally {
+      calloc.free(donePointer);
+    }
+  }
+
+  static int wrapAsyncInsertChainsCallback(
+    Future<void> Function(List<UidAndValue>) callback,
+    Pointer<UnsignedChar> chainsListPointer,
+    int chainsListLength,
+  ) {
+    final donePointer = calloc<Bool>(1);
+    donePointer.value = false;
+
+    try {
+      Isolate.spawn(
+        (message) async {
+          try {
+            // Cast to list
+            final inputArray = Pointer<Uint8>.fromAddress(message.item1)
+                .asTypedList(chainsListLength);
+
+            final uidsAndValues = UidAndValue.deserialize(inputArray);
+
+            await callback(uidsAndValues);
+          } catch (e) {
+            log("Excepting in upsert isolate. $e");
+          } finally {
+            Pointer<Bool>.fromAddress(message.item2).value = true;
+          }
+        },
+        Tuple2(
+          chainsListPointer.address,
+          donePointer.address,
+        ),
+      );
+
+      while (!donePointer.value) {
+        sleep(const Duration(milliseconds: 10));
+      }
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during insertChainsCallback $e $stacktrace");
+      rethrow;
+    } finally {
+      calloc.free(donePointer);
+    }
+  }
+
+  static int wrapSyncFetchCallback(
+    List<UidAndValue> Function(Uids uids) callback,
+    Pointer<UnsignedChar> outputEntryTableLinesPointer,
+    Pointer<UnsignedInt> outputEntryTableLinesLength,
+    Pointer<UnsignedChar> uidsPointer,
+    int uidsNumber,
+  ) {
+    try {
+      final uids =
+          Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
+      final entryTableLines = callback(uids);
+      UidAndValue.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
+          outputEntryTableLinesLength, entryTableLines);
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during fetch callback ($callback) $e $stacktrace");
+      rethrow;
+    }
+  }
+
+  static int wrapSyncUpsertEntriesCallback(
+    List<UidAndValue> Function(List<UpsertData>) callback,
+    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
+    Pointer<UnsignedInt> outputRejectedEntriesListLength,
+    Pointer<UnsignedChar> entriesListPointer,
+    int entriesListLength,
+  ) {
+    try {
+      // Deserialize uids and values
+      final uidsAndValues = UpsertData.deserialize(
+          entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
+
+      final rejectedEntries = callback(uidsAndValues);
+      UidAndValue.serialize(outputRejectedEntriesListPointer,
+          outputRejectedEntriesListLength, rejectedEntries);
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during upsertEntriesCallback $e $stacktrace");
+      rethrow;
+    }
+  }
+
+  static int wrapSyncInsertChainsCallback(
+    void Function(List<UidAndValue>) callback,
+    Pointer<UnsignedChar> chainsListPointer,
+    int chainsListLength,
+  ) {
+    try {
+      final uidsAndValues = UidAndValue.deserialize(
+          chainsListPointer.cast<Uint8>().asTypedList(chainsListLength));
+
+      callback(uidsAndValues);
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during insertChainsCallback $e $stacktrace");
+      rethrow;
     }
   }
 }
