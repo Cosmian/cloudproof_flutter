@@ -19,7 +19,16 @@ const defaultOutputSizeInBytes = 131072;
 const errorCodeInCaseOfCallbackException = 42;
 const uidLength = 32;
 
+class ExceptionThrown {
+  DateTime datetime;
+  Object e;
+  StackTrace stacktrace;
+
+  ExceptionThrown(this.datetime, this.e, this.stacktrace);
+}
+
 class Findex {
+  static List<ExceptionThrown> exceptions = [];
   static FindexNativeLibrary? cachedLibrary;
 
   static FindexNativeLibrary get library {
@@ -86,7 +95,8 @@ class Findex {
         .toNativeUtf8(allocator: malloc);
 
     try {
-      final result = library.h_upsert(
+      final start = DateTime.now();
+      final errorCode = library.h_upsert(
         masterKeyPointer,
         masterKey.k.length,
         labelPointer.cast<Int>(),
@@ -96,10 +106,9 @@ class Findex {
         upsertEntries,
         insertChains,
       );
+      final end = DateTime.now();
 
-      if (result != 0) {
-        throw Exception("Fail to upsert: ${getLastError()}");
-      }
+      throwOnErrorCode("fail to upsert", errorCode, start, end);
     } finally {
       calloc.free(labelPointer);
       malloc.free(indexedValuesAndKeywordsPointer);
@@ -130,7 +139,8 @@ class Findex {
     outputLengthPointer.value = outputSizeInBytes;
 
     try {
-      final result = library.h_search(
+      final start = DateTime.now();
+      final errorCode = library.h_search(
         output.cast<Char>(),
         outputLengthPointer.cast<Int>(),
         kPointer.cast<Char>(),
@@ -144,18 +154,18 @@ class Findex {
         fetchEntries,
         fetchChains,
       );
+      final end = DateTime.now();
 
-      if (result != 0) {
-        // If Rust tells us that our buffer is too small for the search results
-        // retry with the correct buffer size.
-        if (outputLengthPointer.value > outputSizeInBytes) {
-          return search(k, label, keywords, fetchEntries, fetchChains,
-              outputSizeInBytes: outputLengthPointer.value);
-        }
-        throw Exception("Fail to search ${getLastError()}");
+      if (errorCode != 0 && outputLengthPointer.value > outputSizeInBytes) {
+        return search(k, label, keywords, fetchEntries, fetchChains,
+            outputSizeInBytes: outputLengthPointer.value);
       }
+
+      throwOnErrorCode("fail to search", errorCode, start, end);
+
       return deserializeSearchResults(
-          output.asTypedList(outputLengthPointer.value));
+        output.asTypedList(outputLengthPointer.value),
+      );
     } finally {
       calloc.free(output);
       calloc.free(outputLengthPointer);
@@ -163,6 +173,33 @@ class Findex {
       calloc.free(kPointer);
       calloc.free(labelPointer);
     }
+  }
+
+  static void throwOnErrorCode(
+    String baseMessage,
+    int errorCode,
+    DateTime start,
+    DateTime end,
+  ) {
+    if (errorCode == 0) return;
+
+    final message = "$baseMessage: ${getLastError()}";
+
+    if (errorCode == errorCodeInCaseOfCallbackException) {
+      final exceptions = Findex.exceptions.where((element) =>
+          element.datetime.isAfter(start) && element.datetime.isBefore(end));
+
+      if (exceptions.isNotEmpty) {
+        // We currently only rethrow the first exception but if multiple exceptions are thrown during this
+        // FFI call maybe we should give this information to the user.
+        Error.throwWithStackTrace(
+            CallbackExceptionWrapper(
+                "${exceptions.first.e.toString()} ($message)"),
+            exceptions.first.stacktrace);
+      }
+    }
+
+    throw Exception(message);
   }
 
   static Map<Keyword, List<IndexedValue>> deserializeSearchResults(
@@ -371,6 +408,7 @@ class Findex {
           outputEntryTableLinesLength, entryTableLines);
       return 0;
     } catch (e, stacktrace) {
+      Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during fetch callback ($callback) $e $stacktrace");
       rethrow;
     }
@@ -393,6 +431,7 @@ class Findex {
           outputRejectedEntriesListLength, rejectedEntries);
       return 0;
     } catch (e, stacktrace) {
+      Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during upsertEntriesCallback $e $stacktrace");
       rethrow;
     }
@@ -410,6 +449,7 @@ class Findex {
       callback(uidsAndValues);
       return 0;
     } catch (e, stacktrace) {
+      Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during insertChainsCallback $e $stacktrace");
       rethrow;
     }
@@ -423,5 +463,16 @@ extension Uint8ListBlobConversion on Uint8List {
     final blobBytes = blob.asTypedList(length);
     blobBytes.setAll(0, this);
     return blob;
+  }
+}
+
+class CallbackExceptionWrapper implements Exception {
+  String message;
+
+  CallbackExceptionWrapper(this.message);
+
+  @override
+  String toString() {
+    return message;
   }
 }

@@ -232,28 +232,18 @@ class SqliteFindex {
   }
 
   static List<UidAndValue> fetchEntries(Uids uids) {
-    try {
-      var questions = ("?," * uids.uids.length);
-      questions = questions.substring(0, questions.length - 1);
-      log("fetchEntries: questions : $questions");
-      for (final uid in uids.uids) {
-        log("fetchEntries: questions : uid: $uid");
-      }
-      final ResultSet resultSet = db.select(
-          'SELECT * FROM entry_table WHERE uid IN ($questions)', uids.uids);
+    var questions = ("?," * uids.uids.length);
+    questions = questions.substring(0, questions.length - 1);
 
-      List<UidAndValue> entries = [];
-      log("fetchEntries: entries.length : ${entries.length}");
-      for (final Row row in resultSet) {
-        log("fetchEntries: row: $row");
-        entries.add(UidAndValue(row['uid'], row['value']));
-      }
+    final ResultSet resultSet = db.select(
+        'SELECT * FROM entry_table WHERE uid IN ($questions)', uids.uids);
 
-      return entries;
-    } catch (e, stacktrace) {
-      log("fetchEntries: $e, stacktrace: $stacktrace");
-      return [];
+    List<UidAndValue> entries = [];
+    for (final Row row in resultSet) {
+      entries.add(UidAndValue(row['uid'], row['value']));
     }
+
+    return entries;
   }
 
   static List<UidAndValue> fetchChains(Uids uids) {
