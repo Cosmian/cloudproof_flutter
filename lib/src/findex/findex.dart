@@ -108,7 +108,7 @@ class Findex {
       );
       final end = DateTime.now();
 
-      throwOnErrorCode("fail to upsert", errorCode, start, end);
+      throwOnErrorCode(errorCode, start, end);
     } finally {
       calloc.free(labelPointer);
       malloc.free(indexedValuesAndKeywordsPointer);
@@ -161,7 +161,7 @@ class Findex {
             outputSizeInBytes: outputLengthPointer.value);
       }
 
-      throwOnErrorCode("fail to search", errorCode, start, end);
+      throwOnErrorCode(errorCode, start, end);
 
       return deserializeSearchResults(
         output.asTypedList(outputLengthPointer.value),
@@ -176,14 +176,11 @@ class Findex {
   }
 
   static void throwOnErrorCode(
-    String baseMessage,
     int errorCode,
     DateTime start,
     DateTime end,
   ) {
     if (errorCode == 0) return;
-
-    final message = "$baseMessage: ${getLastError()}";
 
     if (errorCode == errorCodeInCaseOfCallbackException) {
       final exceptions = Findex.exceptions.where((element) =>
@@ -192,14 +189,17 @@ class Findex {
       if (exceptions.isNotEmpty) {
         // We currently only rethrow the first exception but if multiple exceptions are thrown during this
         // FFI call maybe we should give this information to the user.
+        // Multiple exceptions can be thrown if there is multiple concurrent request.
         Error.throwWithStackTrace(
-            CallbackExceptionWrapper(
-                "${exceptions.first.e.toString()} ($message)"),
-            exceptions.first.stacktrace);
+          CallbackExceptionWrapper(
+            "${exceptions.first.e.toString()} (${getLastError()})",
+          ),
+          exceptions.first.stacktrace,
+        );
       }
     }
 
-    throw Exception(message);
+    throw FindexException(getLastError());
   }
 
   static Map<Keyword, List<IndexedValue>> deserializeSearchResults(
@@ -404,6 +404,7 @@ class Findex {
       final uids =
           Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
       final entryTableLines = callback(uids);
+
       UidAndValue.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
           outputEntryTableLinesLength, entryTableLines);
       return 0;
@@ -470,6 +471,17 @@ class CallbackExceptionWrapper implements Exception {
   String message;
 
   CallbackExceptionWrapper(this.message);
+
+  @override
+  String toString() {
+    return message;
+  }
+}
+
+class FindexException implements Exception {
+  String message;
+
+  FindexException(this.message);
 
   @override
   String toString() {
