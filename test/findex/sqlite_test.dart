@@ -119,7 +119,7 @@ void main() {
         expect(stacktrace.toString(), contains("SqliteFindex.fetchEntries"));
         expect(
           stacktrace.toString(),
-          contains("test/findex/sqlite_test.dart:305:7"), // :ExceptionLine
+          contains("test/findex/sqlite_test.dart:366:7"), // :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
@@ -158,6 +158,64 @@ void main() {
         );
       } finally {
         SqliteFindex.returnOnlyUidInsideFetchChains = false;
+      }
+
+      try {
+        SqliteFindex.returnOnlyValueInsideFetchChains = true;
+
+        await SqliteFindex.search(
+          masterKey.k,
+          label,
+          [Keyword.fromString("France")],
+        );
+
+        throw Exception("search should throw");
+      } catch (e) {
+        expect(
+          e.toString(),
+          "`uid` should be of length 32. Actual length is 188 bytes. (callback 'fetch chains' threw an exception)",
+        );
+      } finally {
+        SqliteFindex.returnOnlyValueInsideFetchChains = false;
+      }
+
+      try {
+        SqliteFindex.returnOnlyUidInsideFetchEntries = true;
+
+        await SqliteFindex.search(
+          masterKey.k,
+          label,
+          [Keyword.fromString("France")],
+        );
+
+        throw Exception("search should throw");
+      } catch (e) {
+        expect(
+          e.toString(),
+          startsWith(
+              "fail to decrypt one of the `value` returned by the fetch entries callback (uid as hex was"),
+        );
+      } finally {
+        SqliteFindex.returnOnlyUidInsideFetchEntries = false;
+      }
+
+      try {
+        SqliteFindex.returnOnlyValueInsideFetchEntries = true;
+
+        await SqliteFindex.search(
+          masterKey.k,
+          label,
+          [Keyword.fromString("France")],
+        );
+
+        throw Exception("search should throw");
+      } catch (e) {
+        expect(
+          e.toString(),
+          "`uid` should be of length 32. Actual length is 108 bytes. (callback 'fetch entries' threw an exception)",
+        );
+      } finally {
+        SqliteFindex.returnOnlyValueInsideFetchEntries = false;
       }
     });
   });
@@ -216,7 +274,10 @@ Future<Database> initDb(String filepath) async {
 class SqliteFindex {
   static Database? singletonDb;
   static bool throwInsideFetchEntries = false;
+  static bool returnOnlyUidInsideFetchEntries = false;
+  static bool returnOnlyValueInsideFetchEntries = false;
   static bool returnOnlyUidInsideFetchChains = false;
+  static bool returnOnlyValueInsideFetchChains = false;
 
   static Database init(String filepath) {
     final newDb = sqlite3.open(filepath);
@@ -312,7 +373,13 @@ class SqliteFindex {
 
     List<UidAndValue> entries = [];
     for (final Row row in resultSet) {
-      entries.add(UidAndValue(row['uid'], row['value']));
+      if (SqliteFindex.returnOnlyUidInsideFetchEntries) {
+        entries.add(UidAndValue(row['uid'], row['uid']));
+      } else if (SqliteFindex.returnOnlyValueInsideFetchEntries) {
+        entries.add(UidAndValue(row['value'], row['value']));
+      } else {
+        entries.add(UidAndValue(row['uid'], row['value']));
+      }
     }
 
     return entries;
@@ -328,6 +395,8 @@ class SqliteFindex {
     for (final Row row in resultSet) {
       if (SqliteFindex.returnOnlyUidInsideFetchChains) {
         entries.add(UidAndValue(row['uid'], row['uid']));
+      } else if (SqliteFindex.returnOnlyValueInsideFetchChains) {
+        entries.add(UidAndValue(row['value'], row['value']));
       } else {
         entries.add(UidAndValue(row['uid'], row['value']));
       }
