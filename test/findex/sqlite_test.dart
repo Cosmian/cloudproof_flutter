@@ -99,6 +99,7 @@ void main() {
       final masterKey = FindexMasterKey.fromJson(jsonDecode(
           await File('test/resources/findex/master_key.json').readAsString()));
       final label = Uint8List.fromList(utf8.encode("Some Label"));
+      await SqliteFindex.indexAll(masterKey, label);
 
       try {
         SqliteFindex.throwInsideFetchEntries = true;
@@ -118,7 +119,7 @@ void main() {
         expect(stacktrace.toString(), contains("SqliteFindex.fetchEntries"));
         expect(
           stacktrace.toString(),
-          contains("test/findex/sqlite_test.dart:283:7"), // :ExceptionLine
+          contains("test/findex/sqlite_test.dart:305:7"), // :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
@@ -137,6 +138,26 @@ void main() {
           e.toString(),
           "While parsing master key for Findex search, wrong size when parsing bytes: 4 given should be 16",
         );
+      }
+
+      try {
+        SqliteFindex.returnOnlyUidInsideFetchChains = true;
+
+        await SqliteFindex.search(
+          masterKey.k,
+          label,
+          [Keyword.fromString("France")],
+        );
+
+        throw Exception("search should throw");
+      } catch (e) {
+        expect(
+          e.toString(),
+          startsWith(
+              "fail to decrypt one of the `value` returned by the fetch chains callback (uid as hex was"),
+        );
+      } finally {
+        SqliteFindex.returnOnlyUidInsideFetchChains = false;
       }
     });
   });
@@ -195,6 +216,7 @@ Future<Database> initDb(String filepath) async {
 class SqliteFindex {
   static Database? singletonDb;
   static bool throwInsideFetchEntries = false;
+  static bool returnOnlyUidInsideFetchChains = false;
 
   static Database init(String filepath) {
     final newDb = sqlite3.open(filepath);
@@ -304,7 +326,11 @@ class SqliteFindex {
 
     List<UidAndValue> entries = [];
     for (final Row row in resultSet) {
-      entries.add(UidAndValue(row['uid'], row['value']));
+      if (SqliteFindex.returnOnlyUidInsideFetchChains) {
+        entries.add(UidAndValue(row['uid'], row['uid']));
+      } else {
+        entries.add(UidAndValue(row['uid'], row['value']));
+      }
     }
 
     return entries;
@@ -346,6 +372,7 @@ class SqliteFindex {
         }
       }
     }
+
     return rejectedEntries;
   }
 
