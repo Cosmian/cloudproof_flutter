@@ -114,7 +114,7 @@ void main() {
       } catch (e, stacktrace) {
         expect(
           e.toString(),
-          "Unsupported operation: Some message (callback 'fetch entries' threw an exception)",
+          "Unsupported operation: Some message",
         );
         expect(stacktrace.toString(), contains("SqliteFindex.fetchEntries"));
         expect(
@@ -173,7 +173,7 @@ void main() {
       } catch (e) {
         expect(
           e.toString(),
-          "`uid` should be of length 32. Actual length is 188 bytes. (callback 'fetch chains' threw an exception)",
+          "`uid` should be of length 32. Actual length is 188 bytes.",
         );
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchChains = false;
@@ -212,7 +212,7 @@ void main() {
       } catch (e) {
         expect(
           e.toString(),
-          "`uid` should be of length 32. Actual length is 108 bytes. (callback 'fetch entries' threw an exception)",
+          "`uid` should be of length 32. Actual length is 108 bytes.",
         );
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchEntries = false;

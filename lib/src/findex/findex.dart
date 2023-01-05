@@ -191,9 +191,7 @@ class Findex {
         // FFI call maybe we should give this information to the user.
         // Multiple exceptions can be thrown if there is multiple concurrent request.
         Error.throwWithStackTrace(
-          CallbackExceptionWrapper(
-            "${exceptions.first.e.toString()} (${getLastError()})",
-          ),
+          CallbackExceptionWrapper(exceptions.first.e.toString()),
           exceptions.first.stacktrace,
         );
       }
