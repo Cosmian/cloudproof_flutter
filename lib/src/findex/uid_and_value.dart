@@ -10,7 +10,13 @@ class UidAndValue {
   Uint8List uid;
   Uint8List value;
 
-  UidAndValue(this.uid, this.value);
+  UidAndValue(this.uid, this.value) {
+    if (uid.lengthInBytes != 32) {
+      throw FindexException(
+        "`uid` should be of length 32. Actual length is ${uid.lengthInBytes} bytes.",
+      );
+    }
+  }
 
   static List<UidAndValue> deserialize(Uint8List bytes) {
     List<UidAndValue> values = [];
