@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:ffi';
@@ -6,8 +8,8 @@ import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path/path.dart' as path;
 import 'package:sqlite3/sqlite3.dart';
+import 'package:path/path.dart' as path;
 
 const expectedUsersIdsForFrance = [
   4,
@@ -45,13 +47,16 @@ const expectedUsersIdsForFrance = [
 void main() {
   group('Findex SQLite', () {
     test('search/upsert', () async {
-      await initDb();
+      const dbPath = "./build/sqlite.db";
+
+      await initDb(dbPath);
 
       final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_keys.json').readAsString()));
+          await File('test/resources/findex/master_key.json').readAsString()));
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
 
+      SqliteFindex.init(dbPath);
       expect(SqliteFindex.count('entry_table'), equals(0));
       expect(SqliteFindex.count('chain_table'), equals(0));
 
@@ -72,22 +77,32 @@ void main() {
         return indexedValue.location.bytes[0];
       }).toList();
       usersIds.sort();
+      log("Found usersIds: $usersIds");
 
       expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
       expect(usersIds, equals(expectedUsersIdsForFrance));
     });
+
+    test('nonRegressionTest', () async {
+      SqliteFindex.verify('test/resources/findex/non_regression/sqlite.db');
+      final dir = Directory('test/resources/findex/non_regression/');
+      final List<FileSystemEntity> entities = await dir.list().toList();
+      entities.whereType<File>().forEach((element) async {
+        final newPath =
+            path.join(Directory.systemTemp.path, path.basename(element.path));
+        element.copySync(newPath);
+        await SqliteFindex.verify(newPath);
+        print("... OK: Findex non regression test file: $newPath");
+      });
+    });
   });
 }
 
-String dbPath() {
-  return path.join(Directory.systemTemp.path, "findex_tests.database");
-}
-
-Future<Database> initDb() async {
-  if (await File(dbPath()).exists()) {
-    await File(dbPath()).delete();
+Future<Database> initDb(String filepath) async {
+  if (await File(filepath).exists()) {
+    await File(filepath).delete();
   }
-  final db = sqlite3.open(dbPath());
+  final db = sqlite3.open(filepath);
 
   db.execute('''
     CREATE TABLE IF NOT EXISTS users (
@@ -136,14 +151,17 @@ Future<Database> initDb() async {
 class SqliteFindex {
   static Database? singletonDb;
 
+  static Database init(String filepath) {
+    final newDb = sqlite3.open(filepath);
+    singletonDb = newDb;
+    return newDb;
+  }
+
   static Database get db {
     if (singletonDb != null) {
       return singletonDb as Database;
     }
-
-    final newDb = sqlite3.open(dbPath());
-    singletonDb = newDb;
-    return newDb;
+    throw Exception("Database not initialized");
   }
 
   static Future<void> indexAll(
@@ -156,6 +174,45 @@ class SqliteFindex {
     };
 
     await upsert(masterKey, label, indexedValuesAndKeywords);
+  }
+
+  static Future<void> indexAllFromFile(
+      String usersFilepath, FindexMasterKey masterKey, Uint8List label) async {
+    final users = jsonDecode(await File(usersFilepath).readAsString());
+
+    final stmt = db.prepare(
+        'INSERT INTO users (id, firstName, lastName, phone, email, country, region, employeeNumber, security) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+
+    final indexedValuesAndKeywords = {
+      for (final user in users)
+        IndexedValue.fromLocation(
+            Location(Uint8List(4)..buffer.asInt32List()[0] = user['id'])): [
+          Keyword.fromString(user['firstName']),
+          Keyword.fromString(user['lastName']),
+          Keyword.fromString(user['phone']),
+          Keyword.fromString(user['email']),
+          Keyword.fromString(user['country']),
+          Keyword.fromString(user['region']),
+          Keyword.fromString(user['employeeNumber']),
+          Keyword.fromString(user['security'])
+        ],
+    };
+
+    await upsert(masterKey, label, indexedValuesAndKeywords);
+
+    for (final user in users) {
+      stmt.execute([
+        user['id'],
+        user['firstName'],
+        user['lastName'],
+        user['phone'],
+        user['email'],
+        user['country'],
+        user['region'],
+        user['employeeNumber'],
+        user['security'],
+      ]);
+    }
   }
 
   static List<User> allUsers() {
@@ -226,26 +283,28 @@ class SqliteFindex {
   static List<UidAndValue> upsertEntries(List<UpsertData> entries) {
     log("upsertEntries: start");
     List<UidAndValue> rejectedEntries = [];
+    final stmt = db.prepare(
+        'INSERT INTO entry_table (uid, value) VALUES (?, ?) ON CONFLICT (uid)  DO UPDATE SET value = ? WHERE value = ? RETURNING *');
     for (final entry in entries) {
-      List<Uint8List> uids = [entry.uid];
-      final resultSet = db.select(
-        'SELECT value FROM entry_table WHERE uid  = ?',
-        uids,
-      );
-      if (resultSet.length > 1) {
-        throw Exception(
-            "Invalid Entry table, found multiple rows for same uid");
-      }
+      final ResultSet resultSet = stmt.select([
+        entry.uid,
+        entry.newValue,
+        entry.newValue,
+        entry.oldValue,
+      ]);
 
       if (resultSet.isEmpty) {
-        upsertEntry(entry);
-      } else {
-        log("upsertEntries: exist");
-        Uint8List actualValue = resultSet[0]['value'];
-        if (actualValue == entry.oldValue) {
-          upsertEntry(entry);
-        } else {
-          rejectedEntries.add(UidAndValue(entry.uid, actualValue));
+        try {
+          final ResultSet resultSet = db
+              .select('SELECT value FROM entry_table WHERE uid=?', [entry.uid]);
+          if (resultSet.isEmpty || resultSet.length != 1) {
+            throw Exception(
+                "Only 1 entry is expected, found ${resultSet.length} entries");
+          }
+          final Row row = resultSet[0];
+          rejectedEntries.add(UidAndValue(entry.uid, row['value']));
+        } catch (e) {
+          rethrow;
         }
       }
     }
@@ -367,6 +426,58 @@ class SqliteFindex {
       chainsListLength,
     );
   }
+
+  static Future<void> verify(String dbPath) async {
+    final masterKey = FindexMasterKey.fromJson(jsonDecode(
+        await File('test/resources/findex/master_key.json').readAsString()));
+    final label = Uint8List.fromList(utf8.encode("Some Label"));
+
+    init(dbPath);
+
+    expect(SqliteFindex.count('entry_table'), equals(583));
+    expect(SqliteFindex.count('chain_table'), equals(618));
+
+    log("\n\n\n### Start Searching");
+    {
+      final searchResults =
+          await search(masterKey.k, label, [Keyword.fromString("France")]);
+
+      expect(searchResults.length, equals(1));
+
+      final keyword = searchResults.entries.toList()[0].key;
+      final indexedValues = searchResults.entries.toList()[0].value;
+      final usersIds = indexedValues.map((indexedValue) {
+        return indexedValue.location.bytes[0];
+      }).toList();
+      usersIds.sort();
+      log("Found usersIds: $usersIds");
+
+      expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
+      expect(usersIds.length, expectedUsersIdsForFrance.length);
+    }
+
+    log("\n\n\n### Start Upserting");
+    await indexAllFromFile(
+        'test/resources/findex/single_user.json', masterKey, label);
+
+    log("\n\n\n### Start Searching again");
+    {
+      final searchResults =
+          await search(masterKey.k, label, [Keyword.fromString("France")]);
+
+      expect(searchResults.length, 1);
+
+      final keyword = searchResults.entries.toList()[0].key;
+      final indexedValues = searchResults.entries.toList()[0].value;
+      final usersIds = indexedValues.map((indexedValue) {
+        return indexedValue.location.bytes[0];
+      }).toList();
+      usersIds.sort();
+
+      expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
+      expect(usersIds.length, expectedUsersIdsForFrance.length + 1);
+    }
+  }
 }
 
 class User {
@@ -398,7 +509,7 @@ class User {
   }
 
   Location get location {
-    return Location(Uint8List.fromList([id]));
+    return Location(Uint8List(4)..buffer.asInt32List()[0] = id);
   }
 
   List<Keyword> get indexedWords {
