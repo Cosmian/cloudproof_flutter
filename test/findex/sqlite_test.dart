@@ -284,28 +284,28 @@ class SqliteFindex {
     log("upsertEntries: start");
     List<UidAndValue> rejectedEntries = [];
     final stmt = db.prepare(
-        'INSERT INTO entry_table (uid, value) VALUES (?, ?) ON CONFLICT (uid)  DO UPDATE SET value = ? WHERE value = ?');
+        'INSERT INTO entry_table (uid, value) VALUES (?, ?) ON CONFLICT (uid)  DO UPDATE SET value = ? WHERE value = ? RETURNING *');
     for (final entry in entries) {
-      stmt.execute([
+      final ResultSet resultSet = stmt.select([
         entry.uid,
         entry.newValue,
         entry.newValue,
         entry.oldValue,
       ]);
 
-      try {
-        final ResultSet resultSet =
-            db.select('SELECT value FROM entry_table WHERE uid=?', [entry.uid]);
-        if (resultSet.isEmpty || resultSet.length != 1) {
-          throw Exception(
-              "Only 1 entry is expected, found ${resultSet.length} entries");
+      if (resultSet.isEmpty) {
+        try {
+          final ResultSet resultSet = db
+              .select('SELECT value FROM entry_table WHERE uid=?', [entry.uid]);
+          if (resultSet.isEmpty || resultSet.length != 1) {
+            throw Exception(
+                "Only 1 entry is expected, found ${resultSet.length} entries");
+          }
+          final Row row = resultSet[0];
+          rejectedEntries.add(UidAndValue(entry.uid, row['value']));
+        } catch (e) {
+          rethrow;
         }
-        final Row row = resultSet[0];
-        if (row['value'] == entry.oldValue) {
-          rejectedEntries.add(UidAndValue(entry.uid, entry.newValue));
-        }
-      } catch (e) {
-        rethrow;
       }
     }
     return rejectedEntries;
