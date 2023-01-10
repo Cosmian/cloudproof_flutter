@@ -14,7 +14,7 @@ stages:
   script:
     - flutter pub get
     - flutter analyze .
-    - flutter test
+    - flutter test --concurrency 1
     - dart benchmark/cloudproof_benchmark.dart
 
 test_linux:
