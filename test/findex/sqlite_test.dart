@@ -282,6 +282,7 @@ class SqliteFindex {
 
   static List<UidAndValue> upsertEntries(List<UpsertData> entries) {
     log("upsertEntries: start");
+    List<UidAndValue> rejectedEntries = [];
     final stmt = db.prepare(
         'INSERT INTO entry_table (uid, value) VALUES (?, ?) ON CONFLICT (uid)  DO UPDATE SET value = ? WHERE value = ?');
     for (final entry in entries) {
@@ -291,8 +292,27 @@ class SqliteFindex {
         entry.newValue,
         entry.oldValue,
       ]);
+
+      try {
+        final ResultSet resultSet =
+            db.select('SELECT value FROM entry_table WHERE uid=?', [entry.uid]);
+        if (resultSet.isEmpty) {
+          // No rejected value
+          continue;
+        }
+        if (resultSet.length != 1) {
+          throw Exception(
+              "Only 1 entry is expected, found ${resultSet.length} entries");
+        }
+        final Row row = resultSet[0];
+        if (row['value'] == entry.oldValue) {
+          rejectedEntries.add(UidAndValue(entry.uid, entry.oldValue));
+        }
+      } catch (e) {
+        rethrow;
+      }
     }
-    return [];
+    return rejectedEntries;
   }
 
   static void insertChains(List<UidAndValue> chains) {
