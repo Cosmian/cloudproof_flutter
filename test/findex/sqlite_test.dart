@@ -306,7 +306,7 @@ class SqliteFindex {
         }
         final Row row = resultSet[0];
         if (row['value'] == entry.oldValue) {
-          rejectedEntries.add(UidAndValue(entry.uid, entry.oldValue));
+          rejectedEntries.add(UidAndValue(entry.uid, entry.newValue));
         }
       } catch (e) {
         rethrow;
