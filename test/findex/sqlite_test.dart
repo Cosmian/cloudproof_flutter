@@ -296,11 +296,7 @@ class SqliteFindex {
       try {
         final ResultSet resultSet =
             db.select('SELECT value FROM entry_table WHERE uid=?', [entry.uid]);
-        if (resultSet.isEmpty) {
-          // No rejected value
-          continue;
-        }
-        if (resultSet.length != 1) {
+        if (resultSet.isEmpty || resultSet.length != 1) {
           throw Exception(
               "Only 1 entry is expected, found ${resultSet.length} entries");
         }
