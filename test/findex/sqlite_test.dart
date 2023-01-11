@@ -47,8 +47,7 @@ const expectedUsersIdsForFrance = [
 void main() {
   group('Findex SQLite', () {
     test('search/upsert', () async {
-      final dbPath = path.join(
-          Directory.systemTemp.path, path.basename("basic_tests_sqlite.db"));
+      const dbPath = "./build/sqlite.db";
 
       await initDb(dbPath);
 
@@ -293,8 +292,6 @@ class SqliteFindex {
         entry.oldValue,
       ]);
 
-      // final changes = db.getUpdatedRows();
-      // print("changes: $changes");
       if (db.getUpdatedRows() == 0) {
         try {
           final ResultSet resultSet = db
