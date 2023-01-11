@@ -84,7 +84,6 @@ void main() {
     });
 
     test('nonRegressionTest', () async {
-      SqliteFindex.verify('test/resources/findex/non_regression/sqlite.db');
       final dir = Directory('test/resources/findex/non_regression/');
       final List<FileSystemEntity> entities = await dir.list().toList();
       entities.whereType<File>().forEach((element) async {
@@ -284,22 +283,22 @@ class SqliteFindex {
     log("upsertEntries: start");
     List<UidAndValue> rejectedEntries = [];
     final stmt = db.prepare(
-        'INSERT INTO entry_table (uid, value) VALUES (?, ?) ON CONFLICT (uid)  DO UPDATE SET value = ? WHERE value = ? RETURNING *');
+        'INSERT INTO entry_table (uid, value) VALUES (?, ?) ON CONFLICT (uid)  DO UPDATE SET value = ? WHERE value = ?');
     for (final entry in entries) {
-      final ResultSet resultSet = stmt.select([
+      stmt.execute([
         entry.uid,
         entry.newValue,
         entry.newValue,
         entry.oldValue,
       ]);
 
-      if (resultSet.isEmpty) {
+      if (db.getUpdatedRows() == 0) {
         try {
           final ResultSet resultSet = db
               .select('SELECT value FROM entry_table WHERE uid=?', [entry.uid]);
-          if (resultSet.isEmpty || resultSet.length != 1) {
+          if (resultSet.length != 1) {
             throw Exception(
-                "Only 1 entry is expected, found ${resultSet.length} entries");
+                "1 entry is expected, found ${resultSet.length} entries");
           }
           final Row row = resultSet[0];
           rejectedEntries.add(UidAndValue(entry.uid, row['value']));
