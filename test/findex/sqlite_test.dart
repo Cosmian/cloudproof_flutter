@@ -293,20 +293,22 @@ class SqliteFindex {
         entry.oldValue,
       ]);
 
-      // if (resultSet.isEmpty) {
-      //   try {
-      //     final ResultSet resultSet = db
-      //         .select('SELECT value FROM entry_table WHERE uid=?', [entry.uid]);
-      //     if (resultSet.length != 1) {
-      //       throw Exception(
-      //           "1 entry is expected, found ${resultSet.length} entries");
-      //     }
-      //     final Row row = resultSet[0];
-      //     rejectedEntries.add(UidAndValue(entry.uid, row['value']));
-      //   } catch (e) {
-      //     rethrow;
-      //   }
-      // }
+      // final changes = db.getUpdatedRows();
+      // print("changes: $changes");
+      if (db.getUpdatedRows() == 0) {
+        try {
+          final ResultSet resultSet = db
+              .select('SELECT value FROM entry_table WHERE uid=?', [entry.uid]);
+          if (resultSet.length != 1) {
+            throw Exception(
+                "1 entry is expected, found ${resultSet.length} entries");
+          }
+          final Row row = resultSet[0];
+          rejectedEntries.add(UidAndValue(entry.uid, row['value']));
+        } catch (e) {
+          rethrow;
+        }
+      }
     }
     return rejectedEntries;
   }
