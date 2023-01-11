@@ -59,6 +59,7 @@ class FindexNativeLibrary {
     ffi.Pointer<ffi.Char> keywords_ptr,
     int max_results_per_keyword,
     int max_depth,
+    int fetch_chains_batch_size,
     int progress_callback,
     FetchEntryTableCallback fetch_entry,
     FetchChainTableCallback fetch_chain,
@@ -73,6 +74,7 @@ class FindexNativeLibrary {
       keywords_ptr,
       max_results_per_keyword,
       max_depth,
+      fetch_chains_batch_size,
       progress_callback,
       fetch_entry,
       fetch_chain,
@@ -92,6 +94,7 @@ class FindexNativeLibrary {
               ffi.Int,
               ffi.Int,
               ffi.Int,
+              ffi.Int,
               FetchEntryTableCallback,
               FetchChainTableCallback)>>('h_search');
   late final _h_search = _h_searchPtr.asFunction<
@@ -103,6 +106,7 @@ class FindexNativeLibrary {
           ffi.Pointer<ffi.Int>,
           int,
           ffi.Pointer<ffi.Char>,
+          int,
           int,
           int,
           int,
@@ -417,6 +421,8 @@ typedef ListRemovedLocationsCallback = ffi.Pointer<
             ffi.Pointer<ffi.UnsignedInt>,
             ffi.Pointer<ffi.UnsignedChar>,
             ffi.UnsignedInt)>>;
+
+const int SECURE_FETCH_CHAINS_BATCH_SIZE = 1;
 
 const int Keyword_HASH_LENGTH = 32;
 
