@@ -1,7 +1,6 @@
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
@@ -65,7 +64,6 @@ void main() {
       expect(SqliteFindex.count('entry_table'), equals(583));
       expect(SqliteFindex.count('chain_table'), equals(618));
 
-      log("\n\n\n### Start Searching");
       final searchResults = await SqliteFindex.search(
           masterKey.k, label, [Keyword.fromString("France")]);
 
@@ -77,7 +75,6 @@ void main() {
         return indexedValue.location.bytes[0];
       }).toList();
       usersIds.sort();
-      log("Found usersIds: $usersIds");
 
       expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
       expect(usersIds, equals(expectedUsersIdsForFrance));
@@ -93,6 +90,133 @@ void main() {
         await SqliteFindex.verify(newPath);
         print("... OK: Findex non regression test file: $newPath");
       });
+    });
+
+    test('errors', () async {
+      const dbPath = "./build/sqlite.db";
+      await initDb(dbPath);
+
+      final masterKey = FindexMasterKey.fromJson(jsonDecode(
+          await File('test/resources/findex/master_key.json').readAsString()));
+      final label = Uint8List.fromList(utf8.encode("Some Label"));
+      await SqliteFindex.indexAll(masterKey, label);
+
+      try {
+        SqliteFindex.throwInsideFetchEntries = true;
+
+        await SqliteFindex.search(
+          masterKey.k,
+          label,
+          [Keyword.fromString("France")],
+        );
+
+        throw Exception("search should throw");
+      } catch (e, stacktrace) {
+        expect(
+          e.toString(),
+          "Unsupported operation: Some message",
+        );
+        expect(stacktrace.toString(), contains("SqliteFindex.fetchEntries"));
+        expect(
+          stacktrace.toString(),
+          contains("test/findex/sqlite_test.dart:365:7"), // :ExceptionLine
+        );
+      } finally {
+        SqliteFindex.throwInsideFetchEntries = false;
+      }
+
+      try {
+        await SqliteFindex.search(
+          masterKey.k.sublist(0, 4),
+          label,
+          [Keyword.fromString("France")],
+        );
+
+        throw Exception("search should throw");
+      } catch (e) {
+        expect(
+          e.toString(),
+          "While parsing master key for Findex search, wrong size when parsing bytes: 4 given should be 16",
+        );
+      }
+
+      try {
+        SqliteFindex.returnOnlyUidInsideFetchChains = true;
+
+        await SqliteFindex.search(
+          masterKey.k,
+          label,
+          [Keyword.fromString("France")],
+        );
+
+        throw Exception("search should throw");
+      } catch (e) {
+        expect(
+          e.toString(),
+          startsWith(
+              "fail to decrypt one of the `value` returned by the fetch chains callback (uid as hex was"),
+        );
+      } finally {
+        SqliteFindex.returnOnlyUidInsideFetchChains = false;
+      }
+
+      try {
+        SqliteFindex.returnOnlyValueInsideFetchChains = true;
+
+        await SqliteFindex.search(
+          masterKey.k,
+          label,
+          [Keyword.fromString("France")],
+        );
+
+        throw Exception("search should throw");
+      } catch (e) {
+        expect(
+          e.toString(),
+          "`uid` should be of length 32. Actual length is 188 bytes.",
+        );
+      } finally {
+        SqliteFindex.returnOnlyValueInsideFetchChains = false;
+      }
+
+      try {
+        SqliteFindex.returnOnlyUidInsideFetchEntries = true;
+
+        await SqliteFindex.search(
+          masterKey.k,
+          label,
+          [Keyword.fromString("France")],
+        );
+
+        throw Exception("search should throw");
+      } catch (e) {
+        expect(
+          e.toString(),
+          startsWith(
+              "fail to decrypt one of the `value` returned by the fetch entries callback (uid as hex was"),
+        );
+      } finally {
+        SqliteFindex.returnOnlyUidInsideFetchEntries = false;
+      }
+
+      try {
+        SqliteFindex.returnOnlyValueInsideFetchEntries = true;
+
+        await SqliteFindex.search(
+          masterKey.k,
+          label,
+          [Keyword.fromString("France")],
+        );
+
+        throw Exception("search should throw");
+      } catch (e) {
+        expect(
+          e.toString(),
+          "`uid` should be of length 32. Actual length is 108 bytes.",
+        );
+      } finally {
+        SqliteFindex.returnOnlyValueInsideFetchEntries = false;
+      }
     });
   });
 }
@@ -149,6 +273,11 @@ Future<Database> initDb(String filepath) async {
 
 class SqliteFindex {
   static Database? singletonDb;
+  static bool throwInsideFetchEntries = false;
+  static bool returnOnlyUidInsideFetchEntries = false;
+  static bool returnOnlyValueInsideFetchEntries = false;
+  static bool returnOnlyUidInsideFetchChains = false;
+  static bool returnOnlyValueInsideFetchChains = false;
 
   static Database init(String filepath) {
     final newDb = sqlite3.open(filepath);
@@ -232,28 +361,28 @@ class SqliteFindex {
   }
 
   static List<UidAndValue> fetchEntries(Uids uids) {
-    try {
-      var questions = ("?," * uids.uids.length);
-      questions = questions.substring(0, questions.length - 1);
-      log("fetchEntries: questions : $questions");
-      for (final uid in uids.uids) {
-        log("fetchEntries: questions : uid: $uid");
-      }
-      final ResultSet resultSet = db.select(
-          'SELECT * FROM entry_table WHERE uid IN ($questions)', uids.uids);
+    if (SqliteFindex.throwInsideFetchEntries) {
+      throw UnsupportedError("Some message"); // :ExceptionLine
+    }
 
-      List<UidAndValue> entries = [];
-      log("fetchEntries: entries.length : ${entries.length}");
-      for (final Row row in resultSet) {
-        log("fetchEntries: row: $row");
+    var questions = ("?," * uids.uids.length);
+    questions = questions.substring(0, questions.length - 1);
+
+    final ResultSet resultSet = db.select(
+        'SELECT * FROM entry_table WHERE uid IN ($questions)', uids.uids);
+
+    List<UidAndValue> entries = [];
+    for (final Row row in resultSet) {
+      if (SqliteFindex.returnOnlyUidInsideFetchEntries) {
+        entries.add(UidAndValue(row['uid'], row['uid']));
+      } else if (SqliteFindex.returnOnlyValueInsideFetchEntries) {
+        entries.add(UidAndValue(row['value'], row['value']));
+      } else {
         entries.add(UidAndValue(row['uid'], row['value']));
       }
-
-      return entries;
-    } catch (e, stacktrace) {
-      log("fetchEntries: $e, stacktrace: $stacktrace");
-      return [];
     }
+
+    return entries;
   }
 
   static List<UidAndValue> fetchChains(Uids uids) {
@@ -264,7 +393,13 @@ class SqliteFindex {
 
     List<UidAndValue> entries = [];
     for (final Row row in resultSet) {
-      entries.add(UidAndValue(row['uid'], row['value']));
+      if (SqliteFindex.returnOnlyUidInsideFetchChains) {
+        entries.add(UidAndValue(row['uid'], row['uid']));
+      } else if (SqliteFindex.returnOnlyValueInsideFetchChains) {
+        entries.add(UidAndValue(row['value'], row['value']));
+      } else {
+        entries.add(UidAndValue(row['uid'], row['value']));
+      }
     }
 
     return entries;
@@ -280,7 +415,6 @@ class SqliteFindex {
   }
 
   static List<UidAndValue> upsertEntries(List<UpsertData> entries) {
-    log("upsertEntries: start");
     List<UidAndValue> rejectedEntries = [];
     final stmt = db.prepare(
         'INSERT INTO entry_table (uid, value) VALUES (?, ?) ON CONFLICT (uid)  DO UPDATE SET value = ? WHERE value = ?');
@@ -307,6 +441,7 @@ class SqliteFindex {
         }
       }
     }
+
     return rejectedEntries;
   }
 
@@ -318,7 +453,6 @@ class SqliteFindex {
         chain.uid,
         chain.value,
       ]);
-      log("insertChains: \nuid (len: ${chain.uid.length}): ${chain.uid}, \noldValue (len: ${chain.value.length}): ${chain.value}");
     }
   }
 
@@ -436,7 +570,6 @@ class SqliteFindex {
     expect(SqliteFindex.count('entry_table'), equals(583));
     expect(SqliteFindex.count('chain_table'), equals(618));
 
-    log("\n\n\n### Start Searching");
     {
       final searchResults =
           await search(masterKey.k, label, [Keyword.fromString("France")]);
@@ -449,17 +582,14 @@ class SqliteFindex {
         return indexedValue.location.bytes[0];
       }).toList();
       usersIds.sort();
-      log("Found usersIds: $usersIds");
 
       expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
       expect(usersIds.length, expectedUsersIdsForFrance.length);
     }
 
-    log("\n\n\n### Start Upserting");
     await indexAllFromFile(
         'test/resources/findex/single_user.json', masterKey, label);
 
-    log("\n\n\n### Start Searching again");
     {
       final searchResults =
           await search(masterKey.k, label, [Keyword.fromString("France")]);
