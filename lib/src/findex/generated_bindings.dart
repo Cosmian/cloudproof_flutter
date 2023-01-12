@@ -93,7 +93,7 @@ class FindexNativeLibrary {
               ffi.Pointer<ffi.Char>,
               ffi.Int,
               ffi.Int,
-              ffi.Int,
+              ffi.UnsignedInt,
               ffi.Int,
               FetchEntryTableCallback,
               FetchChainTableCallback)>>('h_search');
