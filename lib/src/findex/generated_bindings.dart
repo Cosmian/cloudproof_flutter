@@ -422,8 +422,6 @@ typedef ListRemovedLocationsCallback = ffi.Pointer<
             ffi.Pointer<ffi.UnsignedChar>,
             ffi.UnsignedInt)>>;
 
-const int SECURE_FETCH_CHAINS_BATCH_SIZE = 1;
-
 const int Keyword_HASH_LENGTH = 32;
 
 const int UID_LENGTH = 32;
