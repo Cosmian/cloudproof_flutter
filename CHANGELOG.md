@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.1] - 2023-01-13
+
+### Features
+
+- Add wrapping functions for callbacks in `Findex` to help simplify implementation of callbacks
+- Add `insecureFetchChainsBatchSize` argument to `Findex.search` to reduce the number of `fetchChains` calls during searches
+
+### Miscellaneous Tasks
+
+- Merge tag 'v4.0.0' into develop
+
+### Testing
+
+- Check non regression on existing SQLite db
+- Rework upsertEntries
+
+### Ci
+
+- Rename sqlite filename
+
 ## [4.0.0] - 2022-12-20
 
 ### Features

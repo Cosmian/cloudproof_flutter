@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:ffi';
-import 'dart:io' show Directory, Platform;
+import 'dart:io' show Directory, Platform, sleep;
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
@@ -8,6 +10,7 @@ import 'package:cloudproof/src/findex/generated_bindings.dart';
 import 'package:cloudproof/src/utils/blob_conversion.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
+import 'package:tuple/tuple.dart';
 
 import '../utils/leb128.dart';
 
@@ -16,12 +19,21 @@ const defaultOutputSizeInBytes = 131072;
 const errorCodeInCaseOfCallbackException = 42;
 const uidLength = 32;
 
+class ExceptionThrown {
+  DateTime datetime;
+  Object e;
+  StackTrace stacktrace;
+
+  ExceptionThrown(this.datetime, this.e, this.stacktrace);
+}
+
 class Findex {
-  static FindexNativeLibrary? _library;
+  static List<ExceptionThrown> exceptions = [];
+  static FindexNativeLibrary? cachedLibrary;
 
   static FindexNativeLibrary get library {
-    if (_library != null) {
-      return _library as FindexNativeLibrary;
+    if (cachedLibrary != null) {
+      return cachedLibrary as FindexNativeLibrary;
     }
 
     String? libraryPath;
@@ -41,7 +53,7 @@ class Findex {
     final library = FindexNativeLibrary(libraryPath == null
         ? DynamicLibrary.process()
         : DynamicLibrary.open(libraryPath));
-    _library = library;
+    cachedLibrary = library;
     return library;
   }
 
@@ -64,7 +76,7 @@ class Findex {
     Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
     FetchEntryTableCallback fetchEntries,
     UpsertEntryTableCallback upsertEntries,
-    InsertChainTableCallback upsertChains,
+    InsertChainTableCallback insertChains,
   ) async {
     //
     // FFI INPUT parameters
@@ -83,7 +95,8 @@ class Findex {
         .toNativeUtf8(allocator: malloc);
 
     try {
-      final result = library.h_upsert(
+      final start = DateTime.now();
+      final errorCode = library.h_upsert(
         masterKeyPointer,
         masterKey.k.length,
         labelPointer.cast<Int>(),
@@ -91,12 +104,11 @@ class Findex {
         indexedValuesAndKeywordsPointer.cast<Char>(),
         fetchEntries,
         upsertEntries,
-        upsertChains,
+        insertChains,
       );
+      final end = DateTime.now();
 
-      if (result != 0) {
-        throw Exception("Fail to upsert: ${getLastError()}");
-      }
+      throwOnErrorCode(errorCode, start, end);
     } finally {
       calloc.free(labelPointer);
       malloc.free(indexedValuesAndKeywordsPointer);
@@ -104,12 +116,14 @@ class Findex {
   }
 
   static Future<Map<Keyword, List<IndexedValue>>> search(
-      Uint8List k,
-      Uint8List label,
-      List<Keyword> keywords,
-      FetchEntryTableCallback fetchEntries,
-      FetchChainTableCallback fetchChains,
-      {int outputSizeInBytes = defaultOutputSizeInBytes}) async {
+    Uint8List k,
+    Uint8List label,
+    List<Keyword> keywords,
+    FetchEntryTableCallback fetchEntries,
+    FetchChainTableCallback fetchChains, {
+    int outputSizeInBytes = defaultOutputSizeInBytes,
+    int insecureFetchChainsBatchSize = 0,
+  }) async {
     //
     // FFI INPUT parameters
     //
@@ -127,7 +141,8 @@ class Findex {
     outputLengthPointer.value = outputSizeInBytes;
 
     try {
-      final result = library.h_search(
+      final start = DateTime.now();
+      final errorCode = library.h_search(
         output.cast<Char>(),
         outputLengthPointer.cast<Int>(),
         kPointer.cast<Char>(),
@@ -137,22 +152,23 @@ class Findex {
         keywordsPointer.cast<Char>(),
         0,
         0,
+        insecureFetchChainsBatchSize,
         0, // Progress callback is not used for now.
         fetchEntries,
         fetchChains,
       );
+      final end = DateTime.now();
 
-      if (result != 0) {
-        // If Rust tells us that our buffer is too small for the search results
-        // retry with the correct buffer size.
-        if (outputLengthPointer.value > outputSizeInBytes) {
-          return search(k, label, keywords, fetchEntries, fetchChains,
-              outputSizeInBytes: outputLengthPointer.value);
-        }
-        throw Exception("Fail to search ${getLastError()}");
+      if (errorCode != 0 && outputLengthPointer.value > outputSizeInBytes) {
+        return search(k, label, keywords, fetchEntries, fetchChains,
+            outputSizeInBytes: outputLengthPointer.value);
       }
+
+      throwOnErrorCode(errorCode, start, end);
+
       return deserializeSearchResults(
-          output.asTypedList(outputLengthPointer.value));
+        output.asTypedList(outputLengthPointer.value),
+      );
     } finally {
       calloc.free(output);
       calloc.free(outputLengthPointer);
@@ -160,6 +176,31 @@ class Findex {
       calloc.free(kPointer);
       calloc.free(labelPointer);
     }
+  }
+
+  static void throwOnErrorCode(
+    int errorCode,
+    DateTime start,
+    DateTime end,
+  ) {
+    if (errorCode == 0) return;
+
+    if (errorCode == errorCodeInCaseOfCallbackException) {
+      final exceptions = Findex.exceptions.where((element) =>
+          element.datetime.isAfter(start) && element.datetime.isBefore(end));
+
+      if (exceptions.isNotEmpty) {
+        // We currently only rethrow the first exception but if multiple exceptions are thrown during this
+        // FFI call maybe we should give this information to the user.
+        // Multiple exceptions can be thrown if there is multiple concurrent request.
+        Error.throwWithStackTrace(
+          CallbackExceptionWrapper(exceptions.first.e.toString()),
+          exceptions.first.stacktrace,
+        );
+      }
+    }
+
+    throw FindexException(getLastError());
   }
 
   static Map<Keyword, List<IndexedValue>> deserializeSearchResults(
@@ -207,6 +248,214 @@ class Findex {
       calloc.free(errorLength);
     }
   }
+
+  static int wrapAsyncFetchCallback(
+    Future<List<UidAndValue>> Function(Uids uids) callback,
+    Pointer<UnsignedChar> outputEntryTableLinesPointer,
+    Pointer<UnsignedInt> outputEntryTableLinesLength,
+    Pointer<UnsignedChar> uidsPointer,
+    int uidsNumber,
+  ) {
+    final donePointer = calloc<Bool>(1);
+    donePointer.value = false;
+
+    try {
+      Isolate.spawn(
+        (message) async {
+          try {
+            // Cast to list
+            final inputArray = Pointer<Uint8>.fromAddress(message.item3)
+                .asTypedList(uidsNumber);
+
+            final uids = Uids.deserialize(inputArray);
+            final entryTableLines = await callback(uids);
+
+            UidAndValue.serialize(
+                Pointer<UnsignedChar>.fromAddress(message.item1),
+                Pointer<UnsignedInt>.fromAddress(message.item2),
+                entryTableLines);
+          } catch (e) {
+            log("Excepting in fetch isolate. $e");
+          } finally {
+            Pointer<Bool>.fromAddress(message.item4).value = true;
+          }
+        },
+        Tuple4(
+          outputEntryTableLinesPointer.address,
+          outputEntryTableLinesLength.address,
+          uidsPointer.address,
+          donePointer.address,
+        ),
+      );
+      while (!donePointer.value) {
+        sleep(const Duration(milliseconds: 10));
+      }
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during fetch callback ($callback) $e $stacktrace");
+      rethrow;
+    } finally {
+      calloc.free(donePointer);
+    }
+  }
+
+  static int wrapAsyncUpsertEntriesCallback(
+    Future<List<UidAndValue>> Function(List<UpsertData>) callback,
+    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
+    Pointer<UnsignedInt> outputRejectedEntriesListLength,
+    Pointer<UnsignedChar> entriesListPointer,
+    int entriesListLength,
+  ) {
+    final donePointer = calloc<Bool>(1);
+    donePointer.value = false;
+
+    try {
+      Isolate.spawn(
+        (message) async {
+          try {
+            // Cast to list
+            final inputArray = Pointer<Uint8>.fromAddress(message.item1)
+                .asTypedList(entriesListLength);
+
+            final uidsAndValues = UpsertData.deserialize(inputArray);
+
+            final rejectedEntries = await callback(uidsAndValues);
+
+            UidAndValue.serialize(
+                Pointer<UnsignedChar>.fromAddress(message.item4),
+                Pointer<UnsignedInt>.fromAddress(message.item3),
+                rejectedEntries);
+          } catch (e) {
+            log("Excepting in upsert isolate. $e");
+          } finally {
+            Pointer<Bool>.fromAddress(message.item4).value = true;
+          }
+        },
+        Tuple4(
+          entriesListPointer.address,
+          outputRejectedEntriesListPointer.address,
+          outputRejectedEntriesListLength.address,
+          donePointer.address,
+        ),
+      );
+
+      while (!donePointer.value) {
+        sleep(const Duration(milliseconds: 10));
+      }
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during upsertEntriesCallback $e $stacktrace");
+      rethrow;
+    } finally {
+      calloc.free(donePointer);
+    }
+  }
+
+  static int wrapAsyncInsertChainsCallback(
+    Future<void> Function(List<UidAndValue>) callback,
+    Pointer<UnsignedChar> chainsListPointer,
+    int chainsListLength,
+  ) {
+    final donePointer = calloc<Bool>(1);
+    donePointer.value = false;
+
+    try {
+      Isolate.spawn(
+        (message) async {
+          try {
+            // Cast to list
+            final inputArray = Pointer<Uint8>.fromAddress(message.item1)
+                .asTypedList(chainsListLength);
+
+            final uidsAndValues = UidAndValue.deserialize(inputArray);
+
+            await callback(uidsAndValues);
+          } catch (e) {
+            log("Excepting in upsert isolate. $e");
+          } finally {
+            Pointer<Bool>.fromAddress(message.item2).value = true;
+          }
+        },
+        Tuple2(
+          chainsListPointer.address,
+          donePointer.address,
+        ),
+      );
+
+      while (!donePointer.value) {
+        sleep(const Duration(milliseconds: 10));
+      }
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during insertChainsCallback $e $stacktrace");
+      rethrow;
+    } finally {
+      calloc.free(donePointer);
+    }
+  }
+
+  static int wrapSyncFetchCallback(
+    List<UidAndValue> Function(Uids uids) callback,
+    Pointer<UnsignedChar> outputEntryTableLinesPointer,
+    Pointer<UnsignedInt> outputEntryTableLinesLength,
+    Pointer<UnsignedChar> uidsPointer,
+    int uidsNumber,
+  ) {
+    try {
+      final uids =
+          Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
+      final entryTableLines = callback(uids);
+
+      UidAndValue.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
+          outputEntryTableLinesLength, entryTableLines);
+      return 0;
+    } catch (e, stacktrace) {
+      Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
+      log("Exception during fetch callback ($callback) $e $stacktrace");
+      rethrow;
+    }
+  }
+
+  static int wrapSyncUpsertEntriesCallback(
+    List<UidAndValue> Function(List<UpsertData>) callback,
+    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
+    Pointer<UnsignedInt> outputRejectedEntriesListLength,
+    Pointer<UnsignedChar> entriesListPointer,
+    int entriesListLength,
+  ) {
+    try {
+      // Deserialize uids and values
+      final uidsAndValues = UpsertData.deserialize(
+          entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
+
+      final rejectedEntries = callback(uidsAndValues);
+      UidAndValue.serialize(outputRejectedEntriesListPointer,
+          outputRejectedEntriesListLength, rejectedEntries);
+      return 0;
+    } catch (e, stacktrace) {
+      Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
+      log("Exception during upsertEntriesCallback $e $stacktrace");
+      rethrow;
+    }
+  }
+
+  static int wrapSyncInsertChainsCallback(
+    void Function(List<UidAndValue>) callback,
+    Pointer<UnsignedChar> chainsListPointer,
+    int chainsListLength,
+  ) {
+    try {
+      final uidsAndValues = UidAndValue.deserialize(
+          chainsListPointer.cast<Uint8>().asTypedList(chainsListLength));
+
+      callback(uidsAndValues);
+      return 0;
+    } catch (e, stacktrace) {
+      Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
+      log("Exception during insertChainsCallback $e $stacktrace");
+      rethrow;
+    }
+  }
 }
 
 extension Uint8ListBlobConversion on Uint8List {
@@ -216,5 +465,27 @@ extension Uint8ListBlobConversion on Uint8List {
     final blobBytes = blob.asTypedList(length);
     blobBytes.setAll(0, this);
     return blob;
+  }
+}
+
+class CallbackExceptionWrapper implements Exception {
+  String message;
+
+  CallbackExceptionWrapper(this.message);
+
+  @override
+  String toString() {
+    return message;
+  }
+}
+
+class FindexException implements Exception {
+  String message;
+
+  FindexException(this.message);
+
+  @override
+  String toString() {
+    return message;
   }
 }

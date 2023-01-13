@@ -1,5 +1,4 @@
 // ignore_for_file: avoid_print
-//
 
 // Dart imports:
 import 'dart:convert';
@@ -27,7 +26,7 @@ void main() {
 
     test('generateNonRegressionTest', () async {
       final json = NonRegressionTestVectors.generate().toJson();
-      final file = File('build/non_regression_test_vector.json');
+      final file = File('build/non_regression_vector.json');
 
       // Write the file
       return file.writeAsString(jsonEncode(json));

@@ -220,6 +220,7 @@ int h_search(char *indexed_values_ptr,
              const char *keywords_ptr,
              int max_results_per_keyword,
              int max_depth,
+             unsigned int fetch_chains_batch_size,
              ProgressCallback progress_callback,
              FetchEntryTableCallback fetch_entry,
              FetchChainTableCallback fetch_chain);

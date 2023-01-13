@@ -48,7 +48,7 @@ void main() {
 
     test('search/upsert', () async {
       final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_keys.json').readAsString()));
+          await File('test/resources/findex/master_key.json').readAsString()));
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
 
