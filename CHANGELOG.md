@@ -15,8 +15,8 @@ All notable changes to this project will be documented in this file.
 
 ### Testing
 
-- Check non regression on existing SQLite db ([#10](https://github.com/orhun/git-cliff/issues/10))
-- Rework upsertEntries ([#12](https://github.com/orhun/git-cliff/issues/12))
+- Check non regression on existing SQLite db
+- Rework upsertEntries
 
 ### Ci
 
