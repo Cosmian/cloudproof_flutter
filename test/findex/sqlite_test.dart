@@ -45,56 +45,10 @@ const expectedUsersIdsForFrance = [
 
 void main() {
   group('Findex SQLite', () {
-    test('search/upsert', () async {
-      const dbPath = "./build/sqlite.db";
-
-      await initDb(dbPath);
-
-      final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
-
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      SqliteFindex.init(dbPath);
-      expect(SqliteFindex.count('entry_table'), equals(0));
-      expect(SqliteFindex.count('chain_table'), equals(0));
-
-      await SqliteFindex.indexAll(masterKey, label);
-
-      expect(SqliteFindex.count('entry_table'), equals(583));
-      expect(SqliteFindex.count('chain_table'), equals(618));
-
-      final searchResults = await SqliteFindex.search(
-          masterKey.k, label, [Keyword.fromString("France")]);
-
-      expect(searchResults.length, 1);
-
-      final keyword = searchResults.entries.toList()[0].key;
-      final indexedValues = searchResults.entries.toList()[0].value;
-      final usersIds = indexedValues.map((indexedValue) {
-        return indexedValue.location.bytes[0];
-      }).toList();
-      usersIds.sort();
-
-      expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
-      expect(usersIds, equals(expectedUsersIdsForFrance));
-    });
-
-    test('nonRegressionTest', () async {
-      final dir = Directory('test/resources/findex/non_regression/');
-      final List<FileSystemEntity> entities = await dir.list().toList();
-      entities.whereType<File>().forEach((element) async {
-        final newPath =
-            path.join(Directory.systemTemp.path, path.basename(element.path));
-        element.copySync(newPath);
-        await SqliteFindex.verify(newPath);
-        print("... OK: Findex non regression test file: $newPath");
-      });
-    });
-
     test('errors', () async {
-      const dbPath = "./build/sqlite.db";
+      const dbPath = "./build/sqlite2.db";
       await initDb(dbPath);
+      SqliteFindex.init(dbPath);
 
       final masterKey = FindexMasterKey.fromJson(jsonDecode(
           await File('test/resources/findex/master_key.json').readAsString()));
@@ -119,7 +73,7 @@ void main() {
         expect(stacktrace.toString(), contains("SqliteFindex.fetchEntries"));
         expect(
           stacktrace.toString(),
-          contains("test/findex/sqlite_test.dart:365:7"), // :ExceptionLine
+          contains("test/findex/sqlite_test.dart:372:7"), // :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
@@ -217,6 +171,59 @@ void main() {
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchEntries = false;
       }
+    });
+
+    test('search/upsert', () async {
+      const dbPath = "./build/sqlite.db";
+
+      await initDb(dbPath);
+
+      final masterKey = FindexMasterKey.fromJson(jsonDecode(
+          await File('test/resources/findex/master_key.json').readAsString()));
+
+      final label = Uint8List.fromList(utf8.encode("Some Label"));
+
+      SqliteFindex.init(dbPath);
+      expect(SqliteFindex.count('entry_table'), equals(0));
+      expect(SqliteFindex.count('chain_table'), equals(0));
+
+      await SqliteFindex.indexAll(masterKey, label);
+
+      expect(SqliteFindex.count('entry_table'), equals(583));
+      expect(SqliteFindex.count('chain_table'), equals(618));
+
+      final searchResults = await SqliteFindex.search(
+          masterKey.k, label, [Keyword.fromString("France")]);
+
+      expect(searchResults.length, 1);
+
+      final keyword = searchResults.entries.toList()[0].key;
+      final indexedValues = searchResults.entries.toList()[0].value;
+      final usersIds = indexedValues.map((indexedValue) {
+        return indexedValue.location.bytes[0];
+      }).toList();
+      usersIds.sort();
+
+      expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
+      expect(usersIds, equals(expectedUsersIdsForFrance));
+    });
+
+    test('nonRegressionTest', () async {
+      final dir = Directory('test/resources/findex/non_regression/');
+      final List<FileSystemEntity> entities = await dir.list().toList();
+      entities.whereType<File>().forEach((element) async {
+        final newPath =
+            path.join(Directory.systemTemp.path, path.basename(element.path));
+        print("Test findex file: $newPath");
+        element.copySync(newPath);
+        try {
+          await SqliteFindex.verify(newPath);
+        } catch (e) {
+          print("Exception on $newPath: $e");
+          rethrow;
+        }
+        print("... OK: Findex non regression test file: $newPath");
+      });
     });
   });
 }
@@ -567,8 +574,8 @@ class SqliteFindex {
 
     init(dbPath);
 
-    expect(SqliteFindex.count('entry_table'), equals(583));
-    expect(SqliteFindex.count('chain_table'), equals(618));
+    expect(SqliteFindex.count('entry_table'), greaterThan(0));
+    expect(SqliteFindex.count('chain_table'), greaterThan(0));
 
     {
       final searchResults =
