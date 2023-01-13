@@ -116,12 +116,14 @@ class Findex {
   }
 
   static Future<Map<Keyword, List<IndexedValue>>> search(
-      Uint8List k,
-      Uint8List label,
-      List<Keyword> keywords,
-      FetchEntryTableCallback fetchEntries,
-      FetchChainTableCallback fetchChains,
-      {int outputSizeInBytes = defaultOutputSizeInBytes}) async {
+    Uint8List k,
+    Uint8List label,
+    List<Keyword> keywords,
+    FetchEntryTableCallback fetchEntries,
+    FetchChainTableCallback fetchChains, {
+    int outputSizeInBytes = defaultOutputSizeInBytes,
+    int insecureFetchChainsBatchSize = 0,
+  }) async {
     //
     // FFI INPUT parameters
     //
@@ -150,6 +152,7 @@ class Findex {
         keywordsPointer.cast<Char>(),
         0,
         0,
+        insecureFetchChainsBatchSize,
         0, // Progress callback is not used for now.
         fetchEntries,
         fetchChains,
