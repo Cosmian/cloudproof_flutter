@@ -11,13 +11,18 @@ stages:
 
 .test:
   stage: test
+  before_script:
   script:
+    - python3 scripts/get_native_libraries.py
     - flutter pub get
     - flutter analyze .
     - flutter test --concurrency 1
     - dart benchmark/cloudproof_benchmark.dart
 
 test_linux:
+  before_script:
+    - apt-get update
+    - apt-get install -y python3
   extends: .test
 
 test_mac:

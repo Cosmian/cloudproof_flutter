@@ -10,6 +10,7 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
   - [CoverCrypt](#covercrypt)
   - [Findex](#findex)
 - [Installation](#installation)
+  - [Download required native libraries](#download-required-native-libraries)
 - [Example](#example)
 - [Tests](#tests)
   - [WARNINGS](#warnings)
@@ -194,6 +195,32 @@ Note that the copy/paste code could be removed in a future version when Dart imp
 flutter pub get cloudproof
 ```
 
+### Download required native libraries
+
+The Cloudproof Flutter lib uses FFI to access functions of the following native cryptographic libraries:
+
+- `CoverCrypt`
+- `Findex`
+
+Those libraries must be found in specific subfolders for Android, iOS and PC architectures.
+
+- Android: in `android/src/main/jniLibs/` subfolders:
+  - `arm64-v8a`
+  - `armeabi-v7a`
+  - `x86`
+  - `x86_64`
+- iOS: in `ios/` folder
+- PC: in `resources/` folder
+
+To download them, please run the following script that will fetch the releases in the public URL [package.cosmian.com](https://package.cosmian.com):
+:
+
+```bash
+python3 scripts/get_native_libraries.py
+```
+
+Otherwise, to build those libraries manually, please check the CoverCrypt and Findex projects on Github: their `build` directory contains instructions on how to build the native libraries for your system.
+
 ## Example
 
 To run the example, you need a Redis server configured. Then, update `redisHost` and `redisPort` at the top of the `example/lib/findex_redis_implementation.dart` file.
@@ -290,12 +317,12 @@ To make the flutter build succeed, 3 prerequisites are needed:
 ### Supported versions
 
 | Linux        | Flutter | Dart   | Android SDK       | NDK | Glibc | LLVM     | Smartphone Virtual Device |
-| ------------ | ------- | ------ | ----------------- | --- | ----- | -------- | ------------------------- |
+|--------------|---------|--------|-------------------|-----|-------|----------|---------------------------|
 | Ubuntu 22.04 | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.35  | 14.0.0-1 | Pixel 5 API 30            |
 | Centos 7     | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.17  | -        | -                         |
 
 | Mac      | Flutter | Dart   | OS       | LLVM   | Xcode | Smartphone Virtual Device |
-| -------- | ------- | ------ | -------- | ------ | ----- | ------------------------- |
+|----------|---------|--------|----------|--------|-------|---------------------------|
 | Catalina | 3.3.4   | 2.18.2 | Catalina | 12.0.0 |       | iPhone 12 PRO MAX         |
 
 ## Cloudproof versions Correspondence
@@ -307,9 +334,10 @@ Check the main pages of the respective projects to build the native libraries ap
 This table shows the minimum versions correspondences between the various components
 
 | Flutter Lib | CoverCrypt lib | Findex |
-| ----------- | -------------- | ------ |
+|-------------|----------------|--------|
 | 0.1.0       | 6.0.5          | 0.7.2  |
 | 1.0.0       | 6.0.5          | 0.7.2  |
 | 2.0.0       | 7.1.0          | 0.10.0 |
 | 3.0.0       | 8.0.0          | 0.12.0 |
 | 4.0.0       | 8.0.0          | 1.0.1  |
+| 4.0.1       | 8.0.0          | 2.0.0  |
