@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.2] - 2023-01-16
+
+### Miscellaneous Tasks
+
+- Remove native libs from repo and download them from <https://package.cosmian.com>.
+
 ## [4.0.1] - 2023-01-13
 
 ### Features
