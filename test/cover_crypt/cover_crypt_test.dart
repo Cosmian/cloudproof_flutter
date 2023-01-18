@@ -8,13 +8,14 @@ import 'dart:typed_data';
 // Package imports:
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tuple/tuple.dart';
 
 import 'non_regression_test_vectors.dart';
 
 void main() {
   group('CoverCrypt', () {
     test('nonRegressionTest', () async {
-      final dir = Directory('test/resources/cover_crypt/');
+      final dir = Directory('test/resources/cover_crypt/non_regression/');
       final List<FileSystemEntity> entities = await dir.list().toList();
       entities.whereType<File>().forEach((element) async {
         NonRegressionTestVectors.fromJson(
@@ -32,11 +33,24 @@ void main() {
       return file.writeAsString(jsonEncode(json));
     });
 
-    test('publicDoc', () async {
+    test('encrypt decrypt', () async {
       final policy = Policy.withMaxAttributeCreations(100)
-          .addAxis("Security Level",
-              ["Protected", "Confidential", "Top Secret"], true)
-          .addAxis("Department", ["FIN", "HR", "MKG"], false);
+          .addAxis(
+              "Security Level",
+              [
+                const Tuple2("Protected", false),
+                const Tuple2("Confidential", false),
+                const Tuple2("Top Secret", false)
+              ],
+              true)
+          .addAxis(
+              "Department",
+              [
+                const Tuple2("FIN", false),
+                const Tuple2("HR", false),
+                const Tuple2("MKG", false)
+              ],
+              false);
 
       CoverCryptMasterKeys masterKeys = CoverCrypt.generateMasterKeys(policy);
 
@@ -94,13 +108,6 @@ void main() {
       CoverCrypt.decrypt(topSecretMkgFinKey, protectedFinCiphertext);
       CoverCrypt.decrypt(topSecretMkgFinKey, protectedMkgCiphertext);
       CoverCrypt.decrypt(topSecretMkgFinKey, topSecretMkgCiphertext);
-    });
-
-    test('policy', () {
-      String policyJson =
-          "{\"last_attribute_value\":9,\"max_attribute_creations\":100,\"axes\":{\"Department\":[[\"R&D\",\"HR\",\"MKG\",\"FIN\"],false],\"Security Level\":[[\"Protected\",\"Low Secret\",\"Medium Secret\",\"High Secret\",\"Top Secret\"],true]},\"attribute_to_int\":{\"Security Level::Medium Secret\":[3],\"Security Level::Protected\":[1],\"Security Level::High Secret\":[4],\"Department::R&D\":[6],\"Department::HR\":[7],\"Security Level::Low Secret\":[2],\"Department::MKG\":[8],\"Security Level::Top Secret\":[5],\"Department::FIN\":[9]}}";
-      final policy = Policy.fromJson(jsonDecode(policyJson));
-      expect(policyJson, policy.toString());
     });
   });
 }

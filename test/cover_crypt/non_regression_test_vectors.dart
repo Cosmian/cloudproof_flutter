@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
+import 'package:tuple/tuple.dart';
 
 import 'encryption_test_vector.dart';
 import 'user_secret_key_test_vector.dart';
@@ -66,14 +67,22 @@ class NonRegressionTestVectors {
         .addAxis(
             "Security Level",
             [
-              "Protected",
-              "Low Secret",
-              "Medium Secret",
-              "High Secret",
-              "Top Secret"
+              const Tuple2("Protected", false),
+              const Tuple2("Low Secret", false),
+              const Tuple2("Medium Secret", false),
+              const Tuple2("High Secret", false),
+              const Tuple2("Top Secret", false)
             ],
             true)
-        .addAxis("Department", ["R&D", "HR", "MKG", "FIN"], false);
+        .addAxis(
+            "Department",
+            [
+              const Tuple2("R&D", false),
+              const Tuple2("HR", false),
+              const Tuple2("MKG", false),
+              const Tuple2("FIN", false)
+            ],
+            false);
 
     CoverCryptMasterKeys masterKeys = CoverCrypt.generateMasterKeys(policy);
 
@@ -117,7 +126,7 @@ class NonRegressionTestVectors {
     return NonRegressionTestVectors(
         masterKeys.publicKey,
         masterKeys.masterSecretKey,
-        Uint8List.fromList(policy.toString().codeUnits),
+        policy.toBytes(),
         topSecretMkgFinKey,
         mediumSecretMkgKey,
         topSecretFinKey,
