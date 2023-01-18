@@ -41,8 +41,8 @@ class Findex {
       libraryPath = path.join(
           Directory.current.path, 'resources', 'libcosmian_findex.dylib');
     } else if (Platform.isWindows) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_findex.dll');
+      libraryPath =
+          path.join(Directory.current.path, 'resources', 'cosmian_findex.dll');
     } else if (Platform.isAndroid) {
       libraryPath = "libcosmian_findex.so";
     } else if (Platform.isLinux) {

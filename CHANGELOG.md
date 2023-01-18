@@ -2,11 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## [5.0.0] - 2023-02-01
 
-### Changed
+### Bug Fixes
 
-- `Findex.search` core function only returns `Location`s
+- Update search callback to return `int` instead of `bool`
+- Make sure published package contains dll, so, dylib files
+
+### Features
+
+- Update `search` to return `Location` only
+
+### Ci
+
+- Add github ci
 
 ---
 

@@ -1,5 +1,7 @@
 # Cloudproof Flutter Library
 
+![workflow](https://github.com/Cosmian/cloudproof_flutter/actions/workflows/ci.yml/badge.svg)
+
 The Cloudproof Flutter library provides a Flutter-friendly API to the [Cosmian Cloudproof Encryption product](https://docs.cosmian.com/cloudproof_encryption/use_cases_benefits/).
 
 In summary, Cloudproof Encryption product secures data repositories in the cloud with attributes-based access control encryption and encrypted search.
@@ -33,7 +35,7 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
 
 CoverCrypt allows to decrypt data previously encrypted with one of our libraries (Java, Python, Rust…).
 
-Two classes are available: `CoverCryptDecryption` and `CoverCryptDecryptionWithCache` which is a little bit faster (omit the initialization phase during decryption). See `test/covercrypt_test.dart`.
+To get an example of how to use CoverCrypt, take a look at `test/cover_crypt/cover_crypt_test.dart`.
 
 ### Findex
 
@@ -216,6 +218,7 @@ To download them, please run the following script that will fetch the releases i
 :
 
 ```bash
+flutter pub get
 python3 scripts/get_native_libraries.py
 ```
 
@@ -333,11 +336,12 @@ Check the main pages of the respective projects to build the native libraries ap
 
 This table shows the minimum versions correspondences between the various components
 
-| Flutter Lib | CoverCrypt lib | Findex |
-|-------------|----------------|--------|
-| 0.1.0       | 6.0.5          | 0.7.2  |
-| 1.0.0       | 6.0.5          | 0.7.2  |
-| 2.0.0       | 7.1.0          | 0.10.0 |
-| 3.0.0       | 8.0.0          | 0.12.0 |
-| 4.0.0       | 8.0.0          | 1.0.1  |
-| 4.0.1       | 8.0.0          | 2.0.0  |
+| Flutter Lib       | CoverCrypt lib    | Findex |
+|-------------------|-------------------|--------|
+| 0.1.0             | 6.0.5             | 0.7.2  |
+| 1.0.0             | 6.0.5             | 0.7.2  |
+| 2.0.0             | 7.1.0             | 0.10.0 |
+| 3.0.0             | 8.0.0             | 0.12.0 |
+| 4.0.0             | 8.0.0             | 1.0.1  |
+| 4.0.1,4.0.2,4.0.3 | 8.0.0,8.0.1,8.0.2 | 2.0.0  |
+| 5.0.0             | 10.0.0            | 2.0.1  |
