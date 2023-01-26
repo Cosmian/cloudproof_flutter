@@ -74,9 +74,9 @@ void main() {
       expect(searchResults.length, 1);
 
       final keyword = searchResults.entries.toList()[0].key;
-      final indexedValues = searchResults.entries.toList()[0].value;
-      final usersIds = indexedValues.map((indexedValue) {
-        return indexedValue.location.bytes[0];
+      final locations = searchResults.entries.toList()[0].value;
+      final usersIds = locations.map((location) {
+        return location.bytes[0];
       }).toList();
       usersIds.sort();
 
