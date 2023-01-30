@@ -82,6 +82,6 @@ void main() {
 
       expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
       expect(usersIds, equals(expectedUsersIdsForFrance));
-    });
+    }, tags: 'redis');
   });
 }
