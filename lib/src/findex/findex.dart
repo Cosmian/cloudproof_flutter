@@ -60,11 +60,11 @@ class Findex {
   //
   // Callbacks implementations
   //
-  static bool progressCallback(
-    Pointer<Uint8> uidsListPointer,
+  static int progressCallback(
+    Pointer<UnsignedChar> uidsListPointer,
     int uidsListLength,
   ) {
-    return true;
+    return 1;
   }
 
   //
@@ -153,7 +153,10 @@ class Findex {
         0,
         0,
         insecureFetchChainsBatchSize,
-        0, // Progress callback is not used for now.
+        Pointer.fromFunction(
+          progressCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
         fetchEntries,
         fetchChains,
       );
