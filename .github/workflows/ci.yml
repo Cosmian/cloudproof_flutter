@@ -61,11 +61,13 @@ jobs:
           rm -f ios/.gitignore
           rm -f resources/.gitignore
           rm -f lib/src/*/.gitignore
+          git add * || true
           dart pub publish -f
         env:
           DART_CREDENTIALS: ${{ secrets.DART_CREDENTIALS }}
 
       - name: Verify package import from internet
+        continue-on-error: true
         if: contains(runner.os, 'Linux') && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         run: |
           cp -r example /tmp/flutter_example

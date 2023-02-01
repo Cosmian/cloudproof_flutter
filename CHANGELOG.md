@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 ### Features
 
 - Update `search` to return `Location` only
+- Support CoverCrypt 10.0
 
 ### Ci
 
