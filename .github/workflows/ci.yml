@@ -1,0 +1,98 @@
+---
+name: Flutter CI
+on: push
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-12
+          - os: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v3
+        with:
+          path: /opt/hostedtoolcache/flutter
+          key: ${{ runner.os }}-flutter
+          restore-keys: ${{ runner.os }}-flutter
+
+      - name: Install llvm
+        if: contains(runner.os, 'Linux')
+        run: sudo apt install libclang-dev llvm
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.3.4
+          channel: stable
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.7
+
+      - run: flutter pub get
+      - run: python scripts/get_native_libraries.py
+
+      - run: flutter analyze .
+      - run: flutter test --concurrency 1 -x redis # exclude redis tests (no docker for macos)
+        env:
+          REDIS_HOST: redis
+          REDIS_PORT: 6379
+      - run: dart benchmark/cloudproof_benchmark.dart
+
+      - name: Check build Android
+        if: contains(runner.os, 'Linux')
+        run: |
+          cd example
+          flutter build apk
+          cd ..
+
+      - name: Dart publish
+        if: contains(runner.os, 'Linux') && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p ~/.config/dart
+          echo "$DART_CREDENTIALS" > ~/.config/dart/pub-credentials.json
+          rm -f android/src/main/jniLibs/*/.git*
+          rm -f ios/.gitignore
+          rm -f resources/.gitignore
+          rm -f lib/src/*/.gitignore
+          git add * || true
+          dart pub publish -f
+        env:
+          DART_CREDENTIALS: ${{ secrets.DART_CREDENTIALS }}
+
+      - name: Verify package import from internet
+        continue-on-error: true
+        if: contains(runner.os, 'Linux') && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        run: |
+          cp -r example /tmp/flutter_example
+          cd /tmp/flutter_example
+          sed -i "s/cloudproof:/cloudproof: ${REF_NAME:1}/" pubspec.yaml
+          sed -i "s/path: ..//" pubspec.yaml
+          flutter pub get
+          flutter build apk
+        env:
+          REF_NAME: ${{ github.ref_name }}
+
+  release:
+    needs:
+      - build
+    name: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Release
+        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+
+  cleanup:
+    needs:
+      - release
+    uses: Cosmian/reusable_workflows/.github/workflows/cleanup_cache.yml@main
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    secrets: inherit

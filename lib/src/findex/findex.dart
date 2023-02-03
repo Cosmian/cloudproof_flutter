@@ -41,8 +41,8 @@ class Findex {
       libraryPath = path.join(
           Directory.current.path, 'resources', 'libcosmian_findex.dylib');
     } else if (Platform.isWindows) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_findex.dll');
+      libraryPath =
+          path.join(Directory.current.path, 'resources', 'cosmian_findex.dll');
     } else if (Platform.isAndroid) {
       libraryPath = "libcosmian_findex.so";
     } else if (Platform.isLinux) {
@@ -60,11 +60,11 @@ class Findex {
   //
   // Callbacks implementations
   //
-  static bool progressCallback(
-    Pointer<Uint8> uidsListPointer,
+  static int progressCallback(
+    Pointer<UnsignedChar> uidsListPointer,
     int uidsListLength,
   ) {
-    return true;
+    return 1;
   }
 
   //
@@ -115,7 +115,7 @@ class Findex {
     }
   }
 
-  static Future<Map<Keyword, List<IndexedValue>>> search(
+  static Future<Map<Keyword, List<Location>>> search(
     Uint8List k,
     Uint8List label,
     List<Keyword> keywords,
@@ -153,7 +153,10 @@ class Findex {
         0,
         0,
         insecureFetchChainsBatchSize,
-        0, // Progress callback is not used for now.
+        Pointer.fromFunction(
+          progressCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
         fetchEntries,
         fetchChains,
       );
@@ -203,9 +206,9 @@ class Findex {
     throw FindexException(getLastError());
   }
 
-  static Map<Keyword, List<IndexedValue>> deserializeSearchResults(
+  static Map<Keyword, List<Location>> deserializeSearchResults(
       Uint8List bytes) {
-    Map<Keyword, List<IndexedValue>> result = {};
+    Map<Keyword, List<Location>> result = {};
 
     Iterator<int> iterator = bytes.iterator;
     final length = Leb128.decodeUnsigned(iterator);
@@ -217,10 +220,10 @@ class Findex {
       // Get Keyword
       final keyword = Keyword.deserialize(iterator);
 
-      // Get corresponding list of IndexedValue
-      final indexedValues = IndexedValue.deserializeFromIterator(iterator);
+      // Get corresponding list of Location
+      final locations = Location.deserializeFromIterator(iterator);
 
-      result[keyword] = indexedValues;
+      result[keyword] = locations;
     }
 
     return result;

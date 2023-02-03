@@ -81,7 +81,7 @@
  * where `prefix` is `l` (only `Location`s are returned) and the `byte_vector`
  * is the byte representation of the location.
  */
-typedef bool (*ProgressCallback)(const unsigned char *intermediate_results_ptr, unsigned int intermediate_results_len);
+typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr, unsigned int intermediate_results_len);
 
 /**
  * See [`FindexCallbacks::fetch_entry_table()`](crate::core::FindexCallbacks::fetch_entry_table).
@@ -211,8 +211,8 @@ typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr
  *
  * Cannot be safe since using FFI.
  */
-int h_search(char *indexed_values_ptr,
-             int *indexed_values_len,
+int h_search(char *search_results_ptr,
+             int *search_results_len,
              const char *master_key_ptr,
              int master_key_len,
              const uint8_t *label_ptr,

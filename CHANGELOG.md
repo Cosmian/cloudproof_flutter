@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.0.0] - 2023-02-01
+
+### Bug Fixes
+
+- Update search callback to return `int` instead of `bool`
+- Make sure published package contains dll, so, dylib files
+
+### Features
+
+- Update `search` to return `Location` only
+- Support CoverCrypt 10.0
+
+### Ci
+
+- Add github ci
+
+---
+
 ## [4.0.3] - 2023-01-16
 
 ### Miscellaneous Tasks

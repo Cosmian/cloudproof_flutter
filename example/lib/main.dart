@@ -94,11 +94,11 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  List<Uint8List> getAllIndexedValues(Iterable<List<IndexedValue>> ivs) {
+  List<Uint8List> getAllLocations(Iterable<List<Location>> searchResult) {
     List<Uint8List> res = [];
-    for (final iv in ivs) {
-      for (final i in iv) {
-        res.add(i.location.bytes);
+    for (final locations in searchResult) {
+      for (final loc in locations) {
+        res.add(loc.bytes);
       }
     }
     return res;
@@ -110,7 +110,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _debouncer.run(() async {
       try {
         final stopwatch = Stopwatch()..start();
-        final indexedValues = await FindexRedisImplementation.search(
+        final searchResult = await FindexRedisImplementation.search(
           masterKey.k,
           label,
           [Keyword.fromString(query)],
@@ -118,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
         final newSearchDuration = stopwatch.elapsed;
 
-        if (indexedValues.isEmpty) {
+        if (searchResult.isEmpty) {
           setState(() {
             results = [];
             searchDuration = null;
@@ -131,7 +131,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         final encryptedUsersFromRedis = (await FindexRedisImplementation.mget(
                 await FindexRedisImplementation.db,
                 RedisTable.users,
-                getAllIndexedValues(indexedValues.values)))
+                getAllLocations(searchResult.values)))
             // Remove `null` if some location doesn't exists inside Redis
             .whereType<List<int>>()
             .map(Uint8List.fromList)

@@ -39,6 +39,35 @@ class Location {
   Uint8List bytes;
 
   Location(this.bytes);
+
+  static List<Location> deserialize(Uint8List bytes) {
+    return deserializeFromIterator(bytes.iterator);
+  }
+
+  static List<Location> deserializeFromIterator(Iterator<int> iterator) {
+    log("deserializeFromIterator: start: bytes: $iterator");
+    List<Location> locations = [];
+
+    final length = Leb128.decodeUnsigned(iterator);
+    if (length == 0) {
+      return [];
+    }
+    log("deserializeFromIterator: number of element: $length");
+
+    for (int idx = 0; idx < length; idx++) {
+      // Get fixed-size UID
+      final locationBytes =
+          SerDe.copyFromIterator(iterator, Leb128.decodeUnsigned(iterator));
+      final location = Location(locationBytes);
+      if (!locations.contains(location)) {
+        locations.add(location);
+      }
+      log("deserializeFromIterator: add element: $locationBytes");
+    }
+    log("deserializeFromIterator: $locations");
+
+    return locations;
+  }
 }
 
 class IndexedValue {
