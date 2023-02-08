@@ -120,7 +120,8 @@ class Findex {
     Uint8List label,
     List<Keyword> keywords,
     FetchEntryTableCallback fetchEntries,
-    FetchChainTableCallback fetchChains, {
+    FetchChainTableCallback fetchChains,
+    ProgressCallback progressCallback, {
     int outputSizeInBytes = defaultOutputSizeInBytes,
     int insecureFetchChainsBatchSize = 0,
   }) async {
@@ -153,17 +154,15 @@ class Findex {
         0,
         0,
         insecureFetchChainsBatchSize,
-        Pointer.fromFunction(
-          progressCallback,
-          errorCodeInCaseOfCallbackException,
-        ),
+        progressCallback,
         fetchEntries,
         fetchChains,
       );
       final end = DateTime.now();
 
       if (errorCode != 0 && outputLengthPointer.value > outputSizeInBytes) {
-        return search(k, label, keywords, fetchEntries, fetchChains,
+        return search(
+            k, label, keywords, fetchEntries, fetchChains, progressCallback,
             outputSizeInBytes: outputLengthPointer.value);
       }
 

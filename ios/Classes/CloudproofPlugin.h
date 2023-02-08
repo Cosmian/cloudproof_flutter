@@ -373,7 +373,7 @@ int h_aes_decrypt_block(char *clear_text_ptr,
  * where `prefix` is `l` (only `Location`s are returned) and the `byte_vector`
  * is the byte representation of the location.
  */
-typedef bool (*ProgressCallback)(const unsigned char *intermediate_results_ptr, unsigned int intermediate_results_len);
+typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr, unsigned int intermediate_results_len);
 
 /**
  * See [`FindexCallbacks::fetch_entry_table()`](crate::core::FindexCallbacks::fetch_entry_table).
