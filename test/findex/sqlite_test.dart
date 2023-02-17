@@ -68,12 +68,12 @@ void main() {
       } catch (e, stacktrace) {
         expect(
           e.toString(),
-          "Unsupported operation: Some message",
+          "callback returned with error code 42: fetch entries",
         );
-        expect(stacktrace.toString(), contains("SqliteFindex.fetchEntries"));
+        expect(stacktrace.toString(), contains("SqliteFindex.search"));
         expect(
           stacktrace.toString(),
-          contains("test/findex/sqlite_test.dart:372:7"), // :ExceptionLine
+          contains("src/findex/findex.dart:170:7"), // :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
@@ -90,7 +90,7 @@ void main() {
       } catch (e) {
         expect(
           e.toString(),
-          "While parsing master key for Findex search, wrong size when parsing bytes: 4 given should be 16",
+          "error deserializing master secret key: wrong size when parsing bytes: 4 given should be 16",
         );
       }
 
@@ -108,7 +108,7 @@ void main() {
         expect(
           e.toString(),
           startsWith(
-              "fail to decrypt one of the `value` returned by the fetch chains callback (uid as hex was"),
+              "fail to decrypt one of the `value` returned by the fetch chains callback (uid was"),
         );
       } finally {
         SqliteFindex.returnOnlyUidInsideFetchChains = false;
@@ -127,7 +127,7 @@ void main() {
       } catch (e) {
         expect(
           e.toString(),
-          "`uid` should be of length 32. Actual length is 188 bytes.",
+          "callback returned with error code 42: fetch chains",
         );
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchChains = false;
@@ -147,7 +147,7 @@ void main() {
         expect(
           e.toString(),
           startsWith(
-              "fail to decrypt one of the `value` returned by the fetch entries callback (uid as hex was"),
+              "fail to decrypt one of the `value` returned by the fetch entries callback (uid was"),
         );
       } finally {
         SqliteFindex.returnOnlyUidInsideFetchEntries = false;
@@ -166,7 +166,7 @@ void main() {
       } catch (e) {
         expect(
           e.toString(),
-          "`uid` should be of length 32. Actual length is 108 bytes.",
+          "callback returned with error code 42: fetch entries",
         );
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchEntries = false;

@@ -13,14 +13,14 @@ def download_native_libraries(name: str, version: str, destination: str) -> bool
 
     to_be_copied = {
         f'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/{name}.h': f'{destination}/{name}.h',
-        f'tmp/x86_64-apple-darwin/x86_64-apple-darwin/release/libcosmian_{name}.dylib': f'{destination}/libcosmian_{name}.dylib',
-        f'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/libcosmian_{name}.so': f'{destination}/libcosmian_{name}.so',
-        f'tmp/x86_64-pc-windows-gnu/x86_64-pc-windows-gnu/release/cosmian_{name}.dll': f'{destination}/cosmian_{name}.dll',
-        f'tmp/android/armeabi-v7a/libcosmian_{name}.so': f'{jni_libs}/armeabi-v7a/libcosmian_{name}.so',
-        f'tmp/android/arm64-v8a/libcosmian_{name}.so': f'{jni_libs}/arm64-v8a/libcosmian_{name}.so',
-        f'tmp/android/x86/libcosmian_{name}.so': f'{jni_libs}/x86/libcosmian_{name}.so',
-        f'tmp/android/x86_64/libcosmian_{name}.so': f'{jni_libs}/x86_64/libcosmian_{name}.so',
-        f'tmp/x86_64-apple-darwin/universal/release/libcosmian_{name}.a': f'ios/libcosmian_{name}.a',
+        f'tmp/x86_64-apple-darwin/x86_64-apple-darwin/release/libcloudproof_{name}.dylib': f'{destination}/libcloudproof_{name}.dylib',
+        f'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/libcloudproof_{name}.so': f'{destination}/libcloudproof_{name}.so',
+        f'tmp/x86_64-pc-windows-gnu/x86_64-pc-windows-gnu/release/cloudproof_{name}.dll': f'{destination}/cloudproof_{name}.dll',
+        f'tmp/android/armeabi-v7a/libcloudproof_{name}.so': f'{jni_libs}/armeabi-v7a/libcloudproof_{name}.so',
+        f'tmp/android/arm64-v8a/libcloudproof_{name}.so': f'{jni_libs}/arm64-v8a/libcloudproof_{name}.so',
+        f'tmp/android/x86/libcloudproof_{name}.so': f'{jni_libs}/x86/libcloudproof_{name}.so',
+        f'tmp/android/x86_64/libcloudproof_{name}.so': f'{jni_libs}/x86_64/libcloudproof_{name}.so',
+        f'tmp/x86_64-apple-darwin/universal/release/libcloudproof_{name}.a': f'ios/libcloudproof_{name}.a',
     }
 
     missing_files = False

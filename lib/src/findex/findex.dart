@@ -39,15 +39,15 @@ class Findex {
     String? libraryPath;
     if (Platform.isMacOS) {
       libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_findex.dylib');
+          Directory.current.path, 'resources', 'libcloudproof_findex.dylib');
     } else if (Platform.isWindows) {
       libraryPath =
-          path.join(Directory.current.path, 'resources', 'cosmian_findex.dll');
+          path.join(Directory.current.path, 'resources', 'cloudproof_findex.dll');
     } else if (Platform.isAndroid) {
-      libraryPath = "libcosmian_findex.so";
+      libraryPath = "libcloudproof_findex.so";
     } else if (Platform.isLinux) {
       libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_findex.so');
+          Directory.current.path, 'resources', 'libcloudproof_findex.so');
     }
 
     final library = FindexNativeLibrary(libraryPath == null
