@@ -463,10 +463,13 @@ class SqliteFindex {
     }
   }
 
-  static int progressCallback(
-    Pointer<UnsignedChar> uidsListPointer,
-    int uidsListLength,
-  ) {
+  static int progress(Map<Keyword, List<IndexedValue>> progressResults) {
+    final keyword = progressResults.entries.toList()[0].key;
+    final indexedValues = progressResults.entries.toList()[0].value;
+
+    expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
+    expect(indexedValues.length, 30);
+
     return 1;
   }
 
@@ -479,22 +482,23 @@ class SqliteFindex {
     Uint8List label,
     List<Keyword> words,
   ) async {
-    return await Findex.search(
-        keyK,
-        label,
-        words,
-        Pointer.fromFunction(
-          fetchEntriesCallback,
-          errorCodeInCaseOfCallbackException,
-        ),
-        Pointer.fromFunction(
-          fetchChainsCallback,
-          errorCodeInCaseOfCallbackException,
-        ),
-        Pointer.fromFunction(
-          progressCallback,
-          errorCodeInCaseOfCallbackException,
-        ));
+    return await Findex.searchWithProgress(
+      keyK,
+      label,
+      words,
+      Pointer.fromFunction(
+        fetchEntriesCallback,
+        errorCodeInCaseOfCallbackException,
+      ),
+      Pointer.fromFunction(
+        fetchChainsCallback,
+        errorCodeInCaseOfCallbackException,
+      ),
+      Pointer.fromFunction(
+        progressCallback,
+        errorCodeInCaseOfCallbackException,
+      )
+    );
   }
 
   static Future<void> upsert(
@@ -574,6 +578,17 @@ class SqliteFindex {
       SqliteFindex.insertChains,
       chainsListPointer,
       chainsListLength,
+    );
+  }
+
+  static int progressCallback(
+    Pointer<UnsignedChar> uidsListPointer,
+    int uidsListLength,
+  ) {
+    return Findex.wrapProgressCallback(
+      SqliteFindex.progress,
+      uidsListPointer,
+      uidsListLength,
     );
   }
 

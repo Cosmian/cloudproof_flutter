@@ -60,7 +60,7 @@ class Findex {
   //
   // Callbacks implementations
   //
-  static int progressCallback(
+  static int defaultProgressCallback(
     Pointer<UnsignedChar> uidsListPointer,
     int uidsListLength,
   ) {
@@ -120,6 +120,30 @@ class Findex {
     Uint8List label,
     List<Keyword> keywords,
     FetchEntryTableCallback fetchEntries,
+    FetchChainTableCallback fetchChains, {
+    int outputSizeInBytes = defaultOutputSizeInBytes,
+    int insecureFetchChainsBatchSize = 0,
+  }) async {
+    return searchWithProgress(
+      k,
+      label,
+      keywords,
+      fetchEntries,
+      fetchChains,
+      Pointer.fromFunction(
+        defaultProgressCallback,
+        errorCodeInCaseOfCallbackException,
+      ),
+      outputSizeInBytes: outputSizeInBytes,
+      insecureFetchChainsBatchSize: insecureFetchChainsBatchSize,
+    );
+  }
+
+  static Future<Map<Keyword, List<Location>>> searchWithProgress(
+    Uint8List k,
+    Uint8List label,
+    List<Keyword> keywords,
+    FetchEntryTableCallback fetchEntries,
     FetchChainTableCallback fetchChains,
     ProgressCallback progressCallback, {
     int outputSizeInBytes = defaultOutputSizeInBytes,
@@ -161,7 +185,7 @@ class Findex {
       final end = DateTime.now();
 
       if (errorCode != 0 && outputLengthPointer.value > outputSizeInBytes) {
-        return search(
+        return searchWithProgress(
             k, label, keywords, fetchEntries, fetchChains, progressCallback,
             outputSizeInBytes: outputLengthPointer.value);
       }
@@ -223,6 +247,29 @@ class Findex {
       final locations = Location.deserializeFromIterator(iterator);
 
       result[keyword] = locations;
+    }
+
+    return result;
+  }
+
+  static Map<Keyword, List<IndexedValue>> deserializeProgressResults(
+      Uint8List bytes) {
+    Map<Keyword, List<IndexedValue>> result = {};
+
+    Iterator<int> iterator = bytes.iterator;
+    final length = Leb128.decodeUnsigned(iterator);
+    if (length == 0) {
+      return {};
+    }
+
+    for (int idx = 0; idx < length; idx++) {
+      // Get Keyword
+      final keyword = Keyword.deserialize(iterator);
+
+      // Get corresponding list of IndexedValues
+      final indexedValues = IndexedValue.deserializeFromIterator(iterator);
+
+      result[keyword] = indexedValues;
     }
 
     return result;
@@ -455,6 +502,23 @@ class Findex {
     } catch (e, stacktrace) {
       Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during insertChainsCallback $e $stacktrace");
+      rethrow;
+    }
+  }
+
+  static int wrapProgressCallback(
+    int Function(Map<Keyword, List<IndexedValue>>) callback,
+    Pointer<UnsignedChar> progressResultsPointer,
+    int uidsListLength,
+  ) {
+    try {
+      final Map<Keyword, List<IndexedValue>> progressResults =
+          deserializeProgressResults(
+              progressResultsPointer.cast<Uint8>().asTypedList(uidsListLength));
+      return callback(progressResults);
+    } catch (e, stacktrace) {
+      Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
+      log("Exception during progressCallback $e $stacktrace");
       rethrow;
     }
   }
