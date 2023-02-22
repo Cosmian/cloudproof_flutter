@@ -43,6 +43,18 @@ jobs:
         env:
           REDIS_HOST: redis
           REDIS_PORT: 6379
+
+      - name: Upload non-regression test vectors
+        if: contains(runner.os, 'Linux')
+        uses: actions/upload-artifact@v3
+        with:
+          name: cloudproof_flutter
+          path: |
+            ./build/non_regression_vector.json
+            ./build/sqlite.db
+          retention-days: 1
+          if-no-files-found: error
+
       - run: dart benchmark/cloudproof_benchmark.dart
 
       - name: Check build Android
@@ -79,9 +91,50 @@ jobs:
         env:
           REF_NAME: ${{ github.ref_name }}
 
+  cloudproof_java:
+    needs: build
+    uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_java_in_docker.yml@develop
+    with:
+      branch: develop
+      target: x86_64-unknown-linux-gnu
+      extension: so
+      destination: linux-x86-64
+      os: ubuntu-20.04
+      kms-version: 4.2.0
+      copy_fresh_build: false
+      copy_regression_files: |
+        cp ./cloudproof_flutter/non_regression_vector.json src/test/resources/cover_crypt/non_regression/js_non_regression_vector.json
+        cp ./cloudproof_flutter/sqlite.db                  src/test/resources/findex/non_regression/js_sqlite.db
+
+  cloudproof_js:
+    needs: build
+    uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_js.yml@develop
+    with:
+      branch: develop
+      target: wasm32-unknown-unknown
+      kms-version: 4.2.0
+      copy_fresh_build: false
+      copy_regression_files: |
+        cp ./cloudproof_flutter/non_regression_vector.json tests/data/cover_crypt/non_regression/java_non_regression_vector.json
+        cp ./cloudproof_flutter/sqlite.db                  tests/data/findex/non_regression/java_sqlite.db
+
+  cloudproof_python:
+    needs: build
+    uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_python.yml@develop
+    with:
+      branch: develop
+      target: x86_64-unknown-linux-gnu
+      kms-version: 4.2.0
+      copy_fresh_build: false
+      copy_regression_files: |
+        cp ./cloudproof_flutter/non_regression_vector.json tests/data/cover_crypt/non_regression/java_non_regression_vector.json
+        cp ./cloudproof_flutter/sqlite.db                  tests/data/findex/non_regression/java_sqlite.db
+
   release:
     needs:
-      - build
+      - cloudproof_java
+      - cloudproof_js
+      - cloudproof_python
     name: release
     runs-on: ubuntu-latest
     steps:
