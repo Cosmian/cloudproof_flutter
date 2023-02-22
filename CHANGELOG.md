@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unrelease
+
+### Features
+
+- Add conversions in `Location` to/from number (`int`)
+
+---
+
 ## [5.0.0] - 2023-02-01
 
 ### Bug Fixes

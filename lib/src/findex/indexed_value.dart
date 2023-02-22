@@ -36,9 +36,28 @@ class Keyword {
 }
 
 class Location {
-  Uint8List bytes;
+  late Uint8List bytes;
 
   Location(this.bytes);
+
+  /// Numbers are encoded in big-endian 8 bytes.
+  Location.fromNumber(int number) {
+    final bytes = ByteData(8);
+    bytes.setInt64(0, number, Endian.big);
+
+    this.bytes = bytes.buffer.asUint8List();
+  }
+
+  /// Numbers are encoded in big-endian 8 bytes.
+  int get number {
+    if (bytes.length != 8) {
+      throw Exception(
+        "The location is of length ${bytes.length}, 8 bytes expected for a number.",
+      );
+    }
+
+    return bytes.buffer.asByteData().getInt64(0, Endian.big);
+  }
 
   static List<Location> deserialize(Uint8List bytes) {
     return deserializeFromIterator(bytes.iterator);
