@@ -72,7 +72,7 @@ void main() {
       final keyword = searchResults.entries.toList()[0].key;
       final locations = searchResults.entries.toList()[0].value;
       final usersIds = locations.map((location) {
-        return location.bytes[0];
+        return location.number;
       }).toList();
       usersIds.sort();
 

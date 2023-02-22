@@ -200,7 +200,7 @@ void main() {
       final keyword = searchResults.entries.toList()[0].key;
       final locations = searchResults.entries.toList()[0].value;
       final usersIds = locations.map((location) {
-        return location.bytes[0];
+        return location.number;
       }).toList();
       usersIds.sort();
 
@@ -483,22 +483,21 @@ class SqliteFindex {
     List<Keyword> words,
   ) async {
     return await Findex.searchWithProgress(
-      keyK,
-      label,
-      words,
-      Pointer.fromFunction(
-        fetchEntriesCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        fetchChainsCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        progressCallback,
-        errorCodeInCaseOfCallbackException,
-      )
-    );
+        keyK,
+        label,
+        words,
+        Pointer.fromFunction(
+          fetchEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          fetchChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          progressCallback,
+          errorCodeInCaseOfCallbackException,
+        ));
   }
 
   static Future<void> upsert(
@@ -611,7 +610,7 @@ class SqliteFindex {
       final keyword = searchResults.entries.toList()[0].key;
       final locations = searchResults.entries.toList()[0].value;
       final usersIds = locations.map((location) {
-        return location.bytes[0];
+        return location.number;
       }).toList();
       usersIds.sort();
 
@@ -631,7 +630,7 @@ class SqliteFindex {
       final keyword = searchResults.entries.toList()[0].key;
       final locations = searchResults.entries.toList()[0].value;
       final usersIds = locations.map((location) {
-        return location.bytes[0];
+        return location.number;
       }).toList();
       usersIds.sort();
 
@@ -670,7 +669,7 @@ class User {
   }
 
   Location get location {
-    return Location(Uint8List(4)..buffer.asInt32List()[0] = id);
+    return Location.fromNumber(id);
   }
 
   List<Keyword> get indexedWords {
