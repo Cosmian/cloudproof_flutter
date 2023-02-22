@@ -8,6 +8,8 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
 
 <!-- toc -->
 
+- [Licensing](#licensing)
+- [Cryptographic primitives](#cryptographic-primitives)
 - [Getting started](#getting-started)
   - [CoverCrypt](#covercrypt)
   - [Findex](#findex)
@@ -28,6 +30,22 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
 - [Cloudproof versions Correspondence](#cloudproof-versions-correspondence)
 
 <!-- tocstop -->
+
+## Licensing
+
+The library is available under a dual licensing scheme Affero GPL/v3 and commercial. See [LICENSE.md](LICENSE.md) for details.
+
+## Cryptographic primitives
+
+The library is based on:
+
+- [CoverCrypt](https://github.com/Cosmian/cover_crypt) algorithm which allows
+creating ciphertexts for a set of attributes and issuing user keys with access
+policies over these attributes. `CoverCrypt` offers Post-Quantum resistance.
+
+- [Findex](https://github.com/Cosmian/findex) which is a cryptographic protocol designed to securely make search queries on
+an untrusted cloud server. Thanks to its encrypted indexes, large databases can
+securely be outsourced without compromising usability.
 
 ## Getting started
 
