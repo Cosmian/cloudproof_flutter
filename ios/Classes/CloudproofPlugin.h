@@ -329,9 +329,9 @@ int h_hybrid_decrypt(char *plaintext_ptr,
                      const char *usk_ptr,
                      int usk_len);
 
-extern void log(const str *s);
+// extern void log(const str *s);
 
-extern void alert(const str *s);
+// extern void alert(const str *s);
 
 /**
  * Externally sets the last error recorded on the Rust side.

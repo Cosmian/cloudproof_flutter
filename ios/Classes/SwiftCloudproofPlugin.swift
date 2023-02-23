@@ -14,26 +14,14 @@ public class SwiftCloudproofPlugin: NSObject, FlutterPlugin {
 
   public func dummyMethodToEnforceCoverCryptBundling() {
     // This will never be executed :PreventTreeShaking
-    h_get_encrypted_header_size(nil, 0);
+    h_validate_boolean_expression(nil);
   }
 
   public func dummyMethodToEnforceFindexBundling() {
     // This will never be executed :PreventTreeShaking
-    h_search(
-      nil,
-      nil,
-      nil,
-      0,
-      nil,
-      0,
-      nil,
-      0,
-      0,
-      nil,
+    get_last_error(
       nil,
       nil
       );
   }
-
-
 }
