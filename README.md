@@ -256,14 +256,6 @@ flutter test
 
 Some tests require a Redis database on localhost (default port).
 
-If you ran the Java test which populate the Redis database, you can run the hidden test that read from this database.
-
-```bash
-RUN_JAVA_E2E_TESTS=1 flutter test --plain-name 'Search and decrypt with preallocate Redis by Java'
-```
-
-If you share the same Redis database between Java and Dart tests, `flutter test` will cleanup the Redis database (it could take some time and timeout on the first execution). So you may want to re-run `mvn test` to populate the Redis database again.
-
 You can run the benchmarks with:
 
 ```bash
