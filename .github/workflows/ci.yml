@@ -64,6 +64,13 @@ jobs:
           flutter build apk
           cd ..
 
+      - name: Check build iOS
+        if: contains(runner.os, 'macOS')
+        run: |
+          cd example
+          flutter build ios --release --no-codesign
+          cd ..
+
       - name: Dart publish
         if: contains(runner.os, 'Linux') && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         run: |
