@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-import urllib.request
 import os
 import shutil
 import ssl
+import urllib.request
 import zipfile
-
 from os import path, remove, system
 
 
@@ -63,7 +62,7 @@ def download_native_libraries(name: str, version: str, destination: str) -> bool
 
 
 if __name__ == '__main__':
-    ret = download_native_libraries('findex', 'v2.0.1', 'resources')
+    ret = download_native_libraries('findex', 'v2.1.0', 'resources')
     if ret is False and os.getenv('GITHUB_ACTIONS'):
         download_native_libraries('findex', 'last_build', 'resources')
 

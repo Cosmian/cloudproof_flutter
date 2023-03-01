@@ -41,9 +41,27 @@
 #define DEM_KEY_LENGTH 32
 
 /**
- * Default number of results returned per keyword.
+ * See `Token@index_id`
  */
-#define MAX_RESULTS_PER_KEYWORD 65536
+#define INDEX_ID_LENGTH 5
+
+/**
+ * The callback signature is a kmac of the body of the request.
+ * It is used to assert the client can call this callback.
+ */
+#define CALLBACK_SIGNATURE_LENGTH 32
+
+/**
+ * The number of seconds of validity of the requests to the Findex Cloud
+ * backend. After this time, the request cannot be accepted by the backend.
+ * This is done to prevent replay attacks.
+ */
+#define REQUEST_SIGNATURE_TIMEOUT_AS_SECS 60
+
+/**
+ * This seed is used to derive a new 32 bytes Kmac key.
+ */
+#define SIGNATURE_SEED_LENGTH 16
 
 /**
  * Limit on the recursion to use when none is provided.
@@ -63,8 +81,10 @@
  *
  * The intermediate results are serialized as follows:
  *
- * `LEB128(results.len()) || serialized_keyword_1
- *     || serialized_results_for_keyword_1`
+ * `LEB128(n_keywords) || LEB128(keyword_1)
+ *     || keyword_1 || LEB128(n_associated_results)
+ *     || LEB128(associated_result_1) || associated_result_1
+ *     || ...`
  *
  * With the serialization of a keyword being:
  *
@@ -182,6 +202,18 @@ typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remo
 typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr, unsigned int *removed_locations_len, const unsigned char *locations_ptr, unsigned int locations_len);
 
 /**
+ * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
+ * `get_last_error` name The `h_get_error` is available inside the final lib
+ * (but tools like ffigen seems to not parse it…) Maybe we can find a solution
+ * by changing the function name inside the clients.
+ *
+ * # Safety
+ *
+ * It's unsafe.
+ */
+int get_last_error(char *error_ptr, int *error_len);
+
+/**
  * Recursively searches Findex graphs for values indexed by the given keywords.
  *
  * # Serialization
@@ -195,17 +227,20 @@ typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr
  *
  * # Parameters
  *
- * - `indexed_values`          : (output) search result
- * - `master_key`              : master key
- * - `label`                   : additional information used to derive Entry
+ * - `search_results`            : (output) search result
+ * - `master_key`                : master key
+ * - `label`                     : additional information used to derive Entry
  *   Table UIDs
- * - `keywords`                : `serde` serialized list of base64 keywords
- * - `max_results_per_keyword` : maximum number of results returned per keyword
- * - `max_depth`               : maximum recursion depth allowed
- * - `progress_callback`       : callback used to retrieve intermediate results
- *   and transmit user interrupt
- * - `fetch_entry`             : callback used to fetch the Entry Table
- * - `fetch_chain`             : callback used to fetch the Chain Table
+ * - `keywords`                  : `serde` serialized list of base64 keywords
+ * - `max_results_per_keyword`   : maximum number of results returned per
+ *   keyword
+ * - `max_depth`                 : maximum recursion depth allowed
+ * - `fetch_chains_batch_size`   : increase this value to improve perfs but
+ *   decrease security by batching fetch chains calls
+ * - `progress_callback`         : callback used to retrieve intermediate
+ *   results and transmit user interrupt
+ * - `fetch_entry_callback`      : callback used to fetch the Entry Table
+ * - `fetch_chain_callback`      : callback used to fetch the Chain Table
  *
  * # Safety
  *
@@ -222,8 +257,8 @@ int h_search(char *search_results_ptr,
              int max_depth,
              unsigned int fetch_chains_batch_size,
              ProgressCallback progress_callback,
-             FetchEntryTableCallback fetch_entry,
-             FetchChainTableCallback fetch_chain);
+             FetchEntryTableCallback fetch_entry_callback,
+             FetchChainTableCallback fetch_chain_callback);
 
 /**
  * Index the given values for the given keywords. After upserting, any
@@ -288,7 +323,7 @@ int h_upsert(const uint8_t *master_key_ptr,
  *   compact all Chain Table
  * - `old_master_key`                  : old Findex master key
  * - `new_master_key`                  : new Findex master key
- * - `label`                           : additional information used to derive
+ * - `new_label`                       : additional information used to derive
  *   Entry Table UIDs
  * - `fetch_entry`                     : callback used to fetch the Entry Table
  * - `fetch_chain`                     : callback used to fetch the Chain Table
@@ -302,12 +337,12 @@ int h_upsert(const uint8_t *master_key_ptr,
  * Cannot be safe since using FFI.
  */
 int h_compact(int num_reindexing_before_full_set,
-              const uint8_t *master_key_ptr,
-              int master_key_len,
+              const uint8_t *old_master_key_ptr,
+              int old_master_key_len,
               const uint8_t *new_master_key_ptr,
               int new_master_key_len,
-              const uint8_t *label_ptr,
-              int label_len,
+              const uint8_t *new_label_ptr,
+              int new_label_len,
               FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
               FetchEntryTableCallback fetch_entry,
               FetchChainTableCallback fetch_chain,
@@ -315,8 +350,84 @@ int h_compact(int num_reindexing_before_full_set,
               ListRemovedLocationsCallback list_removed_locations);
 
 /**
- * Get the most recent error as utf-8 bytes, clearing it in the process.
+ * Recursively searches Findex graphs for values indexed by the given keywords.
+ *
+ * # Serialization
+ *
+ * Le output is serialized as follows:
+ *
+ * `LEB128(n_keywords) || LEB128(keyword_1)
+ *     || keyword_1 || LEB128(n_associated_results)
+ *     || LEB128(associated_result_1) || associated_result_1
+ *     || ...`
+ *
+ * # Parameters
+ *
+ * - `search_results`            : (output) search result
+ * - `token`                     : findex cloud token
+ * - `label`                     : additional information used to derive Entry
+ *   Table UIDs
+ * - `keywords`                  : `serde` serialized list of base64 keywords
+ * - `max_results_per_keyword`   : maximum number of results returned per
+ *   keyword
+ * - `max_depth`                 : maximum recursion depth allowed
+ * - `fetch_chains_batch_size`   : increase this value to improve perfs but
+ *   decrease security by batching fetch chains calls
+ * - `base_url`                  : base URL for Findex Cloud (with http prefix
+ *   and port if required). If null, use the default Findex Cloud server.
+ *
  * # Safety
- * - `error_msg`: must be pre-allocated with a sufficient size
+ *
+ * Cannot be safe since using FFI.
  */
-int get_last_error(char *error_msg_ptr, int *error_len);
+int h_search_cloud(char *search_results_ptr,
+                   int *search_results_len,
+                   const char *token_ptr,
+                   const uint8_t *label_ptr,
+                   int label_len,
+                   const char *keywords_ptr,
+                   int max_results_per_keyword,
+                   int max_depth,
+                   unsigned int fetch_chains_batch_size,
+                   const char *base_url_ptr);
+
+/**
+ * Index the given values for the given keywords. After upserting, any
+ * search for such a keyword will result in finding (at least) the
+ * corresponding value.
+ *
+ * # Serialization
+ *
+ * The list of values to index for the associated keywords should be serialized
+ * as follows:
+ *
+ * `LEB128(n_values) || serialized_value_1
+ *     || LEB128(n_associated_keywords) || serialized_keyword_1 || ...`
+ *
+ * where values serialized as follows:
+ *
+ * `LEB128(value_bytes.len() + 1) || base64(prefix || value_bytes)`
+ *
+ * with `prefix` being `l` for a `Location` and `w` for a `NextKeyword`, and
+ * where keywords are serialized as follows:
+ *
+ * `LEB128(keyword_bytes.len()) || base64(keyword_bytes)`
+ *
+ * # Parameters
+ *
+ * - `token`           : Findex Cloud token
+ * - `label`           : additional information used to derive Entry Table UIDs
+ * - `indexed_values_and_keywords` : serialized list of values and the keywords
+ *   used to index them
+ * - `base_url`                  : base URL for Findex Cloud (with http prefix
+ *   and port if required). If null, use the default Findex Cloud server.
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int h_upsert_cloud(const char *token_ptr,
+                   const uint8_t *label_ptr,
+                   int label_len,
+                   const char *indexed_values_and_keywords_ptr,
+                   const char *base_url_ptr);

@@ -8,6 +8,8 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
 
 <!-- toc -->
 
+- [Licensing](#licensing)
+- [Cryptographic primitives](#cryptographic-primitives)
 - [Getting started](#getting-started)
   - [CoverCrypt](#covercrypt)
   - [Findex](#findex)
@@ -28,6 +30,22 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
 - [Cloudproof versions Correspondence](#cloudproof-versions-correspondence)
 
 <!-- tocstop -->
+
+## Licensing
+
+The library is available under a dual licensing scheme Affero GPL/v3 and commercial. See [LICENSE.md](LICENSE.md) for details.
+
+## Cryptographic primitives
+
+The library is based on:
+
+- [CoverCrypt](https://github.com/Cosmian/cover_crypt) algorithm which allows
+creating ciphertexts for a set of attributes and issuing user keys with access
+policies over these attributes. `CoverCrypt` offers Post-Quantum resistance.
+
+- [Findex](https://github.com/Cosmian/findex) which is a cryptographic protocol designed to securely make search queries on
+an untrusted cloud server. Thanks to its encrypted indexes, large databases can
+securely be outsourced without compromising usability.
 
 ## Getting started
 
@@ -238,14 +256,6 @@ flutter test
 
 Some tests require a Redis database on localhost (default port).
 
-If you ran the Java test which populate the Redis database, you can run the hidden test that read from this database.
-
-```bash
-RUN_JAVA_E2E_TESTS=1 flutter test --plain-name 'Search and decrypt with preallocate Redis by Java'
-```
-
-If you share the same Redis database between Java and Dart tests, `flutter test` will cleanup the Redis database (it could take some time and timeout on the first execution). So you may want to re-run `mvn test` to populate the Redis database again.
-
 You can run the benchmarks with:
 
 ```bash
@@ -345,3 +355,4 @@ This table shows the minimum versions correspondences between the various compon
 | 4.0.0             | 8.0.0             | 1.0.1  |
 | 4.0.1,4.0.2,4.0.3 | 8.0.0,8.0.1,8.0.2 | 2.0.0  |
 | 5.0.0             | 10.0.0            | 2.0.1  |
+| 5.1.0             | 10.0.0            | 2.1.0  |
