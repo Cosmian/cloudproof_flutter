@@ -2,11 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unrelease
+---
+
+## [5.1.0] - 2023-03-01
+
+### Bug Fixes
+
+- Remove useless commented functions in ios header
+
+### Documentation
+
+- Uniformize readme with other repos
 
 ### Features
 
+- Add `ProgressCallback` as an argument of the search function
 - Add conversions in `Location` to/from number (`int`)
+
+### Miscellaneous Tasks
+
+- Remove unsupported targets
+
+### Ci
+
+- Add cross tests
+- Clean github cache for each completed PR
+- Build example for ios
 
 ---
 
