@@ -10,7 +10,7 @@ from os import path, remove, system
 CLOUDPROOF_RUST_VERSION = 'v0.1.0'
 
 
-def files_to_be_copied(name: str) -> dict[str, str]:
+def files_to_be_copied(name: str):
     jni_libs = 'android/src/main/jniLibs'
     return {
         f'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/{name}.h': f'resources/{name}.h',
