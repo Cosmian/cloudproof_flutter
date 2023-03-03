@@ -107,7 +107,7 @@ jobs:
       extension: so
       destination: linux-x86-64
       os: ubuntu-20.04
-      kms-version: 4.2.0
+      kms-version: 4.3.3
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json src/test/resources/cover_crypt/non_regression/js_non_regression_vector.json
@@ -119,7 +119,7 @@ jobs:
     with:
       branch: develop
       target: wasm32-unknown-unknown
-      kms-version: 4.2.0
+      kms-version: 4.3.3
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json tests/data/cover_crypt/non_regression/java_non_regression_vector.json
@@ -131,7 +131,7 @@ jobs:
     with:
       branch: develop
       target: x86_64-unknown-linux-gnu
-      kms-version: 4.2.0
+      kms-version: 4.3.3
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json tests/data/cover_crypt/non_regression/java_non_regression_vector.json
