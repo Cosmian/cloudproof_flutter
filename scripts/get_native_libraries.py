@@ -25,6 +25,28 @@ def files_to_be_copied(name: str):
     }
 
 
+def write_cloudproof_plugin_header():
+    # Write ios header
+    cloudproof_plugin_header = """#import <Flutter/Flutter.h>
+
+@interface CloudproofPlugin : NSObject<FlutterPlugin>
+@end
+"""
+    with open(
+        'ios/Classes/CloudproofPlugin.h', 'w'
+    ) as cloudproof_plugin_header_file:
+        cloudproof_plugin_header_file.write(cloudproof_plugin_header)
+        with open('resources/cover_crypt.h', 'r') as f:
+            file_content = f.read()  # Read whole file in file_content
+            cloudproof_plugin_header_file.write(file_content)
+            cloudproof_plugin_header_file.write('\n')
+        with open('resources/findex.h', 'r') as f:
+            file_content = f.read()  # Read whole file in file_content
+            cloudproof_plugin_header_file.write(file_content)
+            cloudproof_plugin_header_file.write('\n')
+        cloudproof_plugin_header_file.write('\n')
+
+
 def download_native_libraries(name: str, version: str) -> bool:
     ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -63,6 +85,9 @@ def download_native_libraries(name: str, version: str) -> bool:
                     'flutter pub run ffigen --config ffigen_cover_crypt.yaml'
                 )
                 system('flutter pub run ffigen --config ffigen_findex.yaml')
+
+                write_cloudproof_plugin_header()
+
                 remove('all.zip')
         except Exception as e:
             print(f'Cannot get {name} {version} ({e})')
