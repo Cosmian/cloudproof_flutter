@@ -73,7 +73,7 @@ void main() {
         expect(stacktrace.toString(), contains("SqliteFindex.search"));
         expect(
           stacktrace.toString(),
-          contains("src/findex/findex.dart:170:7"), // :ExceptionLine
+          contains("src/findex/findex.dart:229:5"), // :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
