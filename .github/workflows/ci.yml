@@ -67,6 +67,9 @@ jobs:
       - name: Check build iOS
         if: contains(runner.os, 'macOS')
         run: |
+          otool -Sv ios/libcloudproof_cover_crypt.a || true
+          otool -L ios/libcloudproof_cover_crypt.a || true
+          nm ios/libcloudproof_cover_crypt.a || true
           cd example
           flutter build ios --release --no-codesign
           cd ..
