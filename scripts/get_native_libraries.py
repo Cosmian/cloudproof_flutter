@@ -7,9 +7,6 @@ import zipfile
 from os import path, remove, system
 
 
-CLOUDPROOF_RUST_VERSION = 'v0.1.0'
-
-
 def files_to_be_copied(name: str):
     jni_libs = 'android/src/main/jniLibs'
     return {
@@ -96,6 +93,6 @@ def download_native_libraries(name: str, version: str) -> bool:
 
 
 if __name__ == '__main__':
-    ret = download_native_libraries('cloudproof_rust', CLOUDPROOF_RUST_VERSION)
+    ret = download_native_libraries('cloudproof_rust', 'v1.0.0')
     if ret is False and os.getenv('GITHUB_ACTIONS'):
         download_native_libraries('cloudproof_rust', 'last_build')

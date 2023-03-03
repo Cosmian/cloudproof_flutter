@@ -356,3 +356,9 @@ This table shows the minimum versions correspondences between the various compon
 | 4.0.1,4.0.2,4.0.3 | 8.0.0,8.0.1,8.0.2 | 2.0.0  |
 | 5.0.0             | 10.0.0            | 2.0.1  |
 | 5.1.0             | 10.0.0            | 2.1.0  |
+
+From version 6.0, Flutter library depends on [cloudproof_rust](https://github.com/Cosmian/cloudproof_rust) which wraps the interfaces of CoverCrypt and Findex.
+
+| Flutter Lib | Cloudproof Rust lib |
+|-------------|---------------------|
+| 6.0.0       | 1.0.0              |
