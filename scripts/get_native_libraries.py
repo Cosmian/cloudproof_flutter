@@ -28,9 +28,9 @@ def files_to_be_copied(name: str):
 def download_native_libraries(name: str, version: str) -> bool:
     ssl._create_default_https_context = ssl._create_unverified_context
 
-    findex_files = files_to_be_copied('findex')
+    to_be_copied = files_to_be_copied('findex')
     cover_crypt_files = files_to_be_copied('cover_crypt')
-    to_be_copied = findex_files | cover_crypt_files
+    to_be_copied.update(cover_crypt_files)
 
     missing_files = False
     for key in to_be_copied:
@@ -39,7 +39,6 @@ def download_native_libraries(name: str, version: str) -> bool:
             break
 
     if missing_files:
-
         url = f'https://package.cosmian.com/{name}/{version}/all.zip'
         try:
             r = urllib.request.urlopen(url)
@@ -60,7 +59,9 @@ def download_native_libraries(name: str, version: str) -> bool:
 
                     shutil.rmtree('tmp')
 
-                system('flutter pub run ffigen --config ffigen_cover_crypt.yaml')
+                system(
+                    'flutter pub run ffigen --config ffigen_cover_crypt.yaml'
+                )
                 system('flutter pub run ffigen --config ffigen_findex.yaml')
                 remove('all.zip')
         except Exception as e:
