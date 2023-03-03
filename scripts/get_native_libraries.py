@@ -29,9 +29,7 @@ def write_cloudproof_plugin_header():
 @interface CloudproofPlugin : NSObject<FlutterPlugin>
 @end
 """
-    with open(
-        'ios/Classes/CloudproofPlugin.h', 'w'
-    ) as cloudproof_plugin_header_file:
+    with open('ios/Classes/CloudproofPlugin.h', 'w') as cloudproof_plugin_header_file:
         cloudproof_plugin_header_file.write(cloudproof_plugin_header)
         with open('resources/cover_crypt.h', 'r') as f:
             file_content = f.read()  # Read whole file in file_content
@@ -44,7 +42,7 @@ def write_cloudproof_plugin_header():
         cloudproof_plugin_header_file.write('\n')
 
 
-def download_native_libraries(name: str, version: str) -> bool:
+def download_native_libraries(version: str) -> bool:
     ssl._create_default_https_context = ssl._create_unverified_context
 
     to_be_copied = files_to_be_copied('findex')
@@ -58,11 +56,11 @@ def download_native_libraries(name: str, version: str) -> bool:
             break
 
     if missing_files:
-        url = f'https://package.cosmian.com/{name}/{version}/all.zip'
+        url = f'https://package.cosmian.com/cloudproof_rust/{version}/all.zip'
         try:
             r = urllib.request.urlopen(url)
             if r.getcode() != 200:
-                print(f'Cannot get {name} {version} ({r.getcode()})')
+                print(f'Cannot get cloudproof_rust {version} ({r.getcode()})')
             else:
                 if path.exists('tmp'):
                     shutil.rmtree('tmp')
@@ -78,21 +76,19 @@ def download_native_libraries(name: str, version: str) -> bool:
 
                     shutil.rmtree('tmp')
 
-                system(
-                    'flutter pub run ffigen --config ffigen_cover_crypt.yaml'
-                )
+                system('flutter pub run ffigen --config ffigen_cover_crypt.yaml')
                 system('flutter pub run ffigen --config ffigen_findex.yaml')
 
                 write_cloudproof_plugin_header()
 
                 remove('all.zip')
         except Exception as e:
-            print(f'Cannot get {name} {version} ({e})')
+            print(f'Cannot get cloudproof_rust {version} ({e})')
             return False
     return True
 
 
 if __name__ == '__main__':
-    ret = download_native_libraries('cloudproof_rust', 'v1.0.0')
+    ret = download_native_libraries('v1.0.0')
     if ret is False and os.getenv('GITHUB_ACTIONS'):
-        download_native_libraries('cloudproof_rust', 'last_build')
+        download_native_libraries('last_build')
