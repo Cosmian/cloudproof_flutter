@@ -38,6 +38,23 @@ jobs:
       - run: flutter pub get
       - run: python scripts/get_native_libraries.py
 
+      - name: Check build Android
+        if: contains(runner.os, 'Linux')
+        run: |
+          cd example
+          flutter build apk
+          cd ..
+
+      - name: Check build iOS
+        if: contains(runner.os, 'macOS')
+        run: |
+          otool -Sv ios/libcloudproof_cover_crypt.a || true
+          otool -L ios/libcloudproof_cover_crypt.a || true
+          nm ios/libcloudproof_cover_crypt.a || true
+          cd example
+          flutter build ios --release --no-codesign
+          cd ..
+
       - run: flutter analyze .
       - run: flutter test --concurrency 1 -x redis # exclude redis tests (no docker for macos)
         env:
@@ -56,23 +73,6 @@ jobs:
           if-no-files-found: error
 
       - run: dart benchmark/cloudproof_benchmark.dart
-
-      - name: Check build Android
-        if: contains(runner.os, 'Linux')
-        run: |
-          cd example
-          flutter build apk
-          cd ..
-
-      - name: Check build iOS
-        if: contains(runner.os, 'macOS')
-        run: |
-          otool -Sv ios/libcloudproof_cover_crypt.a || true
-          otool -L ios/libcloudproof_cover_crypt.a || true
-          nm ios/libcloudproof_cover_crypt.a || true
-          cd example
-          flutter build ios --release --no-codesign
-          cd ..
 
       - name: Dart publish
         if: contains(runner.os, 'Linux') && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
