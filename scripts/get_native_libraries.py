@@ -45,7 +45,6 @@ def write_ios_cloudproof_plugin_header():
             file_content = f.read()  # Read whole file in file_content
             cloudproof_plugin_header_file.write(file_content)
             cloudproof_plugin_header_file.write('\n')
-        cloudproof_plugin_header_file.write('\n')
 
 
 def download_native_libraries(version: str) -> bool:
