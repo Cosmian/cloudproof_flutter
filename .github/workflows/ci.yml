@@ -143,7 +143,7 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_python.yml@develop
     with:
-      branch: feature/cloudproof_rust
+      branch: develop
       target: x86_64-unknown-linux-gnu
       kms-version: 4.3.3
       copy_fresh_build: false
