@@ -26,15 +26,15 @@ class CoverCrypt {
     String? libraryPath;
     if (Platform.isMacOS) {
       libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_cover_crypt.dylib');
+          Directory.current.path, 'resources', 'libcloudproof_cover_crypt.dylib');
     } else if (Platform.isWindows) {
       libraryPath = path.join(
-          Directory.current.path, 'resources', 'cosmian_cover_crypt.dll');
+          Directory.current.path, 'resources', 'cloudproof_cover_crypt.dll');
     } else if (Platform.isAndroid) {
-      libraryPath = "libcosmian_cover_crypt.so";
+      libraryPath = "libcloudproof_cover_crypt.so";
     } else if (Platform.isLinux) {
       libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_cover_crypt.so');
+          Directory.current.path, 'resources', 'libcloudproof_cover_crypt.so');
     }
 
     final library = CoverCryptNativeLibrary(libraryPath == null

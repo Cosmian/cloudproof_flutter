@@ -14,7 +14,7 @@ public class SwiftCloudproofPlugin: NSObject, FlutterPlugin {
 
   public func dummyMethodToEnforceCoverCryptBundling() {
     // This will never be executed :PreventTreeShaking
-    h_validate_boolean_expression(nil);
+    h_symmetric_encryption_overhead();
   }
 
   public func dummyMethodToEnforceFindexBundling() {
