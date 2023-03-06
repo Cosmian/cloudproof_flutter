@@ -8,6 +8,9 @@ from os import path, remove, system
 
 
 def files_to_be_copied(name: str):
+    """
+    Get the list of files to be copied
+    """
     jni_libs = 'android/src/main/jniLibs'
     return {
         f'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/{name}.h': f'resources/{name}.h',
@@ -22,7 +25,10 @@ def files_to_be_copied(name: str):
     }
 
 
-def write_cloudproof_plugin_header():
+def write_ios_cloudproof_plugin_header():
+    """
+    Automatically write the ios cloudproof header
+    """
     # Write ios header
     cloudproof_plugin_header = """#import <Flutter/Flutter.h>
 
@@ -43,6 +49,7 @@ def write_cloudproof_plugin_header():
 
 
 def download_native_libraries(version: str) -> bool:
+    """Download and extract native libraries"""
     ssl._create_default_https_context = ssl._create_unverified_context
 
     to_be_copied = files_to_be_copied('findex')
@@ -50,40 +57,44 @@ def download_native_libraries(version: str) -> bool:
     to_be_copied.update(cover_crypt_files)
 
     missing_files = False
-    for key in to_be_copied:
-        if not path.exists(to_be_copied[key]):
+    for key, value in to_be_copied.items():
+        if not path.exists(value):
             missing_files = True
             break
 
     if missing_files:
         url = f'https://package.cosmian.com/cloudproof_rust/{version}/all.zip'
         try:
-            r = urllib.request.urlopen(url)
-            if r.getcode() != 200:
-                print(f'Cannot get cloudproof_rust {version} ({r.getcode()})')
-            else:
-                if path.exists('tmp'):
-                    shutil.rmtree('tmp')
-                if path.exists('all.zip'):
+            with urllib.request.urlopen(url) as request:
+                if request.getcode() != 200:
+                    print(
+                        f'Cannot get cloudproof_rust {version} \
+                         ({request.getcode()})'
+                    )
+                else:
+                    if path.exists('tmp'):
+                        shutil.rmtree('tmp')
+                    if path.exists('all.zip'):
+                        remove('all.zip')
+
+                    open('all.zip', 'wb').write(request.read())
+                    with zipfile.ZipFile('all.zip', 'r') as zip_ref:
+                        zip_ref.extractall('tmp')
+                        for key, value in to_be_copied.items():
+                            shutil.copyfile(key, value)
+                            print(f'Copied OK: {value}...')
+
+                        shutil.rmtree('tmp')
+
+                    system('flutter pub run ffigen --config ffigen_cover_crypt.yaml')
+                    system('flutter pub run ffigen --config ffigen_findex.yaml')
+
+                    write_ios_cloudproof_plugin_header()
+
                     remove('all.zip')
-
-                open('all.zip', 'wb').write(r.read())
-                with zipfile.ZipFile('all.zip', 'r') as zip_ref:
-                    zip_ref.extractall('tmp')
-                    for key in to_be_copied:
-                        shutil.copyfile(key, to_be_copied[key])
-                        print(f'Copied OK: {to_be_copied[key]}...')
-
-                    shutil.rmtree('tmp')
-
-                system('flutter pub run ffigen --config ffigen_cover_crypt.yaml')
-                system('flutter pub run ffigen --config ffigen_findex.yaml')
-
-                write_cloudproof_plugin_header()
-
-                remove('all.zip')
-        except Exception as e:
-            print(f'Cannot get cloudproof_rust {version} ({e})')
+        # pylint: disable=broad-except
+        except Exception as exception:
+            print(f'Cannot get cloudproof_rust {version} ({exception})')
             return False
     return True
 

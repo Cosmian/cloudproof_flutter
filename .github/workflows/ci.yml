@@ -48,9 +48,6 @@ jobs:
       - name: Check build iOS
         if: contains(runner.os, 'macOS')
         run: |
-          otool -Sv ios/libcloudproof_cover_crypt.a || true
-          otool -L ios/libcloudproof_cover_crypt.a || true
-          nm ios/libcloudproof_cover_crypt.a || true
           cd example
           flutter build ios --release --no-codesign
           cd ..
@@ -73,6 +70,20 @@ jobs:
           if-no-files-found: error
 
       - run: dart benchmark/cloudproof_benchmark.dart
+
+      - name: Dart publish dry run
+        if: contains(runner.os, 'Linux')
+        run: |
+          mkdir -p ~/.config/dart
+          echo "$DART_CREDENTIALS" > ~/.config/dart/pub-credentials.json
+          rm -f android/src/main/jniLibs/*/.git*
+          rm -f ios/.gitignore
+          rm -f resources/.gitignore
+          rm -f lib/src/*/.gitignore
+          git add * || true
+          dart pub publish --dry-run
+        env:
+          DART_CREDENTIALS: ${{ secrets.DART_CREDENTIALS }}
 
       - name: Dart publish
         if: contains(runner.os, 'Linux') && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
