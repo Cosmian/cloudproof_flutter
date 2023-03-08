@@ -8,6 +8,175 @@
 #define MAX_CLEAR_TEXT_SIZE (1 << 30)
 #endif
 
+#if defined(DEFINE_CLOUD)
+/**
+ * See `Token@index_id`
+ */
+#define INDEX_ID_LENGTH 5
+#endif
+
+#if defined(DEFINE_CLOUD)
+/**
+ * The callback signature is a kmac of the body of the request.
+ * It is used to assert the client can call this callback.
+ */
+#define CALLBACK_SIGNATURE_LENGTH 32
+#endif
+
+#if defined(DEFINE_CLOUD)
+/**
+ * The number of seconds of validity of the requests to the Findex Cloud
+ * backend. After this time, the request cannot be accepted by the backend.
+ * This is done to prevent replay attacks.
+ */
+#define REQUEST_SIGNATURE_TIMEOUT_AS_SECS 60
+#endif
+
+#if defined(DEFINE_CLOUD)
+/**
+ * This seed is used to derive a new 32 bytes Kmac key.
+ */
+#define SIGNATURE_SEED_LENGTH 16
+#endif
+
+/**
+ * Limit on the recursion to use when none is provided.
+ */
+#define MAX_DEPTH 100
+
+/**
+ * A pagination is performed in order to fetch the entire Entry Table. It is
+ * fetched by batches of size [`NUMBER_OF_ENTRY_TABLE_LINE_IN_BATCH`].
+ */
+#define NUMBER_OF_ENTRY_TABLE_LINE_IN_BATCH 100
+
+/**
+ * See [`FindexCallbacks::progress()`](crate::core::FindexCallbacks::progress).
+ *
+ * # Serialization
+ *
+ * The intermediate results are serialized as follows:
+ *
+ * `LEB128(n_keywords) || LEB128(keyword_1)
+ *     || keyword_1 || LEB128(n_associated_results)
+ *     || LEB128(associated_result_1) || associated_result_1
+ *     || ...`
+ *
+ * With the serialization of a keyword being:
+ *
+ * `LEB128(keyword.len()) || keyword`
+ *
+ * the serialization of the values associated to a keyword:
+ *
+ * `LEB128(serialized_results_for_keyword.len()) || serialized_result_1 || ...`
+ *
+ * and the serialization of a result:
+ *
+ * `LEB128(byte_vector.len() + 1) || prefix || byte_vector`
+ *
+ * where `prefix` is `l` (only `Location`s are returned) and the `byte_vector`
+ * is the byte representation of the location.
+ */
+typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr, unsigned int intermediate_results_len);
+
+/**
+ * See [`FindexCallbacks::fetch_entry_table()`](crate::core::FindexCallbacks::fetch_entry_table).
+ *
+ * # Serialization
+ *
+ * The input is serialized as follows:
+ *
+ * `LEB128(n_uids) || UID_1 || ...`
+ *
+ * The output should be deserialized as follows:
+ *
+ * `LEB128(n_entries) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
+ */
+typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr, unsigned int *entries_len, const unsigned char *uids_ptr, unsigned int uids_len);
+
+/**
+ * See [`FindexCallbacks::fetch_chain_table()`](crate::core::FindexCallbacks::fetch_chain_table).
+ *
+ * # Serialization
+ *
+ * The input is serialized as follows:
+ *
+ * `LEB128(n_uids) || UID_1 || ...`
+ *
+ * The output should be serialized as follows:
+ *
+ * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
+ */
+typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr, unsigned int *chains_len, const unsigned char *uids_ptr, unsigned int uids_len);
+
+/**
+ * See [`FindexCallbacks::upsert_entry_table()`](crate::core::FindexCallbacks::upsert_entry_table).
+ *
+ * # Serialization
+ *
+ * The input is serialized as follows:
+ *
+ * ` LEB128(entries.len()) || UID_1
+ *     || LEB128(old_value_1.len()) || old_value_1
+ *     || LEB128(new_value_1.len()) || new_value_1
+ *     || ...`
+ *
+ * The output should be serialized as follows:
+ *
+ * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
+ */
+typedef int (*UpsertEntryTableCallback)(unsigned char *outputs_ptr, unsigned int *outputs_len, const unsigned char *entries_ptr, unsigned int entries_len);
+
+/**
+ * See [`FindexCallbacks::insert_chain_table()`](crate::core::FindexCallbacks::insert_chain_table).
+ *
+ * # Serialization
+ *
+ * The input is serialized as follows:
+ *
+ * `LEB128(n_lines) || UID_1 || LEB128(value_1.len() || value_1 || ...`
+ */
+typedef int (*InsertChainTableCallback)(const unsigned char *chains_ptr, unsigned int chains_len);
+
+/**
+ * See [`FindexCallbacks::fetch_all_entry_table_uids()`](crate::core::FindexCallbacks::fetch_all_entry_table_uids).
+ *
+ * The output should be deserialized as follows:
+ *
+ * `UID_1 || UID_2 || ... || UID_n`
+ */
+typedef int (*FetchAllEntryTableUidsCallback)(unsigned char *uids_ptr, unsigned int *uids_len);
+
+/**
+ * See [`FindexCallbacks::update_lines()`](crate::core::FindexCallbacks::update_lines).
+ *
+ * # Serialization
+ *
+ * The removed Chain Table UIDs are serialized as follows:
+ *
+ * `LEB128(n_uids) || UID_1 || ...`
+ *
+ * The new table items are serialized as follows:
+ *
+ * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
+ */
+typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remove_ptr, unsigned int chain_table_uids_to_remove_len, const unsigned char *new_encrypted_entry_table_items_ptr, unsigned int new_encrypted_entry_table_items_len, const unsigned char *new_encrypted_chain_table_items_ptr, unsigned int new_encrypted_chain_table_items_len);
+
+/**
+ * See
+ * [`FindexCallbacks::list_removed_locations()`](crate::core::FindexCallbacks::list_removed_locations).
+ *
+ * # Serialization
+ *
+ * The input is serialized as follows:
+ *
+ * `LEB128(locations.len()) || LEB128(location_bytes_1.len()
+ *     || location_bytes_1 || ...`
+ *
+ * Outputs should follow the same serialization.
+ */
+typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr, unsigned int *removed_locations_len, const unsigned char *locations_ptr, unsigned int locations_len);
+
 /**
  * # Safety
  */
@@ -360,177 +529,6 @@ int32_t h_set_error(const char *error_message_ptr);
  * - `error_len`: size of the allocated memory
  */
 int h_get_error(char *error_ptr, int *error_len);
-
-// NOTE: Autogenerated file
-
-#if defined(DEFINE_CLOUD)
-/**
- * See `Token@index_id`
- */
-#define INDEX_ID_LENGTH 5
-#endif
-
-#if defined(DEFINE_CLOUD)
-/**
- * The callback signature is a kmac of the body of the request.
- * It is used to assert the client can call this callback.
- */
-#define CALLBACK_SIGNATURE_LENGTH 32
-#endif
-
-#if defined(DEFINE_CLOUD)
-/**
- * The number of seconds of validity of the requests to the Findex Cloud
- * backend. After this time, the request cannot be accepted by the backend.
- * This is done to prevent replay attacks.
- */
-#define REQUEST_SIGNATURE_TIMEOUT_AS_SECS 60
-#endif
-
-#if defined(DEFINE_CLOUD)
-/**
- * This seed is used to derive a new 32 bytes Kmac key.
- */
-#define SIGNATURE_SEED_LENGTH 16
-#endif
-
-/**
- * Limit on the recursion to use when none is provided.
- */
-#define MAX_DEPTH 100
-
-/**
- * A pagination is performed in order to fetch the entire Entry Table. It is
- * fetched by batches of size [`NUMBER_OF_ENTRY_TABLE_LINE_IN_BATCH`].
- */
-#define NUMBER_OF_ENTRY_TABLE_LINE_IN_BATCH 100
-
-/**
- * See [`FindexCallbacks::progress()`](crate::core::FindexCallbacks::progress).
- *
- * # Serialization
- *
- * The intermediate results are serialized as follows:
- *
- * `LEB128(n_keywords) || LEB128(keyword_1)
- *     || keyword_1 || LEB128(n_associated_results)
- *     || LEB128(associated_result_1) || associated_result_1
- *     || ...`
- *
- * With the serialization of a keyword being:
- *
- * `LEB128(keyword.len()) || keyword`
- *
- * the serialization of the values associated to a keyword:
- *
- * `LEB128(serialized_results_for_keyword.len()) || serialized_result_1 || ...`
- *
- * and the serialization of a result:
- *
- * `LEB128(byte_vector.len() + 1) || prefix || byte_vector`
- *
- * where `prefix` is `l` (only `Location`s are returned) and the `byte_vector`
- * is the byte representation of the location.
- */
-typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr, unsigned int intermediate_results_len);
-
-/**
- * See [`FindexCallbacks::fetch_entry_table()`](crate::core::FindexCallbacks::fetch_entry_table).
- *
- * # Serialization
- *
- * The input is serialized as follows:
- *
- * `LEB128(n_uids) || UID_1 || ...`
- *
- * The output should be deserialized as follows:
- *
- * `LEB128(n_entries) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
- */
-typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr, unsigned int *entries_len, const unsigned char *uids_ptr, unsigned int uids_len);
-
-/**
- * See [`FindexCallbacks::fetch_chain_table()`](crate::core::FindexCallbacks::fetch_chain_table).
- *
- * # Serialization
- *
- * The input is serialized as follows:
- *
- * `LEB128(n_uids) || UID_1 || ...`
- *
- * The output should be serialized as follows:
- *
- * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
- */
-typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr, unsigned int *chains_len, const unsigned char *uids_ptr, unsigned int uids_len);
-
-/**
- * See [`FindexCallbacks::upsert_entry_table()`](crate::core::FindexCallbacks::upsert_entry_table).
- *
- * # Serialization
- *
- * The input is serialized as follows:
- *
- * ` LEB128(entries.len()) || UID_1
- *     || LEB128(old_value_1.len()) || old_value_1
- *     || LEB128(new_value_1.len()) || new_value_1
- *     || ...`
- *
- * The output should be serialized as follows:
- *
- * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
- */
-typedef int (*UpsertEntryTableCallback)(unsigned char *outputs_ptr, unsigned int *outputs_len, const unsigned char *entries_ptr, unsigned int entries_len);
-
-/**
- * See [`FindexCallbacks::insert_chain_table()`](crate::core::FindexCallbacks::insert_chain_table).
- *
- * # Serialization
- *
- * The input is serialized as follows:
- *
- * `LEB128(n_lines) || UID_1 || LEB128(value_1.len() || value_1 || ...`
- */
-typedef int (*InsertChainTableCallback)(const unsigned char *chains_ptr, unsigned int chains_len);
-
-/**
- * See [`FindexCallbacks::fetch_all_entry_table_uids()`](crate::core::FindexCallbacks::fetch_all_entry_table_uids).
- *
- * The output should be deserialized as follows:
- *
- * `UID_1 || UID_2 || ... || UID_n`
- */
-typedef int (*FetchAllEntryTableUidsCallback)(unsigned char *uids_ptr, unsigned int *uids_len);
-
-/**
- * See [`FindexCallbacks::update_lines()`](crate::core::FindexCallbacks::update_lines).
- *
- * # Serialization
- *
- * The removed Chain Table UIDs are serialized as follows:
- *
- * `LEB128(n_uids) || UID_1 || ...`
- *
- * The new table items are serialized as follows:
- *
- * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
- */
-typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remove_ptr, unsigned int chain_table_uids_to_remove_len, const unsigned char *new_encrypted_entry_table_items_ptr, unsigned int new_encrypted_entry_table_items_len, const unsigned char *new_encrypted_chain_table_items_ptr, unsigned int new_encrypted_chain_table_items_len);
-
-/**
- * See
- * [`FindexCallbacks::list_removed_locations()`](crate::core::FindexCallbacks::list_removed_locations).
- *
- * # Serialization
- *
- * The input is serialized as follows:
- *
- * `LEB128(locations.len()) || LEB128(location_bytes_1.len()
- *     || location_bytes_1 || ...`
- *
- * Outputs should follow the same serialization.
- */
-typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr, unsigned int *removed_locations_len, const unsigned char *locations_ptr, unsigned int locations_len);
 
 /**
  * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old

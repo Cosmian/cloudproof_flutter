@@ -5,7 +5,7 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:cloudproof/src/cover_crypt/generated_bindings.dart';
+import 'package:cloudproof/src/generated_bindings.dart';
 import 'package:cloudproof/src/utils/blob_conversion.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
@@ -16,28 +16,28 @@ const coverCryptErrorMessageMaxLength = 3000;
 const defaultHeaderMetadataSizeInBytes = 4096;
 
 class CoverCrypt {
-  static CoverCryptNativeLibrary? _library;
+  static CloudproofNativeLibrary? _library;
 
-  static CoverCryptNativeLibrary get library {
+  static CloudproofNativeLibrary get library {
     if (_library != null) {
-      return _library as CoverCryptNativeLibrary;
+      return _library as CloudproofNativeLibrary;
     }
 
     String? libraryPath;
     if (Platform.isMacOS) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcloudproof_cover_crypt.dylib');
+      libraryPath =
+          path.join(Directory.current.path, 'resources', 'libcloudproof.dylib');
     } else if (Platform.isWindows) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'cloudproof_cover_crypt.dll');
+      libraryPath =
+          path.join(Directory.current.path, 'resources', 'cloudproof.dll');
     } else if (Platform.isAndroid) {
-      libraryPath = "libcloudproof_cover_crypt.so";
+      libraryPath = "libcloudproof.so";
     } else if (Platform.isLinux) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcloudproof_cover_crypt.so');
+      libraryPath =
+          path.join(Directory.current.path, 'resources', 'libcloudproof.so');
     }
 
-    final library = CoverCryptNativeLibrary(libraryPath == null
+    final library = CloudproofNativeLibrary(libraryPath == null
         ? DynamicLibrary.process()
         : DynamicLibrary.open(libraryPath));
     _library = library;
