@@ -361,3 +361,4 @@ From the version 6.0.0, `cloudproof_flutter` depends on [cloudproof_rust](https:
 | Flutter Lib | Cloudproof Rust lib |
 |-------------|---------------------|
 | 6.0.0       | 1.0.0               |
+| 6.0.1       | 1.0.1               |
