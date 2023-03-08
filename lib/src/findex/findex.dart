@@ -6,7 +6,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
-import 'package:cloudproof/src/findex/generated_bindings.dart';
+import 'package:cloudproof/src/generated_bindings.dart';
 import 'package:cloudproof/src/utils/blob_conversion.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as path;
@@ -29,28 +29,28 @@ class ExceptionThrown {
 
 class Findex {
   static List<ExceptionThrown> exceptions = [];
-  static FindexNativeLibrary? cachedLibrary;
+  static CloudproofNativeLibrary? cachedLibrary;
 
-  static FindexNativeLibrary get library {
+  static CloudproofNativeLibrary get library {
     if (cachedLibrary != null) {
-      return cachedLibrary as FindexNativeLibrary;
+      return cachedLibrary as CloudproofNativeLibrary;
     }
 
     String? libraryPath;
     if (Platform.isMacOS) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcloudproof_findex.dylib');
+      libraryPath =
+          path.join(Directory.current.path, 'resources', 'libcloudproof.dylib');
     } else if (Platform.isWindows) {
       libraryPath =
-          path.join(Directory.current.path, 'resources', 'cloudproof_findex.dll');
+          path.join(Directory.current.path, 'resources', 'cloudproof.dll');
     } else if (Platform.isAndroid) {
-      libraryPath = "libcloudproof_findex.so";
+      libraryPath = "libcloudproof.so";
     } else if (Platform.isLinux) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcloudproof_findex.so');
+      libraryPath =
+          path.join(Directory.current.path, 'resources', 'libcloudproof.so');
     }
 
-    final library = FindexNativeLibrary(libraryPath == null
+    final library = CloudproofNativeLibrary(libraryPath == null
         ? DynamicLibrary.process()
         : DynamicLibrary.open(libraryPath));
     cachedLibrary = library;

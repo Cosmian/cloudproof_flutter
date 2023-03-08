@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [6.0.1] - 2023-03-08
+
+### Refactor
+
+- Use cloudproof binary instead of findex and cover_crypt bins
+
 ## [6.0.0] - 2023-03-03
 
 ### Features
