@@ -20,7 +20,7 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
   - [WARNINGS](#warnings)
   - [Implementation details](#implementation-details)
 - [FFI libs notes](#ffi-libs-notes)
-  - [Generating `.h`](#generating-h)
+  - [Generating Dart bindings from `cloudproof.h`](#generating-dart-bindings-from-cloudproofh)
     - [iOS WARNING](#ios-warning)
   - [Building `.so`, `.a`…](#building-so-a)
     - [Linux](#linux)
@@ -279,13 +279,12 @@ This project has been first created via:
 flutter create --org com.example --template=plugin --platforms=android,ios -a kotlin cloudproof
 ```
 
-### Generating `.h`
+### Generating Dart bindings from `cloudproof.h`
 
-The `lib/src/*/generated_bindings.dart` are generated with `ffigen` with the config file `./ffigen_*.yml`:
+The `lib/src/generated_bindings.dart` are generated with `ffigen` with the config file `./ffigen_*.yml`:
 
 ```bash
-flutter pub run ffigen --config ffigen_cover_crypt.yaml
-flutter pub run ffigen --config ffigen_findex.yaml
+flutter pub run ffigen --config ffigen_cloudproof.yaml
 ```
 
 #### iOS WARNING
@@ -361,4 +360,4 @@ From the version 6.0.0, `cloudproof_flutter` depends on [cloudproof_rust](https:
 
 | Flutter Lib | Cloudproof Rust lib |
 |-------------|---------------------|
-| 6.0.0       | 1.0.0              |
+| 6.0.0       | 1.0.0               |

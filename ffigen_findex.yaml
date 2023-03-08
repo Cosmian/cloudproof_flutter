@@ -1,9 +1,0 @@
----
-preamble: |
-  // ignore_for_file: constant_identifier_names, non_constant_identifier_names
-output: lib/src/findex/generated_bindings.dart
-headers:
-  entry-points:
-    - resources/findex.h
-name: FindexNativeLibrary
-description: Dart bindings to call Findex functions
