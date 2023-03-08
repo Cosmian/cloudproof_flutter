@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [6.0.0] - 2023-03-03
+
+### Features
+
+- Support CoverCrypt 11.0 and Findex 3.0.0
+
+### Ci
+
+- Update kms to 4.3.3
+
 ---
 
 ## [5.1.0] - 2023-03-01

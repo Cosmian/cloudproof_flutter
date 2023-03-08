@@ -38,6 +38,20 @@ jobs:
       - run: flutter pub get
       - run: python scripts/get_native_libraries.py
 
+      - name: Check build Android
+        if: contains(runner.os, 'Linux')
+        run: |
+          cd example
+          flutter build apk
+          cd ..
+
+      - name: Check build iOS
+        if: contains(runner.os, 'macOS')
+        run: |
+          cd example
+          flutter build ios --release --no-codesign
+          cd ..
+
       - run: flutter analyze .
       - run: flutter test --concurrency 1 -x redis # exclude redis tests (no docker for macos)
         env:
@@ -57,22 +71,22 @@ jobs:
 
       - run: dart benchmark/cloudproof_benchmark.dart
 
-      - name: Check build Android
+      - name: Dart publish dry run
         if: contains(runner.os, 'Linux')
         run: |
-          cd example
-          flutter build apk
-          cd ..
-
-      - name: Check build iOS
-        if: contains(runner.os, 'macOS')
-        run: |
-          cd example
-          flutter build ios --release --no-codesign
-          cd ..
+          mkdir -p ~/.config/dart
+          echo "$DART_CREDENTIALS" > ~/.config/dart/pub-credentials.json
+          rm -f android/src/main/jniLibs/*/.git*
+          rm -f ios/.gitignore
+          rm -f resources/.gitignore
+          rm -f lib/src/*/.gitignore
+          git add * || true
+          dart pub publish --dry-run
+        env:
+          DART_CREDENTIALS: ${{ secrets.DART_CREDENTIALS }}
 
       - name: Dart publish
-        if: contains(runner.os, 'Linux') && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        if: contains(runner.os, 'Linux') && startsWith(github.ref, 'refs/tags/')
         run: |
           mkdir -p ~/.config/dart
           echo "$DART_CREDENTIALS" > ~/.config/dart/pub-credentials.json
@@ -87,7 +101,7 @@ jobs:
 
       - name: Verify package import from internet
         continue-on-error: true
-        if: contains(runner.os, 'Linux') && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        if: contains(runner.os, 'Linux') && startsWith(github.ref, 'refs/tags/')
         run: |
           cp -r example /tmp/flutter_example
           cd /tmp/flutter_example
@@ -107,7 +121,7 @@ jobs:
       extension: so
       destination: linux-x86-64
       os: ubuntu-20.04
-      kms-version: 4.2.0
+      kms-version: 4.3.3
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json src/test/resources/cover_crypt/non_regression/js_non_regression_vector.json
@@ -119,7 +133,7 @@ jobs:
     with:
       branch: develop
       target: wasm32-unknown-unknown
-      kms-version: 4.2.0
+      kms-version: 4.3.3
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json tests/data/cover_crypt/non_regression/java_non_regression_vector.json
@@ -131,7 +145,7 @@ jobs:
     with:
       branch: develop
       target: x86_64-unknown-linux-gnu
-      kms-version: 4.2.0
+      kms-version: 4.3.3
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json tests/data/cover_crypt/non_regression/java_non_regression_vector.json
@@ -147,7 +161,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Release
-        if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
 
   cleanup:

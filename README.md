@@ -290,7 +290,7 @@ flutter pub run ffigen --config ffigen_findex.yaml
 
 #### iOS WARNING
 
-Use cbindgen, do not forget to remove `str` type in `libcosmian_cover_crypt.h` (last two lines) for iOS to compile (type `str` unknown in C headers).
+Use cbindgen, do not forget to remove `str` type in `libcloudproof_cover_crypt.h` (last two lines) for iOS to compile (type `str` unknown in C headers).
 
 The two `.h` need to be inside the `ios/Classes` folder. Android doesn't need `.h` files.
 
@@ -318,8 +318,8 @@ If building with `cargo lipo` on Linux we only get `aarch64-apple-ios` and `x86_
 
 On codemagic.io:
 
-- `aarch64-apple-ios` is failing with "ld: in /Users/builder/clone/ios/libcosmian_cover_crypt.a(cover_crypt.cover_crypt.aea4b2d2-cgu.0.rcgu.o), building for iOS Simulator, but linking in object file built for iOS, file '/Users/builder/clone/ios/libcosmian_cover_crypt.a' for architecture arm64"
-- `x86_64-apple-ios` is failing with "ld: warning: ignoring file /Users/builder/clone/ios/libcosmian_cover_crypt.a, building for iOS Simulator-arm64 but attempting to link with file built for iOS Simulator-x86_64"
+- `aarch64-apple-ios` is failing with "ld: in /Users/builder/clone/ios/libcloudproof_cover_crypt.a(cover_crypt.cover_crypt.aea4b2d2-cgu.0.rcgu.o), building for iOS Simulator, but linking in object file built for iOS, file '/Users/builder/clone/ios/libcloudproof_cover_crypt.a' for architecture arm64"
+- `x86_64-apple-ios` is failing with "ld: warning: ignoring file /Users/builder/clone/ios/libcloudproof_cover_crypt.a, building for iOS Simulator-arm64 but attempting to link with file built for iOS Simulator-x86_64"
 
 To make the flutter build succeed, 3 prerequisites are needed:
 
@@ -356,3 +356,9 @@ This table shows the minimum versions correspondences between the various compon
 | 4.0.1,4.0.2,4.0.3 | 8.0.0,8.0.1,8.0.2 | 2.0.0  |
 | 5.0.0             | 10.0.0            | 2.0.1  |
 | 5.1.0             | 10.0.0            | 2.1.0  |
+
+From the version 6.0.0, `cloudproof_flutter` depends on [cloudproof_rust](https://github.com/Cosmian/cloudproof_rust) which wraps the interfaces of `CoverCrypt` and `Findex`.
+
+| Flutter Lib | Cloudproof Rust lib |
+|-------------|---------------------|
+| 6.0.0       | 1.0.0              |
