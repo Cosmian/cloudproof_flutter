@@ -79,7 +79,7 @@ jobs:
           rm -f android/src/main/jniLibs/*/.git*
           rm -f ios/.gitignore
           rm -f resources/.gitignore
-          rm -f lib/src/*/.gitignore
+          rm -f lib/src/.gitignore
           git add * || true
           dart pub publish --dry-run
         env:
@@ -93,7 +93,7 @@ jobs:
           rm -f android/src/main/jniLibs/*/.git*
           rm -f ios/.gitignore
           rm -f resources/.gitignore
-          rm -f lib/src/*/.gitignore
+          rm -f lib/src/.gitignore
           git add * || true
           dart pub publish -f
         env:

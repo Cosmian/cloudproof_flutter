@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [6.0.2] - 2023-03-08
+
+### Bug Fixes
+
+- Auto publishing in CI
+
 ## [6.0.1] - 2023-03-08
 
 ### Refactor
