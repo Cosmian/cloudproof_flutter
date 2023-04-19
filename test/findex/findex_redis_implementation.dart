@@ -9,6 +9,21 @@ import 'package:redis/redis.dart';
 import 'sqlite_test.dart';
 
 class FindexRedisImplementation {
+  static const String throwInsideFetchFilepath = "/tmp/redisThrowInsideFetch";
+
+  static Future<bool> shouldThrowInsideFetch() async {
+    return await File(FindexRedisImplementation.throwInsideFetchFilepath)
+        .exists();
+  }
+
+  static Future<void> setThrowInsideFetch() async {
+    await File(FindexRedisImplementation.throwInsideFetchFilepath).create();
+  }
+
+  static Future<void> resetThrowInsideFetch() async {
+    await File(FindexRedisImplementation.throwInsideFetchFilepath).delete();
+  }
+
   static Future<void> init() async {
     final db = await FindexRedisImplementation.db;
 
@@ -150,6 +165,10 @@ class FindexRedisImplementation {
     List<UidAndValue> results = [];
 
     final db = await FindexRedisImplementation.db;
+
+    if (await FindexRedisImplementation.shouldThrowInsideFetch()) {
+      throw UnsupportedError("Redis Should Throw Exception"); // :ExceptionLine
+    }
 
     final values = await mget(db, table, uids.uids);
 

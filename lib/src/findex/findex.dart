@@ -108,7 +108,7 @@ class Findex {
       );
       final end = DateTime.now();
 
-      throwOnErrorCode(errorCode, start, end);
+      await throwOnErrorCode(errorCode, start, end);
     } finally {
       calloc.free(labelPointer);
       malloc.free(indexedValuesAndKeywordsPointer);
@@ -190,7 +190,7 @@ class Findex {
             outputSizeInBytes: outputLengthPointer.value);
       }
 
-      throwOnErrorCode(errorCode, start, end);
+      await throwOnErrorCode(errorCode, start, end);
 
       return deserializeSearchResults(
         output.asTypedList(outputLengthPointer.value),
@@ -204,29 +204,56 @@ class Findex {
     }
   }
 
-  static void throwOnErrorCode(
+  static Future<void> throwOnErrorCode(
     int errorCode,
     DateTime start,
     DateTime end,
-  ) {
+  ) async {
     if (errorCode == 0) return;
 
-    if (errorCode == errorCodeInCaseOfCallbackException) {
-      final exceptions = Findex.exceptions.where((element) =>
-          element.datetime.isAfter(start) && element.datetime.isBefore(end));
+    // Allow to give back the hand to the event loop to allow
+    // the Isolute error port listeners to run and put exceptions
+    // inside the Findex.exceptions array.
+    await Future.delayed(const Duration(milliseconds: 10));
 
-      if (exceptions.isNotEmpty) {
-        // We currently only rethrow the first exception but if multiple exceptions are thrown during this
-        // FFI call maybe we should give this information to the user.
-        // Multiple exceptions can be thrown if there is multiple concurrent request.
-        Error.throwWithStackTrace(
-          CallbackExceptionWrapper(exceptions.first.e.toString()),
-          exceptions.first.stacktrace,
-        );
+    final exceptions = Findex.exceptions.where((element) =>
+        element.datetime.isAfter(start) && element.datetime.isBefore(end));
+
+    if (exceptions.isNotEmpty) {
+      // We currently only rethrow the first exception but if multiple exceptions are thrown during this
+      // FFI call maybe we should give this information to the user.
+      // Multiple exceptions can be thrown if there is multiple concurrent request.
+
+      // In async callback wrapper the error code is not `errorCodeInCaseOfCallbackException`
+      // because the exception is happening inside an isolate and not reported back to the
+      // real callback that spawn the isolate. So the real callback return 0 (everything is fine)
+      // and the Rust part is failing because the data from inside the pointer is wrong.
+      // We need to report the user exception in this case but maybe the exception is from somewhere
+      // else / has nothing to do with the current problem. In this case we still rethrow the user exception because
+      // there is 99% of chance that this is the problem. But we log the Rust error for completeness.
+      if (errorCode != errorCodeInCaseOfCallbackException) {
+        log("An exception occured during the callback but the errorCode was $errorCode but we expect $errorCodeInCaseOfCallbackException if a user exception happen inside a callback. The Rust error was: ${getLastError()} (it may be something unrelated or the real error). While using async wrapper this is the normal behaviour because user exceptions do not return the correct error code.");
       }
+
+      Error.throwWithStackTrace(
+        exceptions.first.e,
+        exceptions.first.stacktrace,
+      );
     }
 
     throw FindexException(getLastError());
+  }
+
+  static ReceivePort isolateErrorPort() {
+    final now = DateTime.now();
+    final errorPort = ReceivePort();
+    errorPort.listen((messages) {
+      final e = AsyncCallbackExceptionWrapper(messages[0]);
+      Findex.exceptions
+          .add(ExceptionThrown(now, e, StackTrace.fromString(messages[1])));
+    });
+
+    return errorPort;
   }
 
   static Map<Keyword, List<Location>> deserializeSearchResults(
@@ -323,8 +350,6 @@ class Findex {
                 Pointer<UnsignedChar>.fromAddress(message.item1),
                 Pointer<UnsignedInt>.fromAddress(message.item2),
                 entryTableLines);
-          } catch (e) {
-            log("Excepting in fetch isolate. $e");
           } finally {
             Pointer<Bool>.fromAddress(message.item4).value = true;
           }
@@ -335,10 +360,12 @@ class Findex {
           uidsPointer.address,
           donePointer.address,
         ),
+        onError: Findex.isolateErrorPort().sendPort,
       );
       while (!donePointer.value) {
         sleep(const Duration(milliseconds: 10));
       }
+
       return 0;
     } catch (e, stacktrace) {
       log("Exception during fetch callback ($callback) $e $stacktrace");
@@ -374,8 +401,6 @@ class Findex {
                 Pointer<UnsignedChar>.fromAddress(message.item4),
                 Pointer<UnsignedInt>.fromAddress(message.item3),
                 rejectedEntries);
-          } catch (e) {
-            log("Excepting in upsert isolate. $e");
           } finally {
             Pointer<Bool>.fromAddress(message.item4).value = true;
           }
@@ -386,6 +411,7 @@ class Findex {
           outputRejectedEntriesListLength.address,
           donePointer.address,
         ),
+        onError: Findex.isolateErrorPort().sendPort,
       );
 
       while (!donePointer.value) {
@@ -419,8 +445,6 @@ class Findex {
             final uidsAndValues = UidAndValue.deserialize(inputArray);
 
             await callback(uidsAndValues);
-          } catch (e) {
-            log("Excepting in upsert isolate. $e");
           } finally {
             Pointer<Bool>.fromAddress(message.item2).value = true;
           }
@@ -429,6 +453,7 @@ class Findex {
           chainsListPointer.address,
           donePointer.address,
         ),
+        onError: Findex.isolateErrorPort().sendPort,
       );
 
       while (!donePointer.value) {
@@ -534,10 +559,10 @@ extension Uint8ListBlobConversion on Uint8List {
   }
 }
 
-class CallbackExceptionWrapper implements Exception {
+class AsyncCallbackExceptionWrapper implements Exception {
   String message;
 
-  CallbackExceptionWrapper(this.message);
+  AsyncCallbackExceptionWrapper(this.message);
 
   @override
   String toString() {
