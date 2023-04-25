@@ -42,10 +42,6 @@ const expectedUsersIdsForFrance = [
 
 void main() {
   group('Findex Redis', () {
-    if (Platform.environment.containsKey("RUN_JAVA_E2E_TESTS")) {
-      return;
-    }
-
     test('search/upsert', () async {
       final masterKey = FindexMasterKey.fromJson(jsonDecode(
           await File('test/resources/findex/master_key.json').readAsString()));
@@ -82,6 +78,6 @@ void main() {
 
       expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
       expect(usersIds, equals(expectedUsersIdsForFrance));
-    });
+    }, tags: 'redis');
   });
 }
