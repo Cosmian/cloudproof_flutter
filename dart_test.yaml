@@ -1,0 +1,11 @@
+---
+# package:test configuration
+# https://github.com/dart-lang/test/blob/master/pkgs/test/doc/configuration.md
+
+# For Github tests, we ignore Redis tests because macos on github does not
+# docker
+timeout: 10m
+
+tags:
+  redis:
+    allow_test_randomization: false

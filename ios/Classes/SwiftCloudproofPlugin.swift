@@ -14,7 +14,7 @@ public class SwiftCloudproofPlugin: NSObject, FlutterPlugin {
 
   public func dummyMethodToEnforceCoverCryptBundling() {
     // This will never be executed :PreventTreeShaking
-    h_get_encrypted_header_size(nil, 0);
+    h_aes_symmetric_encryption_overhead();
   }
 
   public func dummyMethodToEnforceFindexBundling() {
@@ -27,6 +27,7 @@ public class SwiftCloudproofPlugin: NSObject, FlutterPlugin {
       nil,
       0,
       nil,
+      0,
       0,
       0,
       nil,
