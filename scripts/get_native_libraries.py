@@ -92,6 +92,6 @@ def download_native_libraries(version: str) -> bool:
 
 
 if __name__ == '__main__':
-    ret = download_native_libraries('v1.0.1')
+    ret = download_native_libraries('v1.0.2')
     if ret is False and os.getenv('GITHUB_ACTIONS'):
-        download_native_libraries('last_build/feature/ios_merge_findex_cover_crypt')
+        download_native_libraries('last_build/improve_ffi_errors')

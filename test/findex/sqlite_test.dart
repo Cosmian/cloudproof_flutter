@@ -66,14 +66,24 @@ void main() {
 
         throw Exception("search should throw");
       } catch (e, stacktrace) {
+        // When an exception is thrown inside a callback
+        // we should rethrow the exception from our functions
+        // instead of throwing a generic Findex exception.
+        // The message should be the same
+        // The stacktrace should point to the correct line inside the user callback.
+        // This is working saving by the exceptions during the callbacks runs, returning a
+        // specific error code, Findex forwards the specific error code, Flutter catch the
+        // error code at the end of the search/upsert operation and find the saved exception
+        // to rethrow.
         expect(
           e.toString(),
-          "callback returned with error code 42: fetch entries",
+          "Unsupported operation: Some message",
         );
-        expect(stacktrace.toString(), contains("SqliteFindex.search"));
+        expect(stacktrace.toString(), contains("SqliteFindex.fetchEntries"));
         expect(
           stacktrace.toString(),
-          contains("src/findex/findex.dart:229:5"), // :ExceptionLine
+          contains(
+              "test/findex/sqlite_test.dart:382:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
@@ -127,7 +137,7 @@ void main() {
       } catch (e) {
         expect(
           e.toString(),
-          "callback returned with error code 42: fetch chains",
+          "`uid` should be of length 32. Actual length is 193 bytes.",
         );
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchChains = false;
@@ -166,7 +176,7 @@ void main() {
       } catch (e) {
         expect(
           e.toString(),
-          "callback returned with error code 42: fetch entries",
+          "`uid` should be of length 32. Actual length is 108 bytes.",
         );
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchEntries = false;
