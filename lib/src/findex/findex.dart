@@ -211,9 +211,12 @@ class Findex {
   ) async {
     if (errorCode == 0) return;
 
-    // Allow to give back the hand to the event loop to allow
-    // the Isolate error port listeners to run and put exceptions
-    // inside the Findex.exceptions array.
+    // The async callbacks errors are raised with a Dart listener which run inside
+    // the async event loop. We are in sync code since the start of the FFI call
+    // so even if an error was raised, the listener didn't have the time to run
+    // (because the sync code blocks the event loop). Puting an `await` here allows
+    // the event loop to do some work before continuing the function. The listener
+    // will be run and the potential exception will be stored inside the `Findex.exceptions` array.
     await Future.delayed(const Duration(milliseconds: 10));
 
     final exceptions = Findex.exceptions.where((element) =>
