@@ -212,7 +212,7 @@ class Findex {
     if (errorCode == 0) return;
 
     // Allow to give back the hand to the event loop to allow
-    // the Isolute error port listeners to run and put exceptions
+    // the Isolate error port listeners to run and put exceptions
     // inside the Findex.exceptions array.
     await Future.delayed(const Duration(milliseconds: 10));
 
