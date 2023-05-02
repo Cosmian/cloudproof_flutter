@@ -313,12 +313,12 @@ class SqliteFindex {
       FindexMasterKey masterKey, Uint8List label) async {
     final users = allUsers();
 
-    final indexedValuesAndKeywords = {
+    final additions = {
       for (final user in users)
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 
-    await upsert(masterKey, label, indexedValuesAndKeywords);
+    await upsert(masterKey, label, additions, {});
   }
 
   static Future<void> indexAllFromFile(
@@ -328,7 +328,7 @@ class SqliteFindex {
     final stmt = db.prepare(
         'INSERT INTO users (id, firstName, lastName, phone, email, country, region, employeeNumber, security) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
 
-    final indexedValuesAndKeywords = {
+    final additions = {
       for (final user in users)
         IndexedValue.fromLocation(
             Location(Uint8List(4)..buffer.asInt32List()[0] = user['id'])): [
@@ -343,7 +343,7 @@ class SqliteFindex {
         ],
     };
 
-    await upsert(masterKey, label, indexedValuesAndKeywords);
+    await upsert(masterKey, label, additions, {});
 
     for (final user in users) {
       stmt.execute([
@@ -513,12 +513,14 @@ class SqliteFindex {
   static Future<void> upsert(
     FindexMasterKey masterKey,
     Uint8List label,
-    Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
+    Map<IndexedValue, List<Keyword>> additions,
+    Map<IndexedValue, List<Keyword>> deletions,
   ) async {
     await Findex.upsert(
       masterKey,
       label,
-      indexedValuesAndKeywords,
+      additions,
+      deletions,
       Pointer.fromFunction(
         fetchEntriesCallback,
         errorCodeInCaseOfCallbackException,

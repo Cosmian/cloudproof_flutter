@@ -73,7 +73,8 @@ class Findex {
   static Future<void> upsert(
     FindexMasterKey masterKey,
     Uint8List label,
-    Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
+    Map<IndexedValue, List<Keyword>> additions,
+    Map<IndexedValue, List<Keyword>> deletions,
     FetchEntryTableCallback fetchEntries,
     UpsertEntryTableCallback upsertEntries,
     InsertChainTableCallback insertChains,
@@ -89,9 +90,13 @@ class Findex {
     final labelPointer = label.allocateUint8Pointer();
 
     // Data to index to encode in base64 and JSON
-    final Pointer<Utf8> indexedValuesAndKeywordsPointer = jsonEncode(
-            indexedValuesAndKeywords.map((key, value) => MapEntry(
-                key.toBase64(), value.map((e) => e.toBase64()).toList())))
+    final Pointer<Utf8> additionsPointer = jsonEncode(additions.map((key,
+                value) =>
+            MapEntry(key.toBase64(), value.map((e) => e.toBase64()).toList())))
+        .toNativeUtf8(allocator: malloc);
+    final Pointer<Utf8> deletionsPointer = jsonEncode(deletions.map((key,
+                value) =>
+            MapEntry(key.toBase64(), value.map((e) => e.toBase64()).toList())))
         .toNativeUtf8(allocator: malloc);
 
     try {
@@ -101,7 +106,8 @@ class Findex {
         masterKey.k.length,
         labelPointer.cast<Int>(),
         label.length,
-        indexedValuesAndKeywordsPointer.cast<Char>(),
+        additionsPointer.cast<Char>(),
+        deletionsPointer.cast<Char>(),
         fetchEntries,
         upsertEntries,
         insertChains,
@@ -111,7 +117,8 @@ class Findex {
       await throwOnErrorCode(errorCode, start, end);
     } finally {
       calloc.free(labelPointer);
-      malloc.free(indexedValuesAndKeywordsPointer);
+      malloc.free(additionsPointer);
+      malloc.free(deletionsPointer);
     }
   }
 
@@ -122,7 +129,6 @@ class Findex {
     FetchEntryTableCallback fetchEntries,
     FetchChainTableCallback fetchChains, {
     int outputSizeInBytes = defaultOutputSizeInBytes,
-    int insecureFetchChainsBatchSize = 0,
   }) async {
     return searchWithProgress(
       k,
@@ -135,7 +141,6 @@ class Findex {
         errorCodeInCaseOfCallbackException,
       ),
       outputSizeInBytes: outputSizeInBytes,
-      insecureFetchChainsBatchSize: insecureFetchChainsBatchSize,
     );
   }
 
@@ -147,7 +152,6 @@ class Findex {
     FetchChainTableCallback fetchChains,
     ProgressCallback progressCallback, {
     int outputSizeInBytes = defaultOutputSizeInBytes,
-    int insecureFetchChainsBatchSize = 0,
   }) async {
     //
     // FFI INPUT parameters
@@ -175,9 +179,7 @@ class Findex {
         labelPointer.cast<Int>(),
         label.length,
         keywordsPointer.cast<Char>(),
-        0,
-        0,
-        insecureFetchChainsBatchSize,
+        1000, // TODO remove me
         progressCallback,
         fetchEntries,
         fetchChains,
