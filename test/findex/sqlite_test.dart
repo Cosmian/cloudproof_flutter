@@ -83,7 +83,7 @@ void main() {
         expect(
           stacktrace.toString(),
           contains(
-              "test/findex/sqlite_test.dart:382:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
+              "test/findex/sqlite_test.dart:381:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
@@ -221,11 +221,11 @@ void main() {
     test('nonRegressionTest', () async {
       final dir = Directory('test/resources/findex/non_regression/');
       final List<FileSystemEntity> entities = await dir.list().toList();
-      entities.whereType<File>().forEach((element) async {
+      for (File file in entities.whereType<File>()) {
         final newPath =
-            path.join(Directory.systemTemp.path, path.basename(element.path));
+            path.join(Directory.systemTemp.path, path.basename(file.path));
         print("Test findex file: $newPath");
-        element.copySync(newPath);
+        file.copySync(newPath);
         try {
           await SqliteFindex.verify(newPath);
         } catch (e) {
@@ -233,7 +233,7 @@ void main() {
           rethrow;
         }
         print("... OK: Findex non regression test file: $newPath");
-      });
+      }
     });
   });
 }
@@ -330,8 +330,7 @@ class SqliteFindex {
 
     final indexedValuesAndKeywords = {
       for (final user in users)
-        IndexedValue.fromLocation(
-            Location(Uint8List(4)..buffer.asInt32List()[0] = user['id'])): [
+        IndexedValue.fromLocation(Location.fromNumber(user['id'])): [
           Keyword.fromString(user['firstName']),
           Keyword.fromString(user['lastName']),
           Keyword.fromString(user['phone']),
