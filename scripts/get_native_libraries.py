@@ -15,7 +15,7 @@ def files_to_be_copied():
     return {
         'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/cloudproof.h': 'resources/cloudproof.h',
         'tmp/x86_64-apple-darwin/x86_64-apple-darwin/release/libcloudproof.dylib': 'resources/libcloudproof.dylib',
-        'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/libcloudproof_findex.so': 'resources/libcloudproof.so',
+        'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/libcloudproof.so': 'resources/libcloudproof.so',
         'tmp/x86_64-pc-windows-gnu/x86_64-pc-windows-gnu/release/cloudproof.dll': 'resources/cloudproof.dll',
         'tmp/android/armeabi-v7a/libcloudproof.so': f'{jni_libs}/armeabi-v7a/libcloudproof.so',
         'tmp/android/arm64-v8a/libcloudproof.so': f'{jni_libs}/arm64-v8a/libcloudproof.so',

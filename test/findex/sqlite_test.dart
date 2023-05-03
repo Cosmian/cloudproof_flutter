@@ -137,7 +137,7 @@ void main() {
       } catch (e) {
         expect(
           e.toString(),
-          "`uid` should be of length 32. Actual length is 193 bytes.",
+          "`uid` should be of length 32. Actual length is 114 bytes.",
         );
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchChains = false;
