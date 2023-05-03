@@ -179,7 +179,6 @@ class Findex {
         labelPointer.cast<Int>(),
         label.length,
         keywordsPointer.cast<Char>(),
-        1000, // TODO remove me
         progressCallback,
         fetchEntries,
         fetchChains,
