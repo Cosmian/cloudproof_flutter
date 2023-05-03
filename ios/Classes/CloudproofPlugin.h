@@ -40,11 +40,6 @@
 #endif
 
 /**
- * Limit on the recursion to use when none is provided.
- */
-#define MAX_DEPTH 100
-
-/**
  * A pagination is performed in order to fetch the entire Entry Table. It is
  * fetched by batches of size [`NUMBER_OF_ENTRY_TABLE_LINE_IN_BATCH`].
  */
@@ -158,19 +153,15 @@ typedef int (*InsertChainTableCallback)(const unsigned char *chains_ptr, unsigne
 typedef int (*FetchAllEntryTableUidsCallback)(unsigned char *uids_ptr, unsigned int *uids_len);
 
 /**
- * See [`FindexCallbacks::update_lines()`](cosmian_findex::FindexCallbacks::update_lines).
+ * See [`FindexCallbacks::delete_chain()`](cosmian_findex::FindexCallbacks::delete_chain).
  *
  * # Serialization
  *
- * The removed Chain Table UIDs are serialized as follows:
+ * The input is serialized as follows:
  *
- * `LEB128(n_uids) || UID_1 || ...`
- *
- * The new table items are serialized as follows:
- *
- * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
+ * `LEB128(n_uids) || UID_1 || UID_2 || ...`
  */
-typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remove_ptr, unsigned int chain_table_uids_to_remove_len, const unsigned char *new_encrypted_entry_table_items_ptr, unsigned int new_encrypted_entry_table_items_len, const unsigned char *new_encrypted_chain_table_items_ptr, unsigned int new_encrypted_chain_table_items_len);
+typedef int (*DeleteChainCallback)(const unsigned char *chains_ptr, unsigned int chains_len);
 
 /**
  * See
@@ -186,6 +177,21 @@ typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remo
  * Outputs should follow the same serialization.
  */
 typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr, unsigned int *removed_locations_len, const unsigned char *locations_ptr, unsigned int locations_len);
+
+/**
+ * See [`FindexCallbacks::update_lines()`](cosmian_findex::FindexCallbacks::update_lines).
+ *
+ * # Serialization
+ *
+ * The removed Chain Table UIDs are serialized as follows:
+ *
+ * `LEB128(n_uids) || UID_1 || ...`
+ *
+ * The new table items are serialized as follows:
+ *
+ * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
+ */
+typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remove_ptr, unsigned int chain_table_uids_to_remove_len, const unsigned char *new_encrypted_entry_table_items_ptr, unsigned int new_encrypted_entry_table_items_len, const unsigned char *new_encrypted_chain_table_items_ptr, unsigned int new_encrypted_chain_table_items_len);
 
 /**
  * # Safety
@@ -566,20 +572,14 @@ int get_last_error(char *error_ptr, int *error_len);
  *
  * # Parameters
  *
- * - `search_results`            : (output) search result
- * - `master_key`                : master key
- * - `label`                     : additional information used to derive Entry
- *   Table UIDs
- * - `keywords`                  : `serde` serialized list of base64 keywords
- * - `max_results_per_keyword`   : maximum number of results returned per
- *   keyword
- * - `max_depth`                 : maximum recursion depth allowed
- * - `fetch_chains_batch_size`   : increase this value to improve performances
- *   but decrease security by batching fetch chains calls
- * - `progress_callback`         : callback used to retrieve intermediate
- *   results and transmit user interrupt
- * - `fetch_entry_callback`      : callback used to fetch the Entry Table
- * - `fetch_chain_callback`      : callback used to fetch the Chain Table
+ * - `search_results`          : (output) search result
+ * - `master_key`              : master key
+ * - `label`                   : public information used to derive UIDs
+ * - `keywords`                : `serde` serialized list of base64 keywords
+ * - `progress_callback`       : callback used to retrieve intermediate results
+ *   and transmit user interrupt
+ * - `fetch_entry_callback`    : callback used to fetch the Entry Table
+ * - `fetch_chain_callback`    : callback used to fetch the Chain Table
  *
  * # Safety
  *
@@ -592,9 +592,6 @@ int h_search(char *search_results_ptr,
              const uint8_t *label_ptr,
              int label_len,
              const char *keywords_ptr,
-             int max_results_per_keyword,
-             int max_depth,
-             unsigned int fetch_chains_batch_size,
              ProgressCallback progress_callback,
              FetchEntryTableCallback fetch_entry_callback,
              FetchChainTableCallback fetch_chain_callback);
@@ -625,8 +622,9 @@ int h_search(char *search_results_ptr,
  *
  * - `master_key`      : Findex master key
  * - `label`           : additional information used to derive Entry Table UIDs
- * - `indexed_values_and_keywords` : serialized list of values and the keywords
- *   used to index them
+ * TODO (TBZ): explain the serialization in the doc
+ * - `additions`       : serialized list of new indexed values
+ * - `deletions`       : serialized list of removed indexed values
  * - `fetch_entry`     : callback used to fetch the Entry Table
  * - `upsert_entry`    : callback used to upsert lines in the Entry Table
  * - `insert_chain`    : callback used to insert lines in the Chain Table
@@ -639,7 +637,8 @@ int h_upsert(const uint8_t *master_key_ptr,
              int master_key_len,
              const uint8_t *label_ptr,
              int label_len,
-             const char *indexed_values_and_keywords_ptr,
+             const char *additions_ptr,
+             const char *deletions_ptr,
              FetchEntryTableCallback fetch_entry,
              UpsertEntryTableCallback upsert_entry,
              InsertChainTableCallback insert_chain);
@@ -658,12 +657,11 @@ int h_upsert(const uint8_t *master_key_ptr,
  *
  * # Parameters
  *
- * - `num_reindexing_before_full_set`  : number of compact operation needed to
- *   compact all Chain Table
  * - `old_master_key`                  : old Findex master key
  * - `new_master_key`                  : new Findex master key
- * - `new_label`                       : additional information used to derive
- *   Entry Table UIDs
+ * - `new_label`                       : public information used to derive UIDs
+ * - `num_reindexing_before_full_set`  : number of compact operation needed to
+ *   compact all the Chain Table
  * - `fetch_entry`                     : callback used to fetch the Entry Table
  * - `fetch_chain`                     : callback used to fetch the Chain Table
  * - `update_lines`                    : callback used to update lines in both
@@ -675,13 +673,52 @@ int h_upsert(const uint8_t *master_key_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int h_compact(int num_reindexing_before_full_set,
-              const uint8_t *old_master_key_ptr,
+int h_live_compact(const uint8_t *master_key_ptr,
+                   int master_key_len,
+                   int num_reindexing_before_full_set,
+                   FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
+                   FetchEntryTableCallback fetch_entry,
+                   FetchChainTableCallback fetch_chain,
+                   DeleteChainCallback delete_chain,
+                   ListRemovedLocationsCallback filter_removed_locations);
+
+/**
+ * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
+ * using the given label and the KMAC key derived from the new master key. The
+ * values are decrypted using the DEM key derived from the master key and
+ * re-encrypted using the DEM key derived from the new master key.
+ *
+ * Randomly selects index entries and recompact their associated chains. Chains
+ * indexing no existing location are removed. Others are recomputed from a new
+ * keying material. This removes unneeded paddings. New UIDs are derived for
+ * the chain and values are re-encrypted using a DEM key derived from the new
+ * keying material.
+ *
+ * # Parameters
+ *
+ * - `old_master_key`                  : old Findex master key
+ * - `new_master_key`                  : new Findex master key
+ * - `new_label`                       : public information used to derive UIDs
+ * - `num_reindexing_before_full_set`  : number of compact operation needed to
+ *   compact all the Chain Table
+ * - `fetch_entry`                     : callback used to fetch the Entry Table
+ * - `fetch_chain`                     : callback used to fetch the Chain Table
+ * - `update_lines`                    : callback used to update lines in both
+ *   tables
+ * - `list_removed_locations`          : callback used to list removed
+ *   locations among the ones given
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int h_compact(const uint8_t *old_master_key_ptr,
               int old_master_key_len,
               const uint8_t *new_master_key_ptr,
               int new_master_key_len,
               const uint8_t *new_label_ptr,
               int new_label_len,
+              int num_reindexing_before_full_set,
               FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
               FetchEntryTableCallback fetch_entry,
               FetchChainTableCallback fetch_chain,
@@ -703,17 +740,11 @@ int h_compact(int num_reindexing_before_full_set,
  *
  * # Parameters
  *
- * - `search_results`            : (output) search result
- * - `token`                     : findex cloud token
- * - `label`                     : additional information used to derive Entry
- *   Table UIDs
- * - `keywords`                  : `serde` serialized list of base64 keywords
- * - `max_results_per_keyword`   : maximum number of results returned per
- *   keyword
- * - `max_depth`                 : maximum recursion depth allowed
- * - `fetch_chains_batch_size`   : increase this value to improve performances
- *   but decrease security by batching fetch chains calls
- * - `base_url`                  : base URL for Findex Cloud (with http prefix
+ * - `search_results`          : (output) search result
+ * - `token`                   : findex cloud token
+ * - `label`                   : public information used to derive UIDs
+ * - `keywords`                : `serde` serialized list of base64 keywords
+ * - `base_url`                : base URL for Findex Cloud (with http prefix
  *   and port if required). If null, use the default Findex Cloud server.
  *
  * # Safety
@@ -726,9 +757,6 @@ int h_search_cloud(char *search_results_ptr,
                    const uint8_t *label_ptr,
                    int label_len,
                    const char *keywords_ptr,
-                   int max_results_per_keyword,
-                   int max_depth,
-                   unsigned int fetch_chains_batch_size,
                    const char *base_url_ptr);
 #endif
 
@@ -757,12 +785,12 @@ int h_search_cloud(char *search_results_ptr,
  *
  * # Parameters
  *
- * - `token`           : Findex Cloud token
- * - `label`           : additional information used to derive Entry Table UIDs
- * - `indexed_values_and_keywords` : serialized list of values and the keywords
- *   used to index them
- * - `base_url`                  : base URL for Findex Cloud (with http prefix
- *   and port if required). If null, use the default Findex Cloud server.
+ * - `token`       : Findex Cloud token
+ * - `label`       : additional information used to derive Entry Table UIDs
+ * - `additions`   : serialized list of new indexed values
+ * - `deletions`   : serialized list of removed indexed values
+ * - `base_url`    : base URL for Findex Cloud (with http prefix and port if
+ *   required). If null, use the default Findex Cloud server.
  *
  * # Safety
  *
@@ -771,7 +799,8 @@ int h_search_cloud(char *search_results_ptr,
 int h_upsert_cloud(const char *token_ptr,
                    const uint8_t *label_ptr,
                    int label_len,
-                   const char *indexed_values_and_keywords_ptr,
+                   const char *additions_ptr,
+                   const char *deletions_ptr,
                    const char *base_url_ptr);
 #endif
 

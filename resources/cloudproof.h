@@ -36,11 +36,6 @@
 #endif
 
 /**
- * Limit on the recursion to use when none is provided.
- */
-#define MAX_DEPTH 100
-
-/**
  * A pagination is performed in order to fetch the entire Entry Table. It is
  * fetched by batches of size [`NUMBER_OF_ENTRY_TABLE_LINE_IN_BATCH`].
  */
@@ -577,7 +572,6 @@ int get_last_error(char *error_ptr, int *error_len);
  * - `master_key`              : master key
  * - `label`                   : public information used to derive UIDs
  * - `keywords`                : `serde` serialized list of base64 keywords
- * - `max_results_per_chain`   : maximum number of results returned per keyword
  * - `progress_callback`       : callback used to retrieve intermediate results
  *   and transmit user interrupt
  * - `fetch_entry_callback`    : callback used to fetch the Entry Table
@@ -594,7 +588,6 @@ int h_search(char *search_results_ptr,
              const uint8_t *label_ptr,
              int label_len,
              const char *keywords_ptr,
-             int max_results_per_chain,
              ProgressCallback progress_callback,
              FetchEntryTableCallback fetch_entry_callback,
              FetchChainTableCallback fetch_chain_callback);
@@ -747,7 +740,6 @@ int h_compact(const uint8_t *old_master_key_ptr,
  * - `token`                   : findex cloud token
  * - `label`                   : public information used to derive UIDs
  * - `keywords`                : `serde` serialized list of base64 keywords
- * - `max_results_per_chain`   : maximum number of results returned per chain
  * - `base_url`                : base URL for Findex Cloud (with http prefix
  *   and port if required). If null, use the default Findex Cloud server.
  *
@@ -761,7 +753,6 @@ int h_search_cloud(char *search_results_ptr,
                    const uint8_t *label_ptr,
                    int label_len,
                    const char *keywords_ptr,
-                   int max_results_per_chain,
                    const char *base_url_ptr);
 #endif
 
