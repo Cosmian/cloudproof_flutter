@@ -101,6 +101,15 @@ jobs:
         env:
           REF_NAME: ${{ github.ref_name }}
 
+      - name: Upload dependencies and source
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v3
+        with:
+          name: cloudproof_flutter_${{ github.ref_name }}
+          path: .
+          retention-days: 1
+          if-no-files-found: error
+
   release:
     needs:
       - build
