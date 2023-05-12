@@ -40,18 +40,23 @@
 #endif
 
 /**
- * Limit on the recursion to use when none is provided.
- */
-#define MAX_DEPTH 100
-
-/**
  * A pagination is performed in order to fetch the entire Entry Table. It is
  * fetched by batches of size [`NUMBER_OF_ENTRY_TABLE_LINE_IN_BATCH`].
  */
 #define NUMBER_OF_ENTRY_TABLE_LINE_IN_BATCH 100
 
 /**
- * See [`FindexCallbacks::progress()`](crate::core::FindexCallbacks::progress).
+ * The Key Length: 256 bit = 32 bytes for AES 256
+ */
+#define KEY_LENGTH 32
+
+/**
+ * The recommended threshold according to NIST standards
+ */
+#define RECOMMENDED_THRESHOLD 1000000
+
+/**
+ * See [`FindexCallbacks::progress()`](cosmian_findex::FindexCallbacks::progress).
  *
  * # Serialization
  *
@@ -80,7 +85,7 @@
 typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr, unsigned int intermediate_results_len);
 
 /**
- * See [`FindexCallbacks::fetch_entry_table()`](crate::core::FindexCallbacks::fetch_entry_table).
+ * See [`FindexCallbacks::fetch_entry_table()`](cosmian_findex::FindexCallbacks::fetch_entry_table).
  *
  * # Serialization
  *
@@ -95,7 +100,7 @@ typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr, u
 typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr, unsigned int *entries_len, const unsigned char *uids_ptr, unsigned int uids_len);
 
 /**
- * See [`FindexCallbacks::fetch_chain_table()`](crate::core::FindexCallbacks::fetch_chain_table).
+ * See [`FindexCallbacks::fetch_chain_table()`](cosmian_findex::FindexCallbacks::fetch_chain_table).
  *
  * # Serialization
  *
@@ -110,7 +115,7 @@ typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr, unsigned int 
 typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr, unsigned int *chains_len, const unsigned char *uids_ptr, unsigned int uids_len);
 
 /**
- * See [`FindexCallbacks::upsert_entry_table()`](crate::core::FindexCallbacks::upsert_entry_table).
+ * See [`FindexCallbacks::upsert_entry_table()`](cosmian_findex::FindexCallbacks::upsert_entry_table).
  *
  * # Serialization
  *
@@ -128,7 +133,7 @@ typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr, unsigned int *
 typedef int (*UpsertEntryTableCallback)(unsigned char *outputs_ptr, unsigned int *outputs_len, const unsigned char *entries_ptr, unsigned int entries_len);
 
 /**
- * See [`FindexCallbacks::insert_chain_table()`](crate::core::FindexCallbacks::insert_chain_table).
+ * See [`FindexCallbacks::insert_chain_table()`](cosmian_findex::FindexCallbacks::insert_chain_table).
  *
  * # Serialization
  *
@@ -139,7 +144,7 @@ typedef int (*UpsertEntryTableCallback)(unsigned char *outputs_ptr, unsigned int
 typedef int (*InsertChainTableCallback)(const unsigned char *chains_ptr, unsigned int chains_len);
 
 /**
- * See [`FindexCallbacks::fetch_all_entry_table_uids()`](crate::core::FindexCallbacks::fetch_all_entry_table_uids).
+ * See [`FindexCallbacks::fetch_all_entry_table_uids()`](cosmian_findex::FindexCallbacks::fetch_all_entry_table_uids).
  *
  * The output should be deserialized as follows:
  *
@@ -148,7 +153,33 @@ typedef int (*InsertChainTableCallback)(const unsigned char *chains_ptr, unsigne
 typedef int (*FetchAllEntryTableUidsCallback)(unsigned char *uids_ptr, unsigned int *uids_len);
 
 /**
- * See [`FindexCallbacks::update_lines()`](crate::core::FindexCallbacks::update_lines).
+ * See [`FindexCallbacks::delete_chain()`](cosmian_findex::FindexCallbacks::delete_chain).
+ *
+ * # Serialization
+ *
+ * The input is serialized as follows:
+ *
+ * `LEB128(n_uids) || UID_1 || UID_2 || ...`
+ */
+typedef int (*DeleteChainCallback)(const unsigned char *chains_ptr, unsigned int chains_len);
+
+/**
+ * See
+ * [`FindexCallbacks::list_removed_locations()`](cosmian_findex::FindexCallbacks::list_removed_locations).
+ *
+ * # Serialization
+ *
+ * The input is serialized as follows:
+ *
+ * `LEB128(locations.len()) || LEB128(location_bytes_1.len()
+ *     || location_bytes_1 || ...`
+ *
+ * Outputs should follow the same serialization.
+ */
+typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr, unsigned int *removed_locations_len, const unsigned char *locations_ptr, unsigned int locations_len);
+
+/**
+ * See [`FindexCallbacks::update_lines()`](cosmian_findex::FindexCallbacks::update_lines).
  *
  * # Serialization
  *
@@ -161,21 +192,6 @@ typedef int (*FetchAllEntryTableUidsCallback)(unsigned char *uids_ptr, unsigned 
  * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
 typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remove_ptr, unsigned int chain_table_uids_to_remove_len, const unsigned char *new_encrypted_entry_table_items_ptr, unsigned int new_encrypted_entry_table_items_len, const unsigned char *new_encrypted_chain_table_items_ptr, unsigned int new_encrypted_chain_table_items_len);
-
-/**
- * See
- * [`FindexCallbacks::list_removed_locations()`](crate::core::FindexCallbacks::list_removed_locations).
- *
- * # Serialization
- *
- * The input is serialized as follows:
- *
- * `LEB128(locations.len()) || LEB128(location_bytes_1.len()
- *     || location_bytes_1 || ...`
- *
- * Outputs should follow the same serialization.
- */
-typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr, unsigned int *removed_locations_len, const unsigned char *locations_ptr, unsigned int locations_len);
 
 /**
  * # Safety
@@ -556,20 +572,14 @@ int get_last_error(char *error_ptr, int *error_len);
  *
  * # Parameters
  *
- * - `search_results`            : (output) search result
- * - `master_key`                : master key
- * - `label`                     : additional information used to derive Entry
- *   Table UIDs
- * - `keywords`                  : `serde` serialized list of base64 keywords
- * - `max_results_per_keyword`   : maximum number of results returned per
- *   keyword
- * - `max_depth`                 : maximum recursion depth allowed
- * - `fetch_chains_batch_size`   : increase this value to improve performances
- *   but decrease security by batching fetch chains calls
- * - `progress_callback`         : callback used to retrieve intermediate
- *   results and transmit user interrupt
- * - `fetch_entry_callback`      : callback used to fetch the Entry Table
- * - `fetch_chain_callback`      : callback used to fetch the Chain Table
+ * - `search_results`          : (output) search result
+ * - `master_key`              : master key
+ * - `label`                   : public information used to derive UIDs
+ * - `keywords`                : `serde` serialized list of base64 keywords
+ * - `progress_callback`       : callback used to retrieve intermediate results
+ *   and transmit user interrupt
+ * - `fetch_entry_callback`    : callback used to fetch the Entry Table
+ * - `fetch_chain_callback`    : callback used to fetch the Chain Table
  *
  * # Safety
  *
@@ -582,9 +592,6 @@ int h_search(char *search_results_ptr,
              const uint8_t *label_ptr,
              int label_len,
              const char *keywords_ptr,
-             int max_results_per_keyword,
-             int max_depth,
-             unsigned int fetch_chains_batch_size,
              ProgressCallback progress_callback,
              FetchEntryTableCallback fetch_entry_callback,
              FetchChainTableCallback fetch_chain_callback);
@@ -615,8 +622,9 @@ int h_search(char *search_results_ptr,
  *
  * - `master_key`      : Findex master key
  * - `label`           : additional information used to derive Entry Table UIDs
- * - `indexed_values_and_keywords` : serialized list of values and the keywords
- *   used to index them
+ * TODO (TBZ): explain the serialization in the doc
+ * - `additions`       : serialized list of new indexed values
+ * - `deletions`       : serialized list of removed indexed values
  * - `fetch_entry`     : callback used to fetch the Entry Table
  * - `upsert_entry`    : callback used to upsert lines in the Entry Table
  * - `insert_chain`    : callback used to insert lines in the Chain Table
@@ -629,7 +637,8 @@ int h_upsert(const uint8_t *master_key_ptr,
              int master_key_len,
              const uint8_t *label_ptr,
              int label_len,
-             const char *indexed_values_and_keywords_ptr,
+             const char *additions_ptr,
+             const char *deletions_ptr,
              FetchEntryTableCallback fetch_entry,
              UpsertEntryTableCallback upsert_entry,
              InsertChainTableCallback insert_chain);
@@ -648,12 +657,11 @@ int h_upsert(const uint8_t *master_key_ptr,
  *
  * # Parameters
  *
- * - `num_reindexing_before_full_set`  : number of compact operation needed to
- *   compact all Chain Table
  * - `old_master_key`                  : old Findex master key
  * - `new_master_key`                  : new Findex master key
- * - `new_label`                       : additional information used to derive
- *   Entry Table UIDs
+ * - `new_label`                       : public information used to derive UIDs
+ * - `num_reindexing_before_full_set`  : number of compact operation needed to
+ *   compact all the Chain Table
  * - `fetch_entry`                     : callback used to fetch the Entry Table
  * - `fetch_chain`                     : callback used to fetch the Chain Table
  * - `update_lines`                    : callback used to update lines in both
@@ -665,13 +673,52 @@ int h_upsert(const uint8_t *master_key_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int h_compact(int num_reindexing_before_full_set,
-              const uint8_t *old_master_key_ptr,
+int h_live_compact(const uint8_t *master_key_ptr,
+                   int master_key_len,
+                   int num_reindexing_before_full_set,
+                   FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
+                   FetchEntryTableCallback fetch_entry,
+                   FetchChainTableCallback fetch_chain,
+                   DeleteChainCallback delete_chain,
+                   ListRemovedLocationsCallback filter_removed_locations);
+
+/**
+ * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
+ * using the given label and the KMAC key derived from the new master key. The
+ * values are decrypted using the DEM key derived from the master key and
+ * re-encrypted using the DEM key derived from the new master key.
+ *
+ * Randomly selects index entries and recompact their associated chains. Chains
+ * indexing no existing location are removed. Others are recomputed from a new
+ * keying material. This removes unneeded paddings. New UIDs are derived for
+ * the chain and values are re-encrypted using a DEM key derived from the new
+ * keying material.
+ *
+ * # Parameters
+ *
+ * - `old_master_key`                  : old Findex master key
+ * - `new_master_key`                  : new Findex master key
+ * - `new_label`                       : public information used to derive UIDs
+ * - `num_reindexing_before_full_set`  : number of compact operation needed to
+ *   compact all the Chain Table
+ * - `fetch_entry`                     : callback used to fetch the Entry Table
+ * - `fetch_chain`                     : callback used to fetch the Chain Table
+ * - `update_lines`                    : callback used to update lines in both
+ *   tables
+ * - `list_removed_locations`          : callback used to list removed
+ *   locations among the ones given
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int h_compact(const uint8_t *old_master_key_ptr,
               int old_master_key_len,
               const uint8_t *new_master_key_ptr,
               int new_master_key_len,
               const uint8_t *new_label_ptr,
               int new_label_len,
+              int num_reindexing_before_full_set,
               FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
               FetchEntryTableCallback fetch_entry,
               FetchChainTableCallback fetch_chain,
@@ -693,17 +740,11 @@ int h_compact(int num_reindexing_before_full_set,
  *
  * # Parameters
  *
- * - `search_results`            : (output) search result
- * - `token`                     : findex cloud token
- * - `label`                     : additional information used to derive Entry
- *   Table UIDs
- * - `keywords`                  : `serde` serialized list of base64 keywords
- * - `max_results_per_keyword`   : maximum number of results returned per
- *   keyword
- * - `max_depth`                 : maximum recursion depth allowed
- * - `fetch_chains_batch_size`   : increase this value to improve performances
- *   but decrease security by batching fetch chains calls
- * - `base_url`                  : base URL for Findex Cloud (with http prefix
+ * - `search_results`          : (output) search result
+ * - `token`                   : findex cloud token
+ * - `label`                   : public information used to derive UIDs
+ * - `keywords`                : `serde` serialized list of base64 keywords
+ * - `base_url`                : base URL for Findex Cloud (with http prefix
  *   and port if required). If null, use the default Findex Cloud server.
  *
  * # Safety
@@ -716,9 +757,6 @@ int h_search_cloud(char *search_results_ptr,
                    const uint8_t *label_ptr,
                    int label_len,
                    const char *keywords_ptr,
-                   int max_results_per_keyword,
-                   int max_depth,
-                   unsigned int fetch_chains_batch_size,
                    const char *base_url_ptr);
 #endif
 
@@ -747,12 +785,12 @@ int h_search_cloud(char *search_results_ptr,
  *
  * # Parameters
  *
- * - `token`           : Findex Cloud token
- * - `label`           : additional information used to derive Entry Table UIDs
- * - `indexed_values_and_keywords` : serialized list of values and the keywords
- *   used to index them
- * - `base_url`                  : base URL for Findex Cloud (with http prefix
- *   and port if required). If null, use the default Findex Cloud server.
+ * - `token`       : Findex Cloud token
+ * - `label`       : additional information used to derive Entry Table UIDs
+ * - `additions`   : serialized list of new indexed values
+ * - `deletions`   : serialized list of removed indexed values
+ * - `base_url`    : base URL for Findex Cloud (with http prefix and port if
+ *   required). If null, use the default Findex Cloud server.
  *
  * # Safety
  *
@@ -761,6 +799,306 @@ int h_search_cloud(char *search_results_ptr,
 int h_upsert_cloud(const char *token_ptr,
                    const uint8_t *label_ptr,
                    int label_len,
-                   const char *indexed_values_and_keywords_ptr,
+                   const char *additions_ptr,
+                   const char *deletions_ptr,
                    const char *base_url_ptr);
 #endif
+
+#if defined(DEFINE_CLOUD)
+/**
+ * Generate a new Findex token from the provided index ID and signature seeds,
+ * and a randomly generated Findex master key inside Rust.
+ *
+ * The token is output inside `token_ptr`, `token_len` is updated to match the
+ * token length (this length should always be the same, right now, the length
+ * is always below 200 bytes)
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int h_generate_new_token(uint8_t *token_ptr,
+                         int *token_len,
+                         const char *index_id_ptr,
+                         const uint8_t *fetch_entries_seed_ptr,
+                         int fetch_entries_seed_len,
+                         const uint8_t *fetch_chains_seed_ptr,
+                         int fetch_chains_seed_len,
+                         const uint8_t *upsert_entries_seed_ptr,
+                         int upsert_entries_seed_len,
+                         const uint8_t *insert_chains_seed_ptr,
+                         int insert_chains_seed_len);
+#endif
+
+/**
+ * Encrypts a string using Format Preserving Encryption (FPE) algorithm with
+ * the specified alphabet.
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` due to the usage of raw pointers, which
+ * need to be properly allocated and dereferenced by the caller.
+ *
+ * # Arguments
+ *
+ * * `output_ptr` - a pointer to the buffer where the encrypted string will be
+ *   written.
+ * * `output_len` - a pointer to the variable that stores the maximum size of
+ *   the `output_ptr` buffer. After the function call, the variable will be
+ *   updated with the actual size of the encrypted string.
+ * * `alphabet_id_ptr` - a pointer to a C string that represents the ID of the
+ *   alphabet used for encryption.
+ * * `input_ptr` - a pointer to a C string that represents the plaintext to be
+ *   encrypted.
+ * * `key_ptr` - a pointer to a C string that represents the key used for
+ *   encryption.
+ * * `key_len` - the length of the `key_ptr` string.
+ * * `tweak_ptr` - a pointer to a C string that represents the tweak used for
+ *   encryption.
+ * * `tweak_len` - the length of the `tweak_ptr` string.
+ * * `additional_characters_ptr` - a pointer to a C string that represents
+ *   additional characters to be used in the alphabet.
+ *
+ * # Returns
+ *
+ * An integer that indicates whether the encryption was successful. A value of
+ * `0` means success, while a non-zero value represents an error code.
+ */
+int h_fpe_encrypt_alphabet(unsigned char *output_ptr,
+                           int *output_len,
+                           const char *alphabet_id_ptr,
+                           const char *input_ptr,
+                           const char *key_ptr,
+                           int key_len,
+                           const char *tweak_ptr,
+                           int tweak_len,
+                           const char *additional_characters_ptr);
+
+/**
+ * Decrypts a string using Format Preserving Encryption (FPE) algorithm with
+ * the specified alphabet.
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` due to the usage of raw pointers, which
+ * need to be properly allocated and dereferenced by the caller.
+ *
+ * # Arguments
+ *
+ * * `output_ptr` - a pointer to the buffer where the encrypted string will be
+ *   written.
+ * * `output_len` - a pointer to the variable that stores the maximum size of
+ *   the `output_ptr` buffer. After the function call, the variable will be
+ *   updated with the actual size of the encrypted string.
+ * * `alphabet_id_ptr` - a pointer to a C string that represents the ID of the
+ *   alphabet used for encryption.
+ * * `input_ptr` - a pointer to a C string that represents the plaintext to be
+ *   encrypted.
+ * * `key_ptr` - a pointer to a C string that represents the key used for
+ *   encryption.
+ * * `key_len` - the length of the `key_ptr` string.
+ * * `tweak_ptr` - a pointer to a C string that represents the tweak used for
+ *   encryption.
+ * * `tweak_len` - the length of the `tweak_ptr` string.
+ * * `additional_characters_ptr` - a pointer to a C string that represents
+ *   additional characters to be used in the alphabet.
+ *
+ * # Returns
+ *
+ * An integer that indicates whether the encryption was successful. A value of
+ * `0` means success, while a non-zero value represents an error code.
+ */
+int h_fpe_decrypt_alphabet(unsigned char *output_ptr,
+                           int *output_len,
+                           const char *alphabet_id_ptr,
+                           const char *input_ptr,
+                           const char *key_ptr,
+                           int key_len,
+                           const char *tweak_ptr,
+                           int tweak_len,
+                           const char *additional_characters_ptr);
+
+/**
+ * Encrypts the input `c_double` using the FPE algorithm with the given key and
+ * tweak, and stores the result in the `output` pointer. The length of the key
+ * and tweak must be specified in `key_len` and `tweak_len` respectively. The
+ * function returns an `c_int` indicating success (0) or failure (-1).
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` because it accepts pointers to raw
+ * memory.
+ */
+int h_fpe_encrypt_float(double *output,
+                        double input,
+                        const char *key_ptr,
+                        int key_len,
+                        const char *tweak_ptr,
+                        int tweak_len);
+
+/**
+ * Decrypts the input `c_double` using the FPE algorithm with the given key and
+ * tweak, and stores the result in the `output` pointer. The length of the key
+ * and tweak must be specified in `key_len` and `tweak_len` respectively. The
+ * function returns an `c_int` indicating success (0) or failure (-1).
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` because it accepts pointers to raw
+ * memory.
+ */
+int h_fpe_decrypt_float(double *output,
+                        double input,
+                        const char *key_ptr,
+                        int key_len,
+                        const char *tweak_ptr,
+                        int tweak_len);
+
+/**
+ * Encrypts an integer using the format-preserving encryption (FPE) algorithm.
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` because it takes raw pointers as input,
+ * which must be valid and dereferenceable for the function to work correctly.
+ *
+ * # Arguments
+ *
+ * * `output`: A mutable pointer to the location where the encrypted output
+ *   value will be stored.
+ * * `input`: The integer value to be encrypted.
+ * * `radix`: The radix of the numeric system being used.
+ * * `digits`: The number of digits in the numeric system being used.
+ * * `key_ptr`: A pointer to the key to be used for encryption.
+ * * `key_len`: The length of the key in bytes.
+ * * `tweak_ptr`: A pointer to the tweak value to be used for encryption.
+ * * `tweak_len`: The length of the tweak in bytes.
+ *
+ * # Returns
+ *
+ * An integer value indicating whether the encryption was successful or not. A
+ * return value of 0 indicates success, while any other value indicates an
+ * error.
+ */
+int h_fpe_encrypt_integer(unsigned long long *output,
+                          unsigned long long input,
+                          unsigned int radix,
+                          unsigned int digits,
+                          const char *key_ptr,
+                          int key_len,
+                          const char *tweak_ptr,
+                          int tweak_len);
+
+/**
+ * Decrypts an integer using the format-preserving encryption (FPE) algorithm.
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` because it takes raw pointers as input,
+ * which must be valid and dereferenceable for the function to work correctly.
+ *
+ * # Arguments
+ *
+ * * `output`: A mutable pointer to the location where the encrypted output
+ *   value will be stored.
+ * * `input`: The integer value to be encrypted.
+ * * `radix`: The radix of the numeric system being used.
+ * * `digits`: The number of digits in the numeric system being used.
+ * * `key_ptr`: A pointer to the key to be used for encryption.
+ * * `key_len`: The length of the key in bytes.
+ * * `tweak_ptr`: A pointer to the tweak value to be used for encryption.
+ * * `tweak_len`: The length of the tweak in bytes.
+ *
+ * # Returns
+ *
+ * An integer value indicating whether the encryption was successful or not. A
+ * return value of 0 indicates success, while any other value indicates an
+ * error.
+ */
+int h_fpe_decrypt_integer(unsigned long long *output,
+                          unsigned long long input,
+                          unsigned int radix,
+                          unsigned int digits,
+                          const char *key_ptr,
+                          int key_len,
+                          const char *tweak_ptr,
+                          int tweak_len);
+
+/**
+ * Encrypts an input big integer using the FPE algorithm and returns the
+ * encrypted value as an array of bytes.
+ *
+ * # Arguments
+ *
+ * * `output_ptr` - a pointer to the output buffer where the encrypted bytes
+ *   will be written
+ * * `output_len` - a pointer to an integer that will be updated with the
+ *   length of the encrypted bytes
+ * * `input_ptr` - a pointer to the input buffer that contains the big integer
+ *   to be encrypted
+ * * `radix` - the radix of the input big integer
+ * * `digits` - the number of digits in the input big integer
+ * * `key_ptr` - a pointer to the key buffer that will be used for encryption
+ * * `key_len` - the length of the key buffer
+ * * `tweak_ptr` - a pointer to the tweak buffer that will be used for
+ *   encryption
+ * * `tweak_len` - the length of the tweak buffer
+ *
+ * # Safety
+ *
+ * This function is marked unsafe because it operates on raw pointers and
+ * performs unsafe memory operations.
+ *
+ * # Returns
+ *
+ * Returns 0 on success, -1 on error.
+ */
+int h_fpe_encrypt_big_integer(unsigned char *output_ptr,
+                              int *output_len,
+                              const char *input_ptr,
+                              unsigned int radix,
+                              unsigned int digits,
+                              const char *key_ptr,
+                              int key_len,
+                              const char *tweak_ptr,
+                              int tweak_len);
+
+/**
+ * Decrypts an input big integer using the FPE algorithm and returns the
+ * decrypted value as an array of bytes.
+ *
+ * # Arguments
+ *
+ * * `output_ptr` - a pointer to the output buffer where the decrypted bytes
+ *   will be written
+ * * `output_len` - a pointer to an integer that will be updated with the
+ *   length of the decrypted bytes
+ * * `input_ptr` - a pointer to the input buffer that contains the big integer
+ *   to be decrypted
+ * * `radix` - the radix of the input big integer
+ * * `digits` - the number of digits in the input big integer
+ * * `key_ptr` - a pointer to the key buffer that will be used for decryption
+ * * `key_len` - the length of the key buffer
+ * * `tweak_ptr` - a pointer to the tweak buffer that will be used for
+ *   decryption
+ * * `tweak_len` - the length of the tweak buffer
+ *
+ * # Safety
+ *
+ * This function is marked unsafe because it operates on raw pointers and
+ * performs unsafe memory operations.
+ *
+ * # Returns
+ *
+ * Returns 0 on success, -1 on error.
+ */
+int h_fpe_decrypt_big_integer(unsigned char *output_ptr,
+                              int *output_len,
+                              const char *input_ptr,
+                              unsigned int radix,
+                              unsigned int digits,
+                              const char *key_ptr,
+                              int key_len,
+                              const char *tweak_ptr,
+                              int tweak_len);
+

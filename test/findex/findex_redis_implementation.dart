@@ -128,12 +128,12 @@ class FindexRedisImplementation {
       FindexMasterKey masterKey, Uint8List label) async {
     final users = await allUsers();
 
-    final indexedValuesAndWords = {
+    final additions = {
       for (final user in users)
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 
-    await upsert(masterKey, label, indexedValuesAndWords);
+    await upsert(masterKey, label, additions, {});
   }
 
   static Future<List<Uint8List>> keys(RedisTable table) async {
@@ -231,12 +231,14 @@ class FindexRedisImplementation {
   static Future<void> upsert(
     FindexMasterKey masterKey,
     Uint8List label,
-    Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
+    Map<IndexedValue, List<Keyword>> additions,
+    Map<IndexedValue, List<Keyword>> deletions,
   ) async {
     await Findex.upsert(
       masterKey,
       label,
-      indexedValuesAndKeywords,
+      additions,
+      deletions,
       Pointer.fromFunction(
         fetchEntriesCallback,
         errorCodeInCaseOfCallbackException,

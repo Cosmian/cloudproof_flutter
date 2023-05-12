@@ -137,7 +137,7 @@ void main() {
       } catch (e) {
         expect(
           e.toString(),
-          "`uid` should be of length 32. Actual length is 193 bytes.",
+          "`uid` should be of length 32. Actual length is 114 bytes.",
         );
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchChains = false;
@@ -313,12 +313,12 @@ class SqliteFindex {
       FindexMasterKey masterKey, Uint8List label) async {
     final users = allUsers();
 
-    final indexedValuesAndKeywords = {
+    final additions = {
       for (final user in users)
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 
-    await upsert(masterKey, label, indexedValuesAndKeywords);
+    await upsert(masterKey, label, additions, {});
   }
 
   static Future<void> indexAllFromFile(
@@ -328,7 +328,7 @@ class SqliteFindex {
     final stmt = db.prepare(
         'INSERT INTO users (id, firstName, lastName, phone, email, country, region, employeeNumber, security) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
 
-    final indexedValuesAndKeywords = {
+    final additions = {
       for (final user in users)
         IndexedValue.fromLocation(Location.fromNumber(user['id'])): [
           Keyword.fromString(user['firstName']),
@@ -342,7 +342,7 @@ class SqliteFindex {
         ],
     };
 
-    await upsert(masterKey, label, indexedValuesAndKeywords);
+    await upsert(masterKey, label, additions, {});
 
     for (final user in users) {
       stmt.execute([
@@ -512,12 +512,14 @@ class SqliteFindex {
   static Future<void> upsert(
     FindexMasterKey masterKey,
     Uint8List label,
-    Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
+    Map<IndexedValue, List<Keyword>> additions,
+    Map<IndexedValue, List<Keyword>> deletions,
   ) async {
     await Findex.upsert(
       masterKey,
       label,
-      indexedValuesAndKeywords,
+      additions,
+      deletions,
       Pointer.fromFunction(
         fetchEntriesCallback,
         errorCodeInCaseOfCallbackException,
