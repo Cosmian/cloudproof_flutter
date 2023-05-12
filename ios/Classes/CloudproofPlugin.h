@@ -1101,4 +1101,3 @@ int h_fpe_decrypt_big_integer(unsigned char *output_ptr,
                               int key_len,
                               const char *tweak_ptr,
                               int tweak_len);
-

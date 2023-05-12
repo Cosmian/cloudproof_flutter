@@ -131,7 +131,7 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_js.yml@develop
     with:
-      branch: update_findex_4
+      branch: develop
       target: wasm32-unknown-unknown
       kms-version: 4.3.3
       copy_fresh_build: false
