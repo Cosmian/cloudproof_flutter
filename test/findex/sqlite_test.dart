@@ -83,7 +83,7 @@ void main() {
         expect(
           stacktrace.toString(),
           contains(
-              "test/findex/sqlite_test.dart:381:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
+              "test/findex/sqlite_test.dart:364:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
@@ -325,9 +325,6 @@ class SqliteFindex {
       String usersFilepath, FindexMasterKey masterKey, Uint8List label) async {
     final users = jsonDecode(await File(usersFilepath).readAsString());
 
-    final stmt = db.prepare(
-        'INSERT INTO users (id, firstName, lastName, phone, email, country, region, employeeNumber, security) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-
     final additions = {
       for (final user in users)
         IndexedValue.fromLocation(Location.fromNumber(user['id'])): [
@@ -343,20 +340,6 @@ class SqliteFindex {
     };
 
     await upsert(masterKey, label, additions, {});
-
-    for (final user in users) {
-      stmt.execute([
-        user['id'],
-        user['firstName'],
-        user['lastName'],
-        user['phone'],
-        user['email'],
-        user['country'],
-        user['region'],
-        user['employeeNumber'],
-        user['security'],
-      ]);
-    }
   }
 
   static List<User> allUsers() {
