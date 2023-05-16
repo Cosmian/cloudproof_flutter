@@ -73,7 +73,7 @@ void main() {
         expect(stacktrace.toString(), contains("SqliteFindex.fetchEntries"));
         expect(
           stacktrace.toString(),
-          contains("test/findex/sqlite_test.dart:372:7"), // :ExceptionLine
+          contains("test/findex/sqlite_test.dart:355:7"), // :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
@@ -211,11 +211,11 @@ void main() {
     test('nonRegressionTest', () async {
       final dir = Directory('test/resources/findex/non_regression/');
       final List<FileSystemEntity> entities = await dir.list().toList();
-      entities.whereType<File>().forEach((element) async {
+      for (File file in entities.whereType<File>()) {
         final newPath =
-            path.join(Directory.systemTemp.path, path.basename(element.path));
+            path.join(Directory.systemTemp.path, path.basename(file.path));
         print("Test findex file: $newPath");
-        element.copySync(newPath);
+        file.copySync(newPath);
         try {
           await SqliteFindex.verify(newPath);
         } catch (e) {
@@ -223,7 +223,7 @@ void main() {
           rethrow;
         }
         print("... OK: Findex non regression test file: $newPath");
-      });
+      }
     });
   });
 }
@@ -315,9 +315,6 @@ class SqliteFindex {
       String usersFilepath, FindexMasterKey masterKey, Uint8List label) async {
     final users = jsonDecode(await File(usersFilepath).readAsString());
 
-    final stmt = db.prepare(
-        'INSERT INTO users (id, firstName, lastName, phone, email, country, region, employeeNumber, security) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-
     final indexedValuesAndKeywords = {
       for (final user in users)
         IndexedValue.fromLocation(
@@ -334,20 +331,6 @@ class SqliteFindex {
     };
 
     await upsert(masterKey, label, indexedValuesAndKeywords);
-
-    for (final user in users) {
-      stmt.execute([
-        user['id'],
-        user['firstName'],
-        user['lastName'],
-        user['phone'],
-        user['email'],
-        user['country'],
-        user['region'],
-        user['employeeNumber'],
-        user['security'],
-      ]);
-    }
   }
 
   static List<User> allUsers() {
