@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.1.1] - 2023-05-23
+
+### Bug Fixes
+
+- Tests on published package -> Missing generated ffi bindings in published package
+- Serialization failing silently when output buffer not large enough
+
 ## [4.1.0] - 2023-05-16
 
 ### Features
