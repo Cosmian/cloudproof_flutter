@@ -71,13 +71,13 @@ class Findex {
   // FFI functions
   //
   static Future<void> upsert(
-    FindexMasterKey masterKey,
-    Uint8List label,
-    Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
-    FetchEntryTableCallback fetchEntries,
-    UpsertEntryTableCallback upsertEntries,
-    InsertChainTableCallback insertChains,
-  ) async {
+      FindexMasterKey masterKey,
+      Uint8List label,
+      Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
+      FetchEntryTableCallback fetchEntries,
+      UpsertEntryTableCallback upsertEntries,
+      InsertChainTableCallback insertChains,
+      {int entryTableNumber = 1}) async {
     //
     // FFI INPUT parameters
     //
@@ -102,6 +102,7 @@ class Findex {
         labelPointer.cast<Int>(),
         label.length,
         indexedValuesAndKeywordsPointer.cast<Char>(),
+        entryTableNumber,
         fetchEntries,
         upsertEntries,
         insertChains,
@@ -116,14 +117,14 @@ class Findex {
   }
 
   static Future<Map<Keyword, List<IndexedValue>>> search(
-    Uint8List k,
-    Uint8List label,
-    List<Keyword> keywords,
-    FetchEntryTableCallback fetchEntries,
-    FetchChainTableCallback fetchChains, {
-    int outputSizeInBytes = defaultOutputSizeInBytes,
-    int insecureFetchChainsBatchSize = 0,
-  }) async {
+      Uint8List k,
+      Uint8List label,
+      List<Keyword> keywords,
+      FetchEntryTableCallback fetchEntries,
+      FetchChainTableCallback fetchChains,
+      {int outputSizeInBytes = defaultOutputSizeInBytes,
+      int insecureFetchChainsBatchSize = 0,
+      int entryTableNumber = 1}) async {
     //
     // FFI INPUT parameters
     //
@@ -153,11 +154,13 @@ class Findex {
         0,
         0,
         insecureFetchChainsBatchSize,
+        entryTableNumber,
         0, // Progress callback is not used for now.
         fetchEntries,
         fetchChains,
       );
       final end = DateTime.now();
+      log("after h_search: $errorCode, outputLengthPointer.value=${outputLengthPointer.value}, outputSizeInBytes=$outputSizeInBytes");
 
       if (errorCode != 0 && outputLengthPointer.value > outputSizeInBytes) {
         return search(k, label, keywords, fetchEntries, fetchChains,
@@ -297,10 +300,13 @@ class Findex {
             final uids = Uids.deserialize(inputArray);
             final entryTableLines = await callback(uids);
 
-            UidAndValue.serialize(
+            final ret = UidAndValue.serialize(
                 Pointer<UnsignedChar>.fromAddress(message.item1),
                 Pointer<UnsignedInt>.fromAddress(message.item2),
                 entryTableLines);
+            if (ret != 0) {
+              Pointer<Bool>.fromAddress(message.item4).value = false;
+            }
           } finally {
             Pointer<Bool>.fromAddress(message.item4).value = true;
           }
@@ -348,10 +354,13 @@ class Findex {
 
             final rejectedEntries = await callback(uidsAndValues);
 
-            UidAndValue.serialize(
+            final ret = UidAndValue.serialize(
                 Pointer<UnsignedChar>.fromAddress(message.item4),
                 Pointer<UnsignedInt>.fromAddress(message.item3),
                 rejectedEntries);
+            if (ret != 0) {
+              Pointer<Bool>.fromAddress(message.item4).value = false;
+            }
           } finally {
             Pointer<Bool>.fromAddress(message.item4).value = true;
           }
@@ -431,9 +440,10 @@ class Findex {
           Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
       final entryTableLines = callback(uids);
 
-      UidAndValue.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
-          outputEntryTableLinesLength, entryTableLines);
-      return 0;
+      return UidAndValue.serialize(
+          outputEntryTableLinesPointer.cast<UnsignedChar>(),
+          outputEntryTableLinesLength,
+          entryTableLines);
     } catch (e, stacktrace) {
       Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during fetch callback ($callback) $e $stacktrace");
@@ -454,9 +464,8 @@ class Findex {
           entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
 
       final rejectedEntries = callback(uidsAndValues);
-      UidAndValue.serialize(outputRejectedEntriesListPointer,
+      return UidAndValue.serialize(outputRejectedEntriesListPointer,
           outputRejectedEntriesListLength, rejectedEntries);
-      return 0;
     } catch (e, stacktrace) {
       Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during upsertEntriesCallback $e $stacktrace");

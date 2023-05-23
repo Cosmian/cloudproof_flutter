@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'package:cloudproof/cloudproof.dart';
 import 'package:redis/redis.dart';
 
-import 'sqlite_test.dart';
+import 'user.dart';
 
 class FindexRedisImplementation {
   static Future<void> init() async {

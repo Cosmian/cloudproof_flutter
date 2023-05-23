@@ -221,6 +221,7 @@ int h_search(char *indexed_values_ptr,
              int max_results_per_keyword,
              int max_depth,
              unsigned int fetch_chains_batch_size,
+             unsigned int entry_table_number,
              ProgressCallback progress_callback,
              FetchEntryTableCallback fetch_entry,
              FetchChainTableCallback fetch_chain);
@@ -249,13 +250,17 @@ int h_search(char *indexed_values_ptr,
  *
  * # Parameters
  *
- * - `master_key`      : Findex master key
- * - `label`           : additional information used to derive Entry Table UIDs
+ * - `master_key`                  : Findex master key
+ * - `label`                       : additional information used to derive
+ *   Entry Table UIDs
  * - `indexed_values_and_keywords` : serialized list of values and the keywords
  *   used to index them
- * - `fetch_entry`     : callback used to fetch the Entry Table
- * - `upsert_entry`    : callback used to upsert lines in the Entry Table
- * - `insert_chain`    : callback used to insert lines in the Chain Table
+ * - `entry_table_number`          : number of different entry tables
+ * - `fetch_entry`                 : callback used to fetch the Entry Table
+ * - `upsert_entry`                : callback used to upsert lines in the Entry
+ *   Table
+ * - `insert_chain`                : callback used to insert lines in the Chain
+ *   Table
  *
  * # Safety
  *
@@ -266,6 +271,7 @@ int h_upsert(const uint8_t *master_key_ptr,
              const uint8_t *label_ptr,
              int label_len,
              const char *indexed_values_and_keywords_ptr,
+             unsigned int entry_table_number,
              FetchEntryTableCallback fetch_entry,
              UpsertEntryTableCallback upsert_entry,
              InsertChainTableCallback insert_chain);
@@ -273,7 +279,7 @@ int h_upsert(const uint8_t *master_key_ptr,
 /**
  * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
  * using the given label and the KMAC key derived from the new master key. The
- * values are dectypted using the DEM key derived from the master key and
+ * values are decrypted using the DEM key derived from the master key and
  * re-encrypted using the DEM key derived from the new master key.
  *
  * Randomly selects index entries and recompact their associated chains. Chains
@@ -289,7 +295,8 @@ int h_upsert(const uint8_t *master_key_ptr,
  * - `old_master_key`                  : old Findex master key
  * - `new_master_key`                  : new Findex master key
  * - `label`                           : additional information used to derive
- *   Entry Table UIDs
+ * - `entry_table_number`              : number of different entry table Entry
+ *   Table UIDs
  * - `fetch_entry`                     : callback used to fetch the Entry Table
  * - `fetch_chain`                     : callback used to fetch the Chain Table
  * - `update_lines`                    : callback used to update lines in both
@@ -308,6 +315,7 @@ int h_compact(int num_reindexing_before_full_set,
               int new_master_key_len,
               const uint8_t *label_ptr,
               int label_len,
+              unsigned int entry_table_number,
               FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
               FetchEntryTableCallback fetch_entry,
               FetchChainTableCallback fetch_chain,
