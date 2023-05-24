@@ -305,7 +305,8 @@ class Findex {
                 Pointer<UnsignedInt>.fromAddress(message.item2),
                 entryTableLines);
             if (ret != 0) {
-              Pointer<Bool>.fromAddress(message.item4).value = false;
+              throw Exception(
+                  "Isolate wrapAsyncFetchCallback exception: Unable to serialize callback results: serialize error code: $ret. Rust output buffer is too small. Is the number of entry tables correct?");
             }
           } finally {
             Pointer<Bool>.fromAddress(message.item4).value = true;
@@ -359,7 +360,8 @@ class Findex {
                 Pointer<UnsignedInt>.fromAddress(message.item3),
                 rejectedEntries);
             if (ret != 0) {
-              Pointer<Bool>.fromAddress(message.item4).value = false;
+              throw Exception(
+                  "Isolate wrapAsyncUpsertEntriesCallback exception: Unable to serialize callback results: serialize error code: $ret. Rust output buffer is too small. Is the number of entry tables correct?");
             }
           } finally {
             Pointer<Bool>.fromAddress(message.item4).value = true;

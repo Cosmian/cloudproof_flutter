@@ -31,7 +31,6 @@ class User {
   }
 
   Location get location {
-    // return Location(Uint8List.fromList([id]));
     return Location(Uint8List(4)
       ..buffer.asInt32List()[0] = id); // cloudproof_java waits for this format
   }

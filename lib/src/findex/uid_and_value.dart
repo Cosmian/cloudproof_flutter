@@ -95,7 +95,7 @@ class UidAndValue {
     if (totalSize > outputLength.value) {
       // Let us return the required output length
       final length = serializeToList(Uint8List(2 * totalSize), values);
-      log("Unable to serialize: output length (${outputLength.value}) is insufficient, $length bytes needed. Is the number of Entry Table correct?");
+      log("Unable to serialize: output length ${outputLength.value} is insufficient, $length bytes needed. Is the number of Entry Table correct?");
       outputLength.value = length;
       return 1;
     }
