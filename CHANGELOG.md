@@ -7,7 +7,10 @@ All notable changes to this project will be documented in this file.
 ### Bug Fixes
 
 - Tests on published package -> Missing generated ffi bindings in published package
-- Serialization failing silently when output buffer not large enough
+- Serialization failing silently when output buffer not large enough:
+  - in case of **fetch** callback error, flutter now returns the amount of memory to allocate (used in Rust)
+  - it allows the Rust code to retry with this correct size
+- Update Findex 2.0.3 to 2.0.4 to fix the allocation size of the output buffer used in `fetchEntries` callback
 
 ## [4.1.0] - 2023-05-16
 
