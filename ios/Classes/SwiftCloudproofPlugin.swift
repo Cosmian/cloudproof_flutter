@@ -30,6 +30,7 @@ public class SwiftCloudproofPlugin: NSObject, FlutterPlugin {
       0,
       0,
       0,
+      0,
       nil,
       nil,
       nil
