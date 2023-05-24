@@ -68,7 +68,8 @@ jobs:
           rm -f android/src/main/jniLibs/*/.git*
           rm -f ios/.gitignore
           rm -f resources/.gitignore
-          rm -f lib/src/.gitignore
+          rm -f lib/src/cover_crypt/.gitignore
+          rm -f lib/src/findex/.gitignore
           git add * || true
           dart pub publish --dry-run
         env:
