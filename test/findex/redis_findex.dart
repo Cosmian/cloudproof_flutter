@@ -6,7 +6,7 @@ import 'dart:typed_data';
 import 'package:cloudproof/cloudproof.dart';
 import 'package:redis/redis.dart';
 
-import 'sqlite_test.dart';
+import 'user.dart';
 
 class FindexRedisImplementation {
   static const String throwInsideFetchFilepath = "/tmp/redisThrowInsideFetch";
@@ -209,23 +209,21 @@ class FindexRedisImplementation {
   // --------------------------------------------------
 
   static Future<Map<Keyword, List<Location>>> search(
-    Uint8List keyK,
-    Uint8List label,
-    List<Keyword> words,
-  ) async {
+      Uint8List keyK, Uint8List label, List<Keyword> words,
+      {int entryTableNumber = 1}) async {
     return await Findex.search(
-      keyK,
-      label,
-      words,
-      Pointer.fromFunction(
-        fetchEntriesCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        fetchChainsCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-    );
+        keyK,
+        label,
+        words,
+        Pointer.fromFunction(
+          fetchEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          fetchChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        entryTableNumber: entryTableNumber);
   }
 
   static Future<void> upsert(

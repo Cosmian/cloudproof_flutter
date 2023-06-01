@@ -65,6 +65,7 @@ def download_native_libraries(version: str) -> bool:
                          ({request.getcode()})'
                     )
                 else:
+                    print(f'Copying new files from cloudproof_rust {version}')
                     if path.exists('tmp'):
                         shutil.rmtree('tmp')
                     if path.exists('all.zip'):
@@ -95,4 +96,4 @@ def download_native_libraries(version: str) -> bool:
 if __name__ == '__main__':
     ret = download_native_libraries('v2.0.0')
     if ret is False and os.getenv('GITHUB_ACTIONS'):
-        download_native_libraries('last_build/fix/update_findex')
+        download_native_libraries('last_build/update_findex_multi_fetch_entry_tables')

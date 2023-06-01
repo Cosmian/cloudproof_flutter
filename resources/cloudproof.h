@@ -78,7 +78,8 @@
  * where `prefix` is `l` (only `Location`s are returned) and the `byte_vector`
  * is the byte representation of the location.
  */
-typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr, unsigned int intermediate_results_len);
+typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr,
+                                unsigned int intermediate_results_len);
 
 /**
  * See [`FindexCallbacks::fetch_entry_table()`](cosmian_findex::FindexCallbacks::fetch_entry_table).
@@ -93,7 +94,10 @@ typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr, u
  *
  * `LEB128(n_entries) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr, unsigned int *entries_len, const unsigned char *uids_ptr, unsigned int uids_len);
+typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr,
+                                       unsigned int *entries_len,
+                                       const unsigned char *uids_ptr,
+                                       unsigned int uids_len);
 
 /**
  * See [`FindexCallbacks::fetch_chain_table()`](cosmian_findex::FindexCallbacks::fetch_chain_table).
@@ -108,7 +112,10 @@ typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr, unsigned int 
  *
  * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr, unsigned int *chains_len, const unsigned char *uids_ptr, unsigned int uids_len);
+typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr,
+                                       unsigned int *chains_len,
+                                       const unsigned char *uids_ptr,
+                                       unsigned int uids_len);
 
 /**
  * See [`FindexCallbacks::upsert_entry_table()`](cosmian_findex::FindexCallbacks::upsert_entry_table).
@@ -126,7 +133,10 @@ typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr, unsigned int *
  *
  * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*UpsertEntryTableCallback)(unsigned char *outputs_ptr, unsigned int *outputs_len, const unsigned char *entries_ptr, unsigned int entries_len);
+typedef int (*UpsertEntryTableCallback)(unsigned char *outputs_ptr,
+                                        unsigned int *outputs_len,
+                                        const unsigned char *entries_ptr,
+                                        unsigned int entries_len);
 
 /**
  * See [`FindexCallbacks::insert_chain_table()`](cosmian_findex::FindexCallbacks::insert_chain_table).
@@ -172,7 +182,10 @@ typedef int (*DeleteChainCallback)(const unsigned char *chains_ptr, unsigned int
  *
  * Outputs should follow the same serialization.
  */
-typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr, unsigned int *removed_locations_len, const unsigned char *locations_ptr, unsigned int locations_len);
+typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr,
+                                            unsigned int *removed_locations_len,
+                                            const unsigned char *locations_ptr,
+                                            unsigned int locations_len);
 
 /**
  * See [`FindexCallbacks::update_lines()`](cosmian_findex::FindexCallbacks::update_lines).
@@ -187,7 +200,12 @@ typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr
  *
  * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remove_ptr, unsigned int chain_table_uids_to_remove_len, const unsigned char *new_encrypted_entry_table_items_ptr, unsigned int new_encrypted_entry_table_items_len, const unsigned char *new_encrypted_chain_table_items_ptr, unsigned int new_encrypted_chain_table_items_len);
+typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remove_ptr,
+                                   unsigned int chain_table_uids_to_remove_len,
+                                   const unsigned char *new_encrypted_entry_table_items_ptr,
+                                   unsigned int new_encrypted_entry_table_items_len,
+                                   const unsigned char *new_encrypted_chain_table_items_ptr,
+                                   unsigned int new_encrypted_chain_table_items_len);
 
 /**
  * # Safety
@@ -572,6 +590,7 @@ int get_last_error(char *error_ptr, int *error_len);
  * - `master_key`              : master key
  * - `label`                   : public information used to derive UIDs
  * - `keywords`                : `serde` serialized list of base64 keywords
+ * - `entry_table_number`      : number of different entry tables
  * - `progress_callback`       : callback used to retrieve intermediate results
  *   and transmit user interrupt
  * - `fetch_entry_callback`    : callback used to fetch the Entry Table
@@ -588,6 +607,7 @@ int h_search(char *search_results_ptr,
              const uint8_t *label_ptr,
              int label_len,
              const char *keywords_ptr,
+             unsigned int entry_table_number,
              ProgressCallback progress_callback,
              FetchEntryTableCallback fetch_entry_callback,
              FetchChainTableCallback fetch_chain_callback);
@@ -621,6 +641,7 @@ int h_search(char *search_results_ptr,
  * TODO (TBZ): explain the serialization in the doc
  * - `additions`       : serialized list of new indexed values
  * - `deletions`       : serialized list of removed indexed values
+ * - `entry_table_number` : number of different entry tables
  * - `fetch_entry`     : callback used to fetch the Entry Table
  * - `upsert_entry`    : callback used to upsert lines in the Entry Table
  * - `insert_chain`    : callback used to insert lines in the Chain Table
@@ -635,6 +656,7 @@ int h_upsert(const uint8_t *master_key_ptr,
              int label_len,
              const char *additions_ptr,
              const char *deletions_ptr,
+             unsigned int entry_table_number,
              FetchEntryTableCallback fetch_entry,
              UpsertEntryTableCallback upsert_entry,
              InsertChainTableCallback insert_chain);
@@ -658,6 +680,7 @@ int h_upsert(const uint8_t *master_key_ptr,
  * - `new_label`                       : public information used to derive UIDs
  * - `num_reindexing_before_full_set`  : number of compact operation needed to
  *   compact all the Chain Table
+ * - `entry_table_number`              : number of different entry tables
  * - `fetch_entry`                     : callback used to fetch the Entry Table
  * - `fetch_chain`                     : callback used to fetch the Chain Table
  * - `update_lines`                    : callback used to update lines in both
@@ -672,6 +695,7 @@ int h_upsert(const uint8_t *master_key_ptr,
 int h_live_compact(const uint8_t *master_key_ptr,
                    int master_key_len,
                    int num_reindexing_before_full_set,
+                   unsigned int entry_table_number,
                    FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
                    FetchEntryTableCallback fetch_entry,
                    FetchChainTableCallback fetch_chain,
@@ -697,6 +721,7 @@ int h_live_compact(const uint8_t *master_key_ptr,
  * - `new_label`                       : public information used to derive UIDs
  * - `num_reindexing_before_full_set`  : number of compact operation needed to
  *   compact all the Chain Table
+ * - `entry_table_number`               : number of different entry tables
  * - `fetch_entry`                     : callback used to fetch the Entry Table
  * - `fetch_chain`                     : callback used to fetch the Chain Table
  * - `update_lines`                    : callback used to update lines in both
@@ -715,6 +740,7 @@ int h_compact(const uint8_t *old_master_key_ptr,
               const uint8_t *new_label_ptr,
               int new_label_len,
               int num_reindexing_before_full_set,
+              unsigned int entry_table_number,
               FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
               FetchEntryTableCallback fetch_entry,
               FetchChainTableCallback fetch_chain,
