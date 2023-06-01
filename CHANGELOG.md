@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## [7.0.0] - 2023-06-01
 
 ### Features
 
@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
     - searching for a non indexed keyword leads to an empty array for this
       keyword in the search results instead of this keyword being missing from
       the results.
+    - support multiple fetch entry tables
   - change upsert interface:
     - add deletions
 
