@@ -132,12 +132,13 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_java_in_docker.yml@develop
     with:
-      branch: develop
+      branch: feature/multi_entry_tables
       target: x86_64-unknown-linux-gnu
       extension: so
       destination: linux-x86-64
       os: ubuntu-20.04
       kms-version: 4.3.3
+      findex-cloud-version: 0.1.0
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json src/test/resources/cover_crypt/non_regression/js_non_regression_vector.json
@@ -147,7 +148,7 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_js.yml@develop
     with:
-      branch: develop
+      branch: feature/anonymization
       target: wasm32-unknown-unknown
       kms-version: 4.3.3
       copy_fresh_build: false
@@ -159,7 +160,7 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_python.yml@develop
     with:
-      branch: develop
+      branch: feature/multi_entry_tables
       target: x86_64-unknown-linux-gnu
       kms-version: 4.3.3
       copy_fresh_build: false
