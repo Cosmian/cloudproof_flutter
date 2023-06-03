@@ -11,22 +11,22 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
 - [Licensing](#licensing)
 - [Cryptographic primitives](#cryptographic-primitives)
 - [Getting started](#getting-started)
-  - [CoverCrypt](#covercrypt)
-  - [Findex](#findex)
+  * [CoverCrypt](#covercrypt)
+  * [Findex](#findex)
 - [Installation](#installation)
-  - [Download required native libraries](#download-required-native-libraries)
+  * [Download required native libraries](#download-required-native-libraries)
 - [Example](#example)
 - [Tests](#tests)
-  - [WARNINGS](#warnings)
-  - [Implementation details](#implementation-details)
+  * [WARNINGS](#warnings)
+  * [Implementation details](#implementation-details)
 - [FFI libs notes](#ffi-libs-notes)
-  - [Generating Dart bindings from `cloudproof.h`](#generating-dart-bindings-from-cloudproofh)
-    - [iOS WARNING](#ios-warning)
-  - [Building `.so`, `.a`…](#building-so-a)
-    - [Linux](#linux)
-    - [Android](#android)
-    - [iOS](#ios)
-  - [Supported versions](#supported-versions)
+  * [Generating Dart bindings from `cloudproof.h`](#generating-dart-bindings-from-cloudproofh)
+    + [iOS WARNING](#ios-warning)
+  * [Building `.so`, `.a`…](#building-so-a)
+    + [Linux](#linux)
+    + [Android](#android)
+    + [iOS](#ios)
+  * [Supported versions](#supported-versions)
 - [Cloudproof versions Correspondence](#cloudproof-versions-correspondence)
 
 <!-- tocstop -->
@@ -364,3 +364,4 @@ From the version 6.0.0, `cloudproof_flutter` depends on [cloudproof_rust](https:
 | ----------- | ------------------- |
 | 6.0.0       | 1.0.0               |
 | 6.0.2       | 1.0.1               |
+| 7.0.0       | 2.0.1               |
