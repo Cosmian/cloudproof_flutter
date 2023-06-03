@@ -6,9 +6,24 @@ import 'dart:typed_data';
 import 'package:cloudproof/cloudproof.dart';
 import 'package:redis/redis.dart';
 
-import 'sqlite_test.dart';
+import 'user.dart';
 
 class FindexRedisImplementation {
+  static const String throwInsideFetchFilepath = "/tmp/redisThrowInsideFetch";
+
+  static Future<bool> shouldThrowInsideFetch() async {
+    return await File(FindexRedisImplementation.throwInsideFetchFilepath)
+        .exists();
+  }
+
+  static Future<void> setThrowInsideFetch() async {
+    await File(FindexRedisImplementation.throwInsideFetchFilepath).create();
+  }
+
+  static Future<void> resetThrowInsideFetch() async {
+    await File(FindexRedisImplementation.throwInsideFetchFilepath).delete();
+  }
+
   static Future<void> init() async {
     final db = await FindexRedisImplementation.db;
 
@@ -113,12 +128,12 @@ class FindexRedisImplementation {
       FindexMasterKey masterKey, Uint8List label) async {
     final users = await allUsers();
 
-    final indexedValuesAndWords = {
+    final additions = {
       for (final user in users)
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 
-    await upsert(masterKey, label, indexedValuesAndWords);
+    await upsert(masterKey, label, additions, {});
   }
 
   static Future<List<Uint8List>> keys(RedisTable table) async {
@@ -150,6 +165,10 @@ class FindexRedisImplementation {
     List<UidAndValue> results = [];
 
     final db = await FindexRedisImplementation.db;
+
+    if (await FindexRedisImplementation.shouldThrowInsideFetch()) {
+      throw UnsupportedError("Redis Should Throw Exception"); // :ExceptionLine
+    }
 
     final values = await mget(db, table, uids.uids);
 
@@ -190,34 +209,34 @@ class FindexRedisImplementation {
   // --------------------------------------------------
 
   static Future<Map<Keyword, List<Location>>> search(
-    Uint8List keyK,
-    Uint8List label,
-    List<Keyword> words,
-  ) async {
+      Uint8List keyK, Uint8List label, List<Keyword> words,
+      {int entryTableNumber = 1}) async {
     return await Findex.search(
-      keyK,
-      label,
-      words,
-      Pointer.fromFunction(
-        fetchEntriesCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        fetchChainsCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-    );
+        keyK,
+        label,
+        words,
+        Pointer.fromFunction(
+          fetchEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          fetchChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        entryTableNumber: entryTableNumber);
   }
 
   static Future<void> upsert(
     FindexMasterKey masterKey,
     Uint8List label,
-    Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
+    Map<IndexedValue, List<Keyword>> additions,
+    Map<IndexedValue, List<Keyword>> deletions,
   ) async {
     await Findex.upsert(
       masterKey,
       label,
-      indexedValuesAndKeywords,
+      additions,
+      deletions,
       Pointer.fromFunction(
         fetchEntriesCallback,
         errorCodeInCaseOfCallbackException,

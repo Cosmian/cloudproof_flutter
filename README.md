@@ -11,22 +11,22 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
 - [Licensing](#licensing)
 - [Cryptographic primitives](#cryptographic-primitives)
 - [Getting started](#getting-started)
-  - [CoverCrypt](#covercrypt)
-  - [Findex](#findex)
+  * [CoverCrypt](#covercrypt)
+  * [Findex](#findex)
 - [Installation](#installation)
-  - [Download required native libraries](#download-required-native-libraries)
+  * [Download required native libraries](#download-required-native-libraries)
 - [Example](#example)
 - [Tests](#tests)
-  - [WARNINGS](#warnings)
-  - [Implementation details](#implementation-details)
+  * [WARNINGS](#warnings)
+  * [Implementation details](#implementation-details)
 - [FFI libs notes](#ffi-libs-notes)
-  - [Generating Dart bindings from `cloudproof.h`](#generating-dart-bindings-from-cloudproofh)
-    - [iOS WARNING](#ios-warning)
-  - [Building `.so`, `.a`…](#building-so-a)
-    - [Linux](#linux)
-    - [Android](#android)
-    - [iOS](#ios)
-  - [Supported versions](#supported-versions)
+  * [Generating Dart bindings from `cloudproof.h`](#generating-dart-bindings-from-cloudproofh)
+    + [iOS WARNING](#ios-warning)
+  * [Building `.so`, `.a`…](#building-so-a)
+    + [Linux](#linux)
+    + [Android](#android)
+    + [iOS](#ios)
+  * [Supported versions](#supported-versions)
 - [Cloudproof versions Correspondence](#cloudproof-versions-correspondence)
 
 <!-- tocstop -->
@@ -40,12 +40,12 @@ The library is available under a dual licensing scheme Affero GPL/v3 and commerc
 The library is based on:
 
 - [CoverCrypt](https://github.com/Cosmian/cover_crypt) algorithm which allows
-creating ciphertexts for a set of attributes and issuing user keys with access
-policies over these attributes. `CoverCrypt` offers Post-Quantum resistance.
+  creating ciphertexts for a set of attributes and issuing user keys with access
+  policies over these attributes. `CoverCrypt` offers Post-Quantum resistance.
 
 - [Findex](https://github.com/Cosmian/findex) which is a cryptographic protocol designed to securely make search queries on
-an untrusted cloud server. Thanks to its encrypted indexes, large databases can
-securely be outsourced without compromising usability.
+  an untrusted cloud server. Thanks to its encrypted indexes, large databases can
+  securely be outsourced without compromising usability.
 
 ## Getting started
 
@@ -155,12 +155,14 @@ To upsert, you need:
   static Future<void> upsert(
     MasterKey masterKey,
     Uint8List label,
-    Map<IndexedValue, List<Word>> indexedValuesAndWords,
+    Map<IndexedValue, List<Word>> additions,
+    Map<IndexedValue, List<Word>> deletions,
   ) async {
     await Findex.upsert(
       masterKey,
       label,
-      indexedValuesAndWords,
+      additions,
+      deletions,
       Pointer.fromFunction(
         fetchEntriesCallback,
         errorCodeInCaseOfCallbackException,
@@ -329,12 +331,12 @@ To make the flutter build succeed, 3 prerequisites are needed:
 ### Supported versions
 
 | Linux        | Flutter | Dart   | Android SDK       | NDK | Glibc | LLVM     | Smartphone Virtual Device |
-|--------------|---------|--------|-------------------|-----|-------|----------|---------------------------|
+| ------------ | ------- | ------ | ----------------- | --- | ----- | -------- | ------------------------- |
 | Ubuntu 22.04 | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.35  | 14.0.0-1 | Pixel 5 API 30            |
 | Centos 7     | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.17  | -        | -                         |
 
 | Mac      | Flutter | Dart   | OS       | LLVM   | Xcode | Smartphone Virtual Device |
-|----------|---------|--------|----------|--------|-------|---------------------------|
+| -------- | ------- | ------ | -------- | ------ | ----- | ------------------------- |
 | Catalina | 3.3.4   | 2.18.2 | Catalina | 12.0.0 |       | iPhone 12 PRO MAX         |
 
 ## Cloudproof versions Correspondence
@@ -346,7 +348,7 @@ Check the main pages of the respective projects to build the native libraries ap
 This table shows the minimum versions correspondences between the various components
 
 | Flutter Lib       | CoverCrypt lib    | Findex |
-|-------------------|-------------------|--------|
+| ----------------- | ----------------- | ------ |
 | 0.1.0             | 6.0.5             | 0.7.2  |
 | 1.0.0             | 6.0.5             | 0.7.2  |
 | 2.0.0             | 7.1.0             | 0.10.0 |
@@ -359,6 +361,7 @@ This table shows the minimum versions correspondences between the various compon
 From the version 6.0.0, `cloudproof_flutter` depends on [cloudproof_rust](https://github.com/Cosmian/cloudproof_rust) which wraps the interfaces of `CoverCrypt` and `Findex`.
 
 | Flutter Lib | Cloudproof Rust lib |
-|-------------|---------------------|
+| ----------- | ------------------- |
 | 6.0.0       | 1.0.0               |
 | 6.0.2       | 1.0.1               |
+| 7.0.0       | 2.0.1               |

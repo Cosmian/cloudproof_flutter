@@ -77,7 +77,7 @@ jobs:
           mkdir -p ~/.config/dart
           echo "$DART_CREDENTIALS" > ~/.config/dart/pub-credentials.json
           rm -f android/src/main/jniLibs/*/.git*
-          rm -f ios/.gitignore
+          # rm -f ios/.gitignore # du to the large size of universal lib for ios, .a must be recovered from package.cosmian.com
           rm -f resources/.gitignore
           rm -f lib/src/.gitignore
           git add * || true
@@ -91,7 +91,7 @@ jobs:
           mkdir -p ~/.config/dart
           echo "$DART_CREDENTIALS" > ~/.config/dart/pub-credentials.json
           rm -f android/src/main/jniLibs/*/.git*
-          rm -f ios/.gitignore
+          # rm -f ios/.gitignore # du to the large size of universal lib for ios, .a must be recovered from package.cosmian.com
           rm -f resources/.gitignore
           rm -f lib/src/.gitignore
           git add * || true
@@ -112,16 +112,33 @@ jobs:
         env:
           REF_NAME: ${{ github.ref_name }}
 
+      - name: Upload dependencies and source
+        if: contains(runner.os, 'Linux') && startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v3
+        with:
+          name: cloudproof_flutter_${{ github.ref_name }}
+          path: |
+            .
+            !build
+            !.mypy_cache
+            !example
+            !.git
+            !.dart_tool
+            !.packages
+          retention-days: 1
+          if-no-files-found: error
+
   cloudproof_java:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_java_in_docker.yml@develop
     with:
-      branch: develop
+      branch: feature/multi_entry_tables
       target: x86_64-unknown-linux-gnu
       extension: so
       destination: linux-x86-64
       os: ubuntu-20.04
       kms-version: 4.3.3
+      findex-cloud-version: 0.1.0
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json src/test/resources/cover_crypt/non_regression/js_non_regression_vector.json
@@ -131,7 +148,7 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_js.yml@develop
     with:
-      branch: develop
+      branch: feature/anonymization
       target: wasm32-unknown-unknown
       kms-version: 4.3.3
       copy_fresh_build: false
@@ -143,7 +160,7 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_python.yml@develop
     with:
-      branch: develop
+      branch: feature/multi_entry_tables
       target: x86_64-unknown-linux-gnu
       kms-version: 4.3.3
       copy_fresh_build: false

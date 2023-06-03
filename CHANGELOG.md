@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.0.0] - 2023-06-01
+
+### Features
+
+- upgrade Findex (v3.0.0 -> v4.0.0):
+  - change indexed values size (require a reset of the index database)
+  - change search interface
+    - remove `insecureFetchChainsBatchSize`
+    - searching for a non indexed keyword leads to an empty array for this
+      keyword in the search results instead of this keyword being missing from
+      the results.
+    - support multiple fetch entry tables
+  - change upsert interface:
+    - add deletions
+
 ## [6.0.2] - 2023-03-08
 
 ### Bug Fixes

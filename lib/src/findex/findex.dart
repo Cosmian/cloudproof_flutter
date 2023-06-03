@@ -71,13 +71,14 @@ class Findex {
   // FFI functions
   //
   static Future<void> upsert(
-    FindexMasterKey masterKey,
-    Uint8List label,
-    Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
-    FetchEntryTableCallback fetchEntries,
-    UpsertEntryTableCallback upsertEntries,
-    InsertChainTableCallback insertChains,
-  ) async {
+      FindexMasterKey masterKey,
+      Uint8List label,
+      Map<IndexedValue, List<Keyword>> additions,
+      Map<IndexedValue, List<Keyword>> deletions,
+      FetchEntryTableCallback fetchEntries,
+      UpsertEntryTableCallback upsertEntries,
+      InsertChainTableCallback insertChains,
+      {int entryTableNumber = 1}) async {
     //
     // FFI INPUT parameters
     //
@@ -89,9 +90,13 @@ class Findex {
     final labelPointer = label.allocateUint8Pointer();
 
     // Data to index to encode in base64 and JSON
-    final Pointer<Utf8> indexedValuesAndKeywordsPointer = jsonEncode(
-            indexedValuesAndKeywords.map((key, value) => MapEntry(
-                key.toBase64(), value.map((e) => e.toBase64()).toList())))
+    final Pointer<Utf8> additionsPointer = jsonEncode(additions.map((key,
+                value) =>
+            MapEntry(key.toBase64(), value.map((e) => e.toBase64()).toList())))
+        .toNativeUtf8(allocator: malloc);
+    final Pointer<Utf8> deletionsPointer = jsonEncode(deletions.map((key,
+                value) =>
+            MapEntry(key.toBase64(), value.map((e) => e.toBase64()).toList())))
         .toNativeUtf8(allocator: malloc);
 
     try {
@@ -101,29 +106,31 @@ class Findex {
         masterKey.k.length,
         labelPointer.cast<Int>(),
         label.length,
-        indexedValuesAndKeywordsPointer.cast<Char>(),
+        additionsPointer.cast<Char>(),
+        deletionsPointer.cast<Char>(),
+        entryTableNumber,
         fetchEntries,
         upsertEntries,
         insertChains,
       );
       final end = DateTime.now();
 
-      throwOnErrorCode(errorCode, start, end);
+      await throwOnErrorCode(errorCode, start, end);
     } finally {
       calloc.free(labelPointer);
-      malloc.free(indexedValuesAndKeywordsPointer);
+      malloc.free(additionsPointer);
+      malloc.free(deletionsPointer);
     }
   }
 
   static Future<Map<Keyword, List<Location>>> search(
-    Uint8List k,
-    Uint8List label,
-    List<Keyword> keywords,
-    FetchEntryTableCallback fetchEntries,
-    FetchChainTableCallback fetchChains, {
-    int outputSizeInBytes = defaultOutputSizeInBytes,
-    int insecureFetchChainsBatchSize = 0,
-  }) async {
+      Uint8List k,
+      Uint8List label,
+      List<Keyword> keywords,
+      FetchEntryTableCallback fetchEntries,
+      FetchChainTableCallback fetchChains,
+      {int outputSizeInBytes = defaultOutputSizeInBytes,
+      int entryTableNumber = 1}) async {
     return searchWithProgress(
       k,
       label,
@@ -135,20 +142,19 @@ class Findex {
         errorCodeInCaseOfCallbackException,
       ),
       outputSizeInBytes: outputSizeInBytes,
-      insecureFetchChainsBatchSize: insecureFetchChainsBatchSize,
+      entryTableNumber: entryTableNumber,
     );
   }
 
   static Future<Map<Keyword, List<Location>>> searchWithProgress(
-    Uint8List k,
-    Uint8List label,
-    List<Keyword> keywords,
-    FetchEntryTableCallback fetchEntries,
-    FetchChainTableCallback fetchChains,
-    ProgressCallback progressCallback, {
-    int outputSizeInBytes = defaultOutputSizeInBytes,
-    int insecureFetchChainsBatchSize = 0,
-  }) async {
+      Uint8List k,
+      Uint8List label,
+      List<Keyword> keywords,
+      FetchEntryTableCallback fetchEntries,
+      FetchChainTableCallback fetchChains,
+      ProgressCallback progressCallback,
+      {int outputSizeInBytes = defaultOutputSizeInBytes,
+      int entryTableNumber = 1}) async {
     //
     // FFI INPUT parameters
     //
@@ -175,9 +181,7 @@ class Findex {
         labelPointer.cast<Int>(),
         label.length,
         keywordsPointer.cast<Char>(),
-        0,
-        0,
-        insecureFetchChainsBatchSize,
+        entryTableNumber,
         progressCallback,
         fetchEntries,
         fetchChains,
@@ -190,7 +194,7 @@ class Findex {
             outputSizeInBytes: outputLengthPointer.value);
       }
 
-      throwOnErrorCode(errorCode, start, end);
+      await throwOnErrorCode(errorCode, start, end);
 
       return deserializeSearchResults(
         output.asTypedList(outputLengthPointer.value),
@@ -204,29 +208,59 @@ class Findex {
     }
   }
 
-  static void throwOnErrorCode(
+  static Future<void> throwOnErrorCode(
     int errorCode,
     DateTime start,
     DateTime end,
-  ) {
+  ) async {
     if (errorCode == 0) return;
 
-    if (errorCode == errorCodeInCaseOfCallbackException) {
-      final exceptions = Findex.exceptions.where((element) =>
-          element.datetime.isAfter(start) && element.datetime.isBefore(end));
+    // The async callbacks errors are raised with a Dart listener which run inside
+    // the async event loop. We are in sync code since the start of the FFI call
+    // so even if an error was raised, the listener didn't have the time to run
+    // (because the sync code blocks the event loop). Putting an `await` here allows
+    // the event loop to do some work before continuing the function. The listener
+    // will be run and the potential exception will be stored inside the `Findex.exceptions` array.
+    await Future.delayed(const Duration(milliseconds: 10));
 
-      if (exceptions.isNotEmpty) {
-        // We currently only rethrow the first exception but if multiple exceptions are thrown during this
-        // FFI call maybe we should give this information to the user.
-        // Multiple exceptions can be thrown if there is multiple concurrent request.
-        Error.throwWithStackTrace(
-          CallbackExceptionWrapper(exceptions.first.e.toString()),
-          exceptions.first.stacktrace,
-        );
+    final exceptions = Findex.exceptions.where((element) =>
+        element.datetime.isAfter(start) && element.datetime.isBefore(end));
+
+    if (exceptions.isNotEmpty) {
+      // We currently only rethrow the first exception but if multiple exceptions are thrown during this
+      // FFI call maybe we should give this information to the user.
+      // Multiple exceptions can be thrown if there is multiple concurrent request.
+
+      // In async callback wrapper the error code is not `errorCodeInCaseOfCallbackException`
+      // because the exception is happening inside an isolate and not reported back to the
+      // real callback that spawn the isolate. So the real callback return 0 (everything is fine)
+      // and the Rust part is failing because the data from inside the pointer is wrong.
+      // We need to report the user exception in this case but maybe the exception is from somewhere
+      // else / has nothing to do with the current problem. In this case we still rethrow the user exception because
+      // there is 99% of chance that this is the problem. But we log the Rust error for completeness.
+      if (errorCode != errorCodeInCaseOfCallbackException) {
+        log("An exception occurred during the callback but the errorCode was $errorCode but we expect $errorCodeInCaseOfCallbackException if a user exception happen inside a callback. The Rust error was: ${getLastError()} (it may be something unrelated or the real error). While using async wrapper this is the normal behavior because user exceptions do not return the correct error code.");
       }
+
+      Error.throwWithStackTrace(
+        exceptions.first.e,
+        exceptions.first.stacktrace,
+      );
     }
 
     throw FindexException(getLastError());
+  }
+
+  static ReceivePort isolateErrorPort() {
+    final now = DateTime.now();
+    final errorPort = ReceivePort();
+    errorPort.listen((messages) {
+      final e = AsyncCallbackExceptionWrapper(messages[0]);
+      Findex.exceptions
+          .add(ExceptionThrown(now, e, StackTrace.fromString(messages[1])));
+    });
+
+    return errorPort;
   }
 
   static Map<Keyword, List<Location>> deserializeSearchResults(
@@ -319,12 +353,14 @@ class Findex {
             final uids = Uids.deserialize(inputArray);
             final entryTableLines = await callback(uids);
 
-            UidAndValue.serialize(
+            final ret = UidAndValue.serialize(
                 Pointer<UnsignedChar>.fromAddress(message.item1),
                 Pointer<UnsignedInt>.fromAddress(message.item2),
                 entryTableLines);
-          } catch (e) {
-            log("Excepting in fetch isolate. $e");
+            if (ret != 0) {
+              throw Exception(
+                  "Isolate wrapAsyncFetchCallback exception: Unable to serialize callback results: serialize error code: $ret. Rust output buffer is too small. Is the number of entry tables correct?");
+            }
           } finally {
             Pointer<Bool>.fromAddress(message.item4).value = true;
           }
@@ -335,10 +371,12 @@ class Findex {
           uidsPointer.address,
           donePointer.address,
         ),
+        onError: Findex.isolateErrorPort().sendPort,
       );
       while (!donePointer.value) {
         sleep(const Duration(milliseconds: 10));
       }
+
       return 0;
     } catch (e, stacktrace) {
       log("Exception during fetch callback ($callback) $e $stacktrace");
@@ -370,12 +408,14 @@ class Findex {
 
             final rejectedEntries = await callback(uidsAndValues);
 
-            UidAndValue.serialize(
+            final ret = UidAndValue.serialize(
                 Pointer<UnsignedChar>.fromAddress(message.item4),
                 Pointer<UnsignedInt>.fromAddress(message.item3),
                 rejectedEntries);
-          } catch (e) {
-            log("Excepting in upsert isolate. $e");
+            if (ret != 0) {
+              throw Exception(
+                  "Isolate wrapAsyncUpsertEntriesCallback exception: Unable to serialize callback results: serialize error code: $ret. Rust output buffer is too small. Is the number of entry tables correct?");
+            }
           } finally {
             Pointer<Bool>.fromAddress(message.item4).value = true;
           }
@@ -386,6 +426,7 @@ class Findex {
           outputRejectedEntriesListLength.address,
           donePointer.address,
         ),
+        onError: Findex.isolateErrorPort().sendPort,
       );
 
       while (!donePointer.value) {
@@ -419,8 +460,6 @@ class Findex {
             final uidsAndValues = UidAndValue.deserialize(inputArray);
 
             await callback(uidsAndValues);
-          } catch (e) {
-            log("Excepting in upsert isolate. $e");
           } finally {
             Pointer<Bool>.fromAddress(message.item2).value = true;
           }
@@ -429,6 +468,7 @@ class Findex {
           chainsListPointer.address,
           donePointer.address,
         ),
+        onError: Findex.isolateErrorPort().sendPort,
       );
 
       while (!donePointer.value) {
@@ -455,9 +495,10 @@ class Findex {
           Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
       final entryTableLines = callback(uids);
 
-      UidAndValue.serialize(outputEntryTableLinesPointer.cast<UnsignedChar>(),
-          outputEntryTableLinesLength, entryTableLines);
-      return 0;
+      return UidAndValue.serialize(
+          outputEntryTableLinesPointer.cast<UnsignedChar>(),
+          outputEntryTableLinesLength,
+          entryTableLines);
     } catch (e, stacktrace) {
       Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during fetch callback ($callback) $e $stacktrace");
@@ -478,9 +519,8 @@ class Findex {
           entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
 
       final rejectedEntries = callback(uidsAndValues);
-      UidAndValue.serialize(outputRejectedEntriesListPointer,
+      return UidAndValue.serialize(outputRejectedEntriesListPointer,
           outputRejectedEntriesListLength, rejectedEntries);
-      return 0;
     } catch (e, stacktrace) {
       Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during upsertEntriesCallback $e $stacktrace");
@@ -534,10 +574,10 @@ extension Uint8ListBlobConversion on Uint8List {
   }
 }
 
-class CallbackExceptionWrapper implements Exception {
+class AsyncCallbackExceptionWrapper implements Exception {
   String message;
 
-  CallbackExceptionWrapper(this.message);
+  AsyncCallbackExceptionWrapper(this.message);
 
   @override
   String toString() {

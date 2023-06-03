@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:cloudproof/cloudproof.dart';
 
 class User {
@@ -31,7 +29,7 @@ class User {
   }
 
   Location get location {
-    return Location(Uint8List.fromList([id]));
+    return Location.fromNumber(id);
   }
 
   List<Keyword> get indexedWords {

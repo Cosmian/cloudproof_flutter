@@ -18,6 +18,10 @@ class UidAndValue {
     }
   }
 
+  int size() {
+    return uid.length + value.length;
+  }
+
   static List<UidAndValue> deserialize(Uint8List bytes) {
     List<UidAndValue> values = [];
 
@@ -42,16 +46,25 @@ class UidAndValue {
   }
 
   static int serializeToList(Uint8List output, List<UidAndValue> values) {
-    log("serialize: output: $output");
-    if (output.isEmpty) {
-      throw Exception("Unable to serialize: output length value is 0");
+    log("serializeToList: output.length: ${output.length}");
+
+    // Check if output length is enough
+    int totalSize = values.fold(
+        0, (int accumulator, UidAndValue uv) => accumulator + uv.size());
+    log("serializeList: totalSize: $totalSize");
+    if (totalSize > output.length) {
+      throw Exception(
+          "Unable to serialize: output length (${output.length}) is insufficient, $totalSize bytes needed. Is the number of Entry Table correct?");
     }
+
     try {
+      log("serializeToList: values.length: ${values.length}");
       final numItems = Leb128.encodeUnsigned(values.length);
       output.setAll(0, numItems);
 
       var idx = numItems.length;
       for (var entry in values) {
+        log("serializeToList: entry.uid.length: ${entry.uid.length} + ${entry.value.length}");
         idx = SerDe.write(output, idx, entry.uid);
         idx = SerDe.writeVector(output, idx, entry.value);
       }
@@ -68,10 +81,29 @@ class UidAndValue {
     if (outputLength.value == 0) {
       throw Exception("Unable to serialize: output length value is 0");
     }
+    log("serialize: outputLength.value: ${outputLength.value}");
+    // Check if output length is enough
+    int totalSize = values.fold(
+        0, (int accumulator, UidAndValue uv) => accumulator + uv.size());
+    log("serialize: totalSize: $totalSize");
+
+    if (totalSize == 0) {
+      outputLength.value = 1;
+      return 0;
+    }
+
+    if (totalSize > outputLength.value) {
+      // Let us return the required output length
+      final length = serializeToList(Uint8List(2 * totalSize), values);
+      log("Unable to serialize: output length ${outputLength.value} is insufficient, $length bytes needed. Is the number of Entry Table correct?");
+      outputLength.value = length;
+      return 1;
+    }
     var output = outputPointer.cast<Uint8>().asTypedList(outputLength.value);
 
     final length = serializeToList(output, values);
+    log("serialize: outputLength.value (3): ${outputLength.value}, length: $length, totalSize: $totalSize");
     outputLength.value = length;
-    return length;
+    return 0;
   }
 }
