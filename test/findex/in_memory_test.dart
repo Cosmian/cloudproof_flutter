@@ -40,11 +40,7 @@ const expectedUsersIdsForFrance = [
   96
 ];
 
-Future<void> testFunction() async {
-  final masterKey = FindexMasterKey.fromJson(jsonDecode(
-      await File('test/resources/findex/master_key.json').readAsString()));
-  final label = Uint8List.fromList(utf8.encode("Some Label"));
-
+Future<void> testFunction(FindexMasterKey masterKey, Uint8List label) async {
   InMemoryFindex.init();
 
   expect(InMemoryFindex.entryTable?.length, equals(0));
@@ -73,7 +69,11 @@ Future<void> testFunction() async {
 void main() {
   group('Findex in memory', () {
     test('in_memory', () async {
-      await testFunction();
+      final masterKey = FindexMasterKey.fromJson(jsonDecode(
+          await File('test/resources/findex/master_key.json').readAsString()));
+      final label = Uint8List.fromList(utf8.encode("Some Label"));
+
+      await testFunction(masterKey, label);
     });
   });
 }

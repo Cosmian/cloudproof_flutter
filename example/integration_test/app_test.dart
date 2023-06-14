@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -28,7 +29,10 @@ void main() {
 
       expect(result.plaintext, equals(plaintext));
 
-      await testFunction();
+      final masterKey =
+          FindexMasterKey(base64Decode("6hb1TznoNQFvCWisGWajkA=="));
+      final label = Uint8List.fromList(utf8.encode("Some Label"));
+      await testFunction(masterKey, label);
 
       app.main();
     });
