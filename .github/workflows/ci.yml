@@ -80,7 +80,7 @@ jobs:
         run: |
           cd example
           flutter build ios --release --no-codesign
-          # flutter test integration_test/
+          flutter test integration_test/
           cd ..
 
       - run: flutter analyze .
