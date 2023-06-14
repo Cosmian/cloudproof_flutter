@@ -82,8 +82,8 @@ class Findex {
     // FFI INPUT parameters
     //
     // Master key
-    final Pointer<Int> masterKeyPointer =
-        masterKey.k.allocateInt8Pointer().cast<Int>();
+    final Pointer<Uint8> masterKeyPointer =
+        masterKey.k.allocateInt8Pointer().cast<Uint8>();
 
     // Label
     final labelPointer = label.allocateUint8Pointer();
@@ -99,7 +99,7 @@ class Findex {
       final errorCode = library.h_upsert(
         masterKeyPointer,
         masterKey.k.length,
-        labelPointer.cast<Int>(),
+        labelPointer.cast<Uint8>(),
         label.length,
         indexedValuesAndKeywordsPointer.cast<Char>(),
         entryTableNumber,
@@ -116,15 +116,23 @@ class Findex {
     }
   }
 
+  static bool defaultProgressCallback(
+    Pointer<UnsignedChar> uidsListPointer,
+    int uidsListLength,
+  ) {
+    return true;
+  }
+
   static Future<Map<Keyword, List<IndexedValue>>> search(
-      Uint8List k,
-      Uint8List label,
-      List<Keyword> keywords,
-      FetchEntryTableCallback fetchEntries,
-      FetchChainTableCallback fetchChains,
-      {int outputSizeInBytes = defaultOutputSizeInBytes,
-      int insecureFetchChainsBatchSize = 0,
-      int entryTableNumber = 1}) async {
+    Uint8List k,
+    Uint8List label,
+    List<Keyword> keywords,
+    FetchEntryTableCallback fetchEntries,
+    FetchChainTableCallback fetchChains, {
+    int outputSizeInBytes = defaultOutputSizeInBytes,
+    int insecureFetchChainsBatchSize = 0,
+    int entryTableNumber = 1,
+  }) async {
     //
     // FFI INPUT parameters
     //
@@ -148,14 +156,17 @@ class Findex {
         outputLengthPointer.cast<Int>(),
         kPointer.cast<Char>(),
         k.length,
-        labelPointer.cast<Int>(),
+        labelPointer.cast<Uint8>(),
         label.length,
         keywordsPointer.cast<Char>(),
         0,
         0,
         insecureFetchChainsBatchSize,
         entryTableNumber,
-        0, // Progress callback is not used for now.
+        Pointer.fromFunction(
+          Findex.defaultProgressCallback,
+          false,
+        ), // Progress callback is not used for now.
         fetchEntries,
         fetchChains,
       );

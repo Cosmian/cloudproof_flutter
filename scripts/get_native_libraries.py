@@ -22,6 +22,7 @@ def files_to_be_copied(name: str):
         f'tmp/android/x86/libcosmian_{name}.so': f'{jni_libs}/x86/libcosmian_{name}.so',
         f'tmp/android/x86_64/libcosmian_{name}.so': f'{jni_libs}/x86_64/libcosmian_{name}.so',
         f'tmp/x86_64-apple-darwin/universal/release/libcosmian_{name}.a': f'ios/libcosmian_{name}.a',
+        f'tmp/x86_64-apple-darwin/universal/release/libcosmian_{name}.a': f'example/ios/libcosmian_{name}.a',
     }
 
 
@@ -35,20 +36,33 @@ def write_ios_cloudproof_plugin_header():
 @interface CloudproofPlugin : NSObject<FlutterPlugin>
 @end
 """
-    if not os.path.exists('resources/findex.h') or not os.path.exists('resources/cover_crypt.h'):
+    if not os.path.exists('resources/findex.h') or not os.path.exists(
+        'resources/cover_crypt.h'
+    ):
         raise Exception('missing header file (findex.h or cover_crypt.h)')
 
-    with open('ios/Classes/CloudproofPlugin.h', 'w', encoding='utf-8') as cloudproof_plugin_header_file:
+    with open(
+        'ios/Classes/CloudproofPlugin.h', 'w', encoding='utf-8'
+    ) as cloudproof_plugin_header_file:
         cloudproof_plugin_header_file.write(cloudproof_plugin_header)
-        with open('resources/cover_crypt.h', 'r', encoding='utf-8') as cover_crypt_header:
-            file_content = cover_crypt_header.read()  # Read whole file in file_content
+        with open(
+            'resources/cover_crypt.h', 'r', encoding='utf-8'
+        ) as cover_crypt_header:
+            file_content = (
+                cover_crypt_header.read()
+            )  # Read whole file in file_content
             cloudproof_plugin_header_file.write(file_content)
             cloudproof_plugin_header_file.write('\n')
-        with open('resources/findex.h', 'r', encoding='utf-8') as findex_header:
-            file_content = findex_header.read()  # Read whole file in file_content
+        with open(
+            'resources/findex.h', 'r', encoding='utf-8'
+        ) as findex_header:
+            file_content = (
+                findex_header.read()
+            )  # Read whole file in file_content
             cloudproof_plugin_header_file.write(file_content)
             cloudproof_plugin_header_file.write('\n')
     print('Generate CloudproofPlugin.h done!')
+
 
 def download_native_libraries(name: str, version: str) -> bool:
     """Download and extract native libraries"""
@@ -72,6 +86,7 @@ def download_native_libraries(name: str, version: str) -> bool:
                          ({request.getcode()})'
                     )
                 else:
+                    print(f'Getting {name} {version}')
                     if path.exists('tmp'):
                         shutil.rmtree('tmp')
                     if path.exists('all.zip'):
@@ -87,7 +102,9 @@ def download_native_libraries(name: str, version: str) -> bool:
                         shutil.rmtree('tmp')
 
                     system('flutter pub get')
-                    system(f'flutter pub run ffigen --config ffigen_{name}.yaml')
+                    system(
+                        f'flutter pub run ffigen --config ffigen_{name}.yaml'
+                    )
 
                     remove('all.zip')
         # pylint: disable=broad-except
