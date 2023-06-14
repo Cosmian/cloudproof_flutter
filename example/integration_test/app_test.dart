@@ -1,14 +1,12 @@
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
 import 'package:cloudproof/cloudproof.dart';
-// import 'package:cloudproof_demo/main.dart' as app;
+import 'package:cloudproof_demo/main.dart' as app;
 
-import '../../test/findex/sqlite_findex.dart';
+import '../../test/findex/in_memory_test.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -16,8 +14,6 @@ void main() {
   group('end-to-end test', () {
     testWidgets('tap on the floating action button, verify counter',
         (tester) async {
-      // app.main();
-
       final encrypted = base64Decode(
           "3DnOR7troSUW3TJA7rRltGzkqz5eVzfqOnTLupvliy/w7XRzQ6uPIkiRjtfHnOwH7ewmUHbiq/8Di9/RZQuWIAEtfSF6I+gHUChts2uoQklvQ4miSoLx8KYacB2VxYfOu7ad8DdoWK8uShldAhP6vl0tgmSvWW+Qn5q7OoIjjU4PIgoeFPl1REJ93rPizbde2nM/wkHEqDvcbVvOScvApjdn7hfmLIWGRghzZLBJj+4wFBoAAMdzZGuiZ9QnG0dXmcZdjgKH5ZpHTDjbdR4JraI7FaF8");
 
@@ -32,39 +28,9 @@ void main() {
 
       expect(result.plaintext, equals(plaintext));
 
-      const dbPath = "./sqlite.db";
+      await testFunction();
 
-      await initDb(dbPath);
-
-      final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('../test/resources/findex/master_key.json')
-              .readAsString()));
-
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      SqliteFindex.init(dbPath);
-      expect(SqliteFindex.count('entry_table'), equals(0));
-      expect(SqliteFindex.count('chain_table'), equals(0));
-
-      await SqliteFindex.indexAll(masterKey, label);
-
-      expect(SqliteFindex.count('entry_table'), equals(583));
-      expect(SqliteFindex.count('chain_table'), equals(618));
-
-      final searchResults = await SqliteFindex.search(
-          masterKey.k, label, [Keyword.fromString("France")]);
-
-      expect(searchResults.length, 1);
-
-      final keyword = searchResults.entries.toList()[0].key;
-      final indexedValues = searchResults.entries.toList()[0].value;
-      final usersIds = indexedValues.map((indexedValue) {
-        return indexedValue.location.bytes[0];
-      }).toList();
-      usersIds.sort();
-
-      expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
-      expect(usersIds, equals(expectedUsersIdsForFrance));
+      app.main();
     });
   });
 }
