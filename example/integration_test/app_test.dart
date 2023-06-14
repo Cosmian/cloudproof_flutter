@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
 import 'package:cloudproof/cloudproof.dart';
-import 'package:cloudproof_demo/main.dart' as app;
+// import 'package:cloudproof_demo/main.dart' as app;
 
 import '../../test/findex/in_memory_test.dart';
 
@@ -34,7 +34,7 @@ void main() {
       final label = Uint8List.fromList(utf8.encode("Some Label"));
       await testFunction(masterKey, label);
 
-      app.main();
+      // app.main();
     });
   });
 }
