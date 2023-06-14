@@ -40,10 +40,12 @@
  */
 #define DEM_KEY_LENGTH 32
 
+#if defined(DEFINE_WASM)
 /**
  * Default number of results returned per keyword.
  */
 #define MAX_RESULTS_PER_KEYWORD 65536
+#endif
 
 /**
  * Limit on the recursion to use when none is provided.
@@ -81,7 +83,8 @@
  * where `prefix` is `l` (only `Location`s are returned) and the `byte_vector`
  * is the byte representation of the location.
  */
-typedef bool (*ProgressCallback)(const unsigned char *intermediate_results_ptr, unsigned int intermediate_results_len);
+typedef bool (*ProgressCallback)(const unsigned char *intermediate_results_ptr,
+                                 unsigned int intermediate_results_len);
 
 /**
  * See [`FindexCallbacks::fetch_entry_table()`](crate::core::FindexCallbacks::fetch_entry_table).
@@ -96,7 +99,10 @@ typedef bool (*ProgressCallback)(const unsigned char *intermediate_results_ptr, 
  *
  * `LEB128(n_entries) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr, unsigned int *entries_len, const unsigned char *uids_ptr, unsigned int uids_len);
+typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr,
+                                       unsigned int *entries_len,
+                                       const unsigned char *uids_ptr,
+                                       unsigned int uids_len);
 
 /**
  * See [`FindexCallbacks::fetch_chain_table()`](crate::core::FindexCallbacks::fetch_chain_table).
@@ -111,7 +117,10 @@ typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr, unsigned int 
  *
  * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr, unsigned int *chains_len, const unsigned char *uids_ptr, unsigned int uids_len);
+typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr,
+                                       unsigned int *chains_len,
+                                       const unsigned char *uids_ptr,
+                                       unsigned int uids_len);
 
 /**
  * See [`FindexCallbacks::upsert_entry_table()`](crate::core::FindexCallbacks::upsert_entry_table).
@@ -129,7 +138,10 @@ typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr, unsigned int *
  *
  * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*UpsertEntryTableCallback)(unsigned char *outputs_ptr, unsigned int *outputs_len, const unsigned char *entries_ptr, unsigned int entries_len);
+typedef int (*UpsertEntryTableCallback)(unsigned char *outputs_ptr,
+                                        unsigned int *outputs_len,
+                                        const unsigned char *entries_ptr,
+                                        unsigned int entries_len);
 
 /**
  * See [`FindexCallbacks::insert_chain_table()`](crate::core::FindexCallbacks::insert_chain_table).
@@ -164,7 +176,12 @@ typedef int (*FetchAllEntryTableUidsCallback)(unsigned char *uids_ptr, unsigned 
  *
  * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remove_ptr, unsigned int chain_table_uids_to_remove_len, const unsigned char *new_encrypted_entry_table_items_ptr, unsigned int new_encrypted_entry_table_items_len, const unsigned char *new_encrypted_chain_table_items_ptr, unsigned int new_encrypted_chain_table_items_len);
+typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remove_ptr,
+                                   unsigned int chain_table_uids_to_remove_len,
+                                   const unsigned char *new_encrypted_entry_table_items_ptr,
+                                   unsigned int new_encrypted_entry_table_items_len,
+                                   const unsigned char *new_encrypted_chain_table_items_ptr,
+                                   unsigned int new_encrypted_chain_table_items_len);
 
 /**
  * See
@@ -179,7 +196,10 @@ typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remo
  *
  * Outputs should follow the same serialization.
  */
-typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr, unsigned int *removed_locations_len, const unsigned char *locations_ptr, unsigned int locations_len);
+typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr,
+                                            unsigned int *removed_locations_len,
+                                            const unsigned char *locations_ptr,
+                                            unsigned int locations_len);
 
 /**
  * Recursively searches Findex graphs for values indexed by the given keywords.
@@ -220,8 +240,8 @@ int h_search(char *indexed_values_ptr,
              const char *keywords_ptr,
              int max_results_per_keyword,
              int max_depth,
-             unsigned int fetch_chains_batch_size,
-             unsigned int entry_table_number,
+             int fetch_chains_batch_size,
+             int entry_table_number,
              ProgressCallback progress_callback,
              FetchEntryTableCallback fetch_entry,
              FetchChainTableCallback fetch_chain);
@@ -271,7 +291,7 @@ int h_upsert(const uint8_t *master_key_ptr,
              const uint8_t *label_ptr,
              int label_len,
              const char *indexed_values_and_keywords_ptr,
-             unsigned int entry_table_number,
+             int entry_table_number,
              FetchEntryTableCallback fetch_entry,
              UpsertEntryTableCallback upsert_entry,
              InsertChainTableCallback insert_chain);
@@ -315,7 +335,7 @@ int h_compact(int num_reindexing_before_full_set,
               int new_master_key_len,
               const uint8_t *label_ptr,
               int label_len,
-              unsigned int entry_table_number,
+              int entry_table_number,
               FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
               FetchEntryTableCallback fetch_entry,
               FetchChainTableCallback fetch_chain,

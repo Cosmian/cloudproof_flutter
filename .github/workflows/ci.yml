@@ -52,6 +52,24 @@ jobs:
           flutter build ios --release --no-codesign
           cd ..
 
+      - name: List all simulators
+        if: contains(runner.os, 'macOS')
+        run: xcrun xctrace list devices
+
+      - name: Start Simulator
+        if: contains(runner.os, 'macOS')
+        # the command "xcrun simctl boot" expects a device identifier
+        # the assignment of the UUID variable consists of retrieving the ID of the simulator
+        # by extracting it from the command "xcrun xctrace list devices"
+        run: |
+          UUID=$(xcrun xctrace list devices | grep "^iPhone 11 Simulator (15.2)" | awk '{gsub(/[()]/,""); print $NF}')
+          echo $UUID
+          xcrun simctl boot "${UUID:?No Simulator with this name found}"
+
+      - name: Run integration tests on iOS
+        if: contains(runner.os, 'macOS')
+        run: flutter test integration_test/
+
       - run: flutter analyze .
       - run: flutter test --concurrency 1 -x redis # exclude redis tests (no docker for macos)
         env:

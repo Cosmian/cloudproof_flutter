@@ -119,6 +119,7 @@ void main() {
       expect(
           await RedisMultiEntryTables.count(RedisTables.chains_2), equals(1));
 
+      print("\n\nSEARCH in flutter");
       final searchResults = await RedisMultiEntryTables.search(
           masterKey.k, label, [Keyword.fromString("John")],
           entryTableNumber: 2);
