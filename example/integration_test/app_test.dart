@@ -30,14 +30,15 @@ void main() {
       final result = CoverCrypt.decryptWithAuthenticationData(
           key, encrypted, authenticationData);
 
-      expect(result, equals(plaintext));
+      expect(result.plaintext, equals(plaintext));
 
       const dbPath = "./sqlite.db";
 
       await initDb(dbPath);
 
       final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+          await File('../test/resources/findex/master_key.json')
+              .readAsString()));
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
 
