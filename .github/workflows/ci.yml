@@ -45,13 +45,6 @@ jobs:
           flutter build apk
           cd ..
 
-      - name: Check build iOS
-        if: contains(runner.os, 'macOS')
-        run: |
-          cd example
-          flutter build ios --release --no-codesign
-          cd ..
-
       - name: List all simulators
         if: contains(runner.os, 'macOS')
         run: xcrun xctrace list devices
@@ -70,6 +63,7 @@ jobs:
         if: contains(runner.os, 'macOS')
         run: |
           cd example
+          flutter build ios --release --no-codesign
           flutter test integration_test/
 
       - run: flutter analyze .
