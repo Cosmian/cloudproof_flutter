@@ -14,7 +14,6 @@ def files_to_be_copied(name: str):
     jni_libs = 'android/src/main/jniLibs'
     return {
         f'tmp/x86_64-apple-darwin/{name}.h': f'resources/{name}.h',
-        f'tmp/x86_64-apple-darwin/{name}.h': f'example/ios/{name}.h',
         f'tmp/x86_64-apple-darwin/x86_64-apple-darwin/release/libcosmian_{name}.dylib': f'resources/libcosmian_{name}.dylib',
         f'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/libcosmian_{name}.so': f'resources/libcosmian_{name}.so',
         f'tmp/x86_64-pc-windows-gnu/x86_64-pc-windows-gnu/release/cosmian_{name}.dll': f'resources/cosmian_{name}.dll',
@@ -23,11 +22,10 @@ def files_to_be_copied(name: str):
         f'tmp/android/x86/libcosmian_{name}.so': f'{jni_libs}/x86/libcosmian_{name}.so',
         f'tmp/android/x86_64/libcosmian_{name}.so': f'{jni_libs}/x86_64/libcosmian_{name}.so',
         f'tmp/x86_64-apple-darwin/universal/release/libcosmian_{name}.a': f'ios/libcosmian_{name}.a',
-        f'tmp/x86_64-apple-darwin/universal/release/libcosmian_{name}.a': f'example/ios/libcosmian_{name}.a',
     }
 
 
-def write_ios_cloudproof_plugin_header():
+def write_ios_cloudproof_plugin_header(header_path: str):
     """
     Automatically write the ios cloudproof header
     """
@@ -43,7 +41,7 @@ def write_ios_cloudproof_plugin_header():
         raise Exception('missing header file (findex.h or cover_crypt.h)')
 
     with open(
-        'ios/Classes/CloudproofPlugin.h', 'w', encoding='utf-8'
+        header_path, 'w', encoding='utf-8'
     ) as cloudproof_plugin_header_file:
         cloudproof_plugin_header_file.write(cloudproof_plugin_header)
         with open(
@@ -122,4 +120,4 @@ if __name__ == '__main__':
     ret = download_native_libraries('cover_crypt', 'v8.0.2')
     if ret is False and os.getenv('GITHUB_ACTIONS'):
         download_native_libraries('cover_crypt', 'last_build')
-    # write_ios_cloudproof_plugin_header()
+    # write_ios_cloudproof_plugin_header('ios/Classes/CloudproofPlugin.h')
