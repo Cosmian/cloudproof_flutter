@@ -98,10 +98,10 @@ def download_native_libraries(name: str, version: str) -> bool:
 
 
 if __name__ == '__main__':
-    # ret = download_native_libraries('findex', 'v2.0.5')
-    # if ret is False and os.getenv('GITHUB_ACTIONS'):
-    #     download_native_libraries('findex', 'last_build')
-    # ret = download_native_libraries('cover_crypt', 'v8.0.2')
-    # if ret is False and os.getenv('GITHUB_ACTIONS'):
-    #     download_native_libraries('cover_crypt', 'last_build')
-    write_ios_cloudproof_plugin_header()
+    ret = download_native_libraries('findex', 'v2.0.5')
+    if ret is False and os.getenv('GITHUB_ACTIONS'):
+        download_native_libraries('findex', 'last_build')
+    ret = download_native_libraries('cover_crypt', 'v8.0.2')
+    if ret is False and os.getenv('GITHUB_ACTIONS'):
+        download_native_libraries('cover_crypt', 'last_build')
+    # write_ios_cloudproof_plugin_header()
