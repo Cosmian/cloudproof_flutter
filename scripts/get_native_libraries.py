@@ -13,7 +13,7 @@ def files_to_be_copied(name: str):
     """
     jni_libs = 'android/src/main/jniLibs'
     return {
-        f'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/{name}.h': f'resources/{name}.h',
+        f'tmp/x86_64-apple-darwin/{name}.h': f'resources/{name}.h',
         f'tmp/x86_64-apple-darwin/x86_64-apple-darwin/release/libcosmian_{name}.dylib': f'resources/libcosmian_{name}.dylib',
         f'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/libcosmian_{name}.so': f'resources/libcosmian_{name}.so',
         f'tmp/x86_64-pc-windows-gnu/x86_64-pc-windows-gnu/release/cosmian_{name}.dll': f'resources/cosmian_{name}.dll',
