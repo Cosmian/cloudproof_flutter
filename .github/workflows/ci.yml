@@ -45,6 +45,16 @@ jobs:
           flutter build apk
           cd ..
 
+      - name: Run integration tests
+        if: contains(runner.os, 'Linux')
+        # more info on https://github.com/ReactiveCircus/android-emulator-runner
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          profile: Nexus 6
+          script: flutter test integration_test --verbose
+
       - name: List all simulators
         if: contains(runner.os, 'macOS')
         run: xcrun xctrace list devices
