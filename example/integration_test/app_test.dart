@@ -1,9 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:cloudproof_demo/main.dart' as app;
-import 'package:flutter_test/flutter_test.dart';
-import 'package:integration_test/integration_test.dart';
+
+import '../../test/findex/sqlite_findex.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -14,17 +19,51 @@ void main() {
       app.main();
 
       final encrypted = base64Decode(
-          "AAAApQAAAGGQRxoBq/Yf0KlkLjBCRbCR8tQDF7AJ6RZaFaP/GOJFdnoHqouOoYSF3WGAy2vrkeVOi6kmRRo1h0Y6+6lzGLMXAdiJUa59Oy+ZYQ/OmJwRj0ZmE8TgLxTskF7UmbXnwQP3iETaIBoY2Picl3mwZQTLsz2nPMUDskMK/fjleKCNqR0aA3IuCMS4JpyEeZyuFClHPbjsJxMHS0BtsyaTXebXSreOIYBPl2ywpyvqdtDaY6o3wQzaiLHRU5cseDcxcUj/+SEWZRJKIgEYwwmurO6LoH+wCSjuTaVA0kDaDdd/HSZ2b+2RxdyeaV1K+l/d0aXIXUNX4qQWguQ9rbZg9zDI01jV7tk2Q/PIuB/qkF/D0Fz2mNDdk6J4G4fM0f7DL9yVM8Y9bfsSe15UEigK/gkSXKs96/xZGeDAqEdb3aoFKW6m272aefo4p0V754qGV8WQX2lPnWFkyD4TBeFnWzPjzdytdKvyMbcGJ1iACDKvdUa5JpVmfIIZyxaQYZuYoaPinVZ6Vx2vUhT/wLvTTBIlzxdpq3ydY54okyT9IHJFCwQBOB2xpaC6RYfaxTHUOSC1P9w1L4KNiQD0em0Q8fJD1REvznjhOL0YiRxMuOMhH9AcZsX2LVVI3uNSa81CUOhgSXqI2U5MFphwHD7V2ZrzmzUPDy++LeL1hYwWs31DjEt6cu/ORE3HnV2ccnqovED0+2GjnahHbqoaOU92akiGrxXrSYXMuevYP9e6ERi7Fm81pVjWsmN/3/vfWydRlqjo7VXHQIPOxyqc/6v0mCGFHV7UWw==");
+          "3DnOR7troSUW3TJA7rRltGzkqz5eVzfqOnTLupvliy/w7XRzQ6uPIkiRjtfHnOwH7ewmUHbiq/8Di9/RZQuWIAEtfSF6I+gHUChts2uoQklvQ4miSoLx8KYacB2VxYfOu7ad8DdoWK8uShldAhP6vl0tgmSvWW+Qn5q7OoIjjU4PIgoeFPl1REJ93rPizbde2nM/wkHEqDvcbVvOScvApjdn7hfmLIWGRghzZLBJj+4wFBoAAMdzZGuiZ9QnG0dXmcZdjgKH5ZpHTDjbdR4JraI7FaF8");
 
       final key = base64Decode(
-          "7F4indGmKCsQbfLHHiyH0n19acuqI8NU33S56oAREgQ7+yX/bsaCQQMeKkPoftF2pAEvH7bVDAPXQMSsss9vCQECAQR+WA+2Z7Y+BPGV0norPeSMFTPASyUXH6pn6VDlEfFkDw==");
+          "jHlN6FrJyNDvNV5mS2bOXfGjXkvvPUG8IOQoHJGqIgvirbMshM0uO2QpBLV6h4cDOkGF2PtR5Jo8XB4avhcgAQqpJbg/a6k2gSFaJiQkTgvjpOveCwY1ko62SmBuNTn1B5gBgPeox1CtyBN8LlILnYIK3lK22e4n+1S8Alr6SK8BXMGnOPN6WCU5YavcsnCT4zsVkw9RryzQql7UhNKoNQSsjEt3Ol/64qXHZNR0L4JC8QLPX8HunDLylDy5R0EaDxqT6rI9latktRUAwBwmr0lXPdtnsAEMZ9yHe0Zfb6cCLQ1vNSXZ+OGjq6+ktbabJ0QSbrxEPJ1XscyZmc7mWwAKerIZLvW2umrvT9p5s0FlVqH7G1upDmynT6douwaRCU6KzaS6wDo+rf63jdqd3wIGq3IljQ1/Lv8oMAEfmHYG43HxsKHQcxGzHd/+Phi98crqZLlevV2/HNB/QGoQvgU9uZqTzUdUcH2EUKyEO0FF4dXcpixLe9hNkpBQ5Po1Dg==");
 
-      final plaintext = base64Decode(
-          "eyJTbiI6Il81TjlsalFAb1MiLCJnaXZlbk5hbWUiOiJNYXJ0aW5vcyIsImRlcGFydG1lbnROdW1iZXIiOiIzNzciLCJ0aXRsZSI6Il80XFxDV1Y5UXRoIiwiY2FZZWxsb3dQYWdlc0NhdGVnb3J5IjoiMTo0MzVTUDJWTSIsInVpZCI6IkZMMk5NTFdyd14iLCJlbXBsb3llZU51bWJlciI6IkdJdGtaYmFdcjkiLCJNYWlsIjoiWWxjcF5ldWdaVCIsIlRlbGVwaG9uZU51bWJlciI6IlVGdnI+PnpTMFQiLCJNb2JpbGUiOiI7ZV9qVVlYWkw/IiwiZmFjc2ltaWxlVGVsZXBob25lTnVtYmVyIjoiMFFCMG5PakM1SSIsImNhUGVyc29uTG9jYWxpc2F0aW9uIjoiYm01bjhMdGRjWiIsIkNuIjoiallUTHJPbHMxMSIsImNhVW5pdGRuIjoiT0l3VUlhYEloMiIsImRlcGFydG1lbnQiOiJwXz5OdFpkXFx3OSIsImNvIjoiRnJhbmNlIn0=");
+      final plaintext = base64Decode("VG9wU2VjcmV0TWtnUGxhaW50ZXh0");
+      final authenticationData = base64Decode("BwgJCgs=");
 
-      final result = CoverCrypt.decrypt(key, encrypted);
+      final result = CoverCrypt.decryptWithAuthenticationData(
+          key, encrypted, authenticationData);
 
       expect(result, equals(plaintext));
+
+      const dbPath = "./sqlite.db";
+
+      await initDb(dbPath);
+
+      final masterKey = FindexMasterKey.fromJson(jsonDecode(
+          await File('test/resources/findex/master_key.json').readAsString()));
+
+      final label = Uint8List.fromList(utf8.encode("Some Label"));
+
+      SqliteFindex.init(dbPath);
+      expect(SqliteFindex.count('entry_table'), equals(0));
+      expect(SqliteFindex.count('chain_table'), equals(0));
+
+      await SqliteFindex.indexAll(masterKey, label);
+
+      expect(SqliteFindex.count('entry_table'), equals(583));
+      expect(SqliteFindex.count('chain_table'), equals(618));
+
+      final searchResults = await SqliteFindex.search(
+          masterKey.k, label, [Keyword.fromString("France")]);
+
+      expect(searchResults.length, 1);
+
+      final keyword = searchResults.entries.toList()[0].key;
+      final indexedValues = searchResults.entries.toList()[0].value;
+      final usersIds = indexedValues.map((indexedValue) {
+        return indexedValue.location.bytes[0];
+      }).toList();
+      usersIds.sort();
+
+      expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
+      expect(usersIds, equals(expectedUsersIdsForFrance));
     });
   });
 }
