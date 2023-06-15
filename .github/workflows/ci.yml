@@ -75,12 +75,18 @@ jobs:
           otool -Tv ios/libcosmian_findex.a || true
           nm -g ios/libcosmian_findex.a || true
 
-      - name: Run integration tests on iOS
+      - name: Build on iOS
         if: contains(runner.os, 'macOS')
         run: |
           flutter doctor
           cd example
           flutter build ios --release --no-codesign
+          cd ..
+
+      - name: Run integration tests on iOS
+        if: contains(runner.os, 'macOS')
+        run: |
+          cd example
           flutter test integration_test/
           cd ..
 
