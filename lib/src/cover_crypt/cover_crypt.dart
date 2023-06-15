@@ -16,32 +16,34 @@ const coverCryptErrorMessageMaxLength = 3000;
 const defaultHeaderMetadataSizeInBytes = 4096;
 
 class CoverCrypt {
-  static CoverCryptNativeLibrary? _library;
+  static CoverCryptNativeLibrary? cachedLibrary;
+
+  static CoverCryptNativeLibrary getNativeLibrary(String libraryName) {
+    return CoverCryptNativeLibrary(DynamicLibrary.open(
+        path.join(Directory.current.path, 'resources', libraryName)));
+  }
 
   static CoverCryptNativeLibrary get library {
-    if (_library != null) {
-      return _library as CoverCryptNativeLibrary;
+    if (cachedLibrary != null) {
+      return cachedLibrary as CoverCryptNativeLibrary;
     }
 
-    String? libraryPath;
     if (Platform.isMacOS) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_cover_crypt.dylib');
+      cachedLibrary = getNativeLibrary('libcosmian_cover_crypt.dylib');
     } else if (Platform.isWindows) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_cover_crypt.dll');
+      cachedLibrary = getNativeLibrary('libcosmian_cover_crypt.dll');
     } else if (Platform.isAndroid) {
-      libraryPath = "libcosmian_cover_crypt.so";
+      cachedLibrary = CoverCryptNativeLibrary(
+          DynamicLibrary.open("libcosmian_cover_crypt.so"));
     } else if (Platform.isLinux) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_cover_crypt.so');
+      cachedLibrary = getNativeLibrary('libcosmian_cover_crypt.so');
+    } else if (Platform.isIOS) {
+      cachedLibrary = CoverCryptNativeLibrary(DynamicLibrary.process());
+    } else {
+      throw Exception(
+          "Platform not supported when loading native library cover_crypt");
     }
-
-    final library = CoverCryptNativeLibrary(libraryPath == null
-        ? DynamicLibrary.process()
-        : DynamicLibrary.open(libraryPath));
-    _library = library;
-    return library;
+    return cachedLibrary!;
   }
 
   //

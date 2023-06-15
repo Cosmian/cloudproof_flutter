@@ -31,30 +31,32 @@ class Findex {
   static List<ExceptionThrown> exceptions = [];
   static FindexNativeLibrary? cachedLibrary;
 
+  static FindexNativeLibrary getNativeLibrary(String libraryName) {
+    return FindexNativeLibrary(DynamicLibrary.open(
+        path.join(Directory.current.path, 'resources', libraryName)));
+  }
+
   static FindexNativeLibrary get library {
     if (cachedLibrary != null) {
       return cachedLibrary as FindexNativeLibrary;
     }
 
-    String? libraryPath;
     if (Platform.isMacOS) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_findex.dylib');
+      cachedLibrary = getNativeLibrary('libcosmian_findex.dylib');
     } else if (Platform.isWindows) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_findex.dll');
+      cachedLibrary = getNativeLibrary('libcosmian_findex.dll');
     } else if (Platform.isAndroid) {
-      libraryPath = "libcosmian_findex.so";
+      cachedLibrary =
+          FindexNativeLibrary(DynamicLibrary.open("libcosmian_findex.so"));
     } else if (Platform.isLinux) {
-      libraryPath = path.join(
-          Directory.current.path, 'resources', 'libcosmian_findex.so');
+      cachedLibrary = getNativeLibrary('libcosmian_findex.so');
+    } else if (Platform.isIOS) {
+      cachedLibrary = FindexNativeLibrary(DynamicLibrary.process());
+    } else {
+      throw Exception(
+          "Platform not supported when loading native library findex");
     }
-
-    final library = FindexNativeLibrary(libraryPath == null
-        ? DynamicLibrary.process()
-        : DynamicLibrary.open(libraryPath));
-    cachedLibrary = library;
-    return library;
+    return cachedLibrary!;
   }
 
   //
