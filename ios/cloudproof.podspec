@@ -24,7 +24,7 @@ A new Flutter plugin project.
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
-    'OTHER_LDFLAGS' => '$(inherited) -ObjC'
+    'OTHER_LDFLAGS' => '$(inherited) -lcosmian_cover_crypt -lcosmian_findex'
   }
   s.swift_version = '5.0'
 end
