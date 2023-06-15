@@ -10,30 +10,4 @@ import Flutter
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
-
-  public func dummyMethodToEnforceCoverCryptBundling() {
-    // This will never be executed :PreventTreeShaking
-    h_aes_symmetric_encryption_overhead();
-  }
-
-  public func dummyMethodToEnforceFindexBundling() {
-    // This will never be executed :PreventTreeShaking
-    h_search(
-      nil,
-      nil,
-      nil,
-      0,
-      nil,
-      0,
-      nil,
-      0,
-      0,
-      0,
-      0,
-      nil,
-      nil,
-      nil
-      );
-  }
-
 }
