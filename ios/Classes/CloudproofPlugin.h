@@ -593,11 +593,26 @@ int h_search(char *indexed_values_ptr,
              const char *keywords_ptr,
              int max_results_per_keyword,
              int max_depth,
-             int fetch_chains_batch_size,
-             int entry_table_number,
+             unsigned int fetch_chains_batch_size,
+             unsigned int entry_table_number,
              ProgressCallback progress_callback,
              FetchEntryTableCallback fetch_entry,
              FetchChainTableCallback fetch_chain);
+
+int h_search_with_logs(char *indexed_values_ptr,
+                       int *indexed_values_len,
+                       const char *master_key_ptr,
+                       int master_key_len,
+                       const uint8_t *label_ptr,
+                       int label_len,
+                       const char *keywords_ptr,
+                       int max_results_per_keyword,
+                       int max_depth,
+                       unsigned int fetch_chains_batch_size,
+                       unsigned int entry_table_number,
+                       ProgressCallback progress_callback,
+                       FetchEntryTableCallback fetch_entry,
+                       FetchChainTableCallback fetch_chain);
 
 /**
  * Index the given values for the given keywords. After upserting, any
@@ -644,10 +659,20 @@ int h_upsert(const uint8_t *master_key_ptr,
              const uint8_t *label_ptr,
              int label_len,
              const char *indexed_values_and_keywords_ptr,
-             int entry_table_number,
+             unsigned int entry_table_number,
              FetchEntryTableCallback fetch_entry,
              UpsertEntryTableCallback upsert_entry,
              InsertChainTableCallback insert_chain);
+
+int h_upsert_with_logs(const uint8_t *master_key_ptr,
+                       int master_key_len,
+                       const uint8_t *label_ptr,
+                       int label_len,
+                       const char *indexed_values_and_keywords_ptr,
+                       unsigned int entry_table_number,
+                       FetchEntryTableCallback fetch_entry,
+                       UpsertEntryTableCallback upsert_entry,
+                       InsertChainTableCallback insert_chain);
 
 /**
  * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
@@ -688,12 +713,26 @@ int h_compact(int num_reindexing_before_full_set,
               int new_master_key_len,
               const uint8_t *label_ptr,
               int label_len,
-              int entry_table_number,
+              unsigned int entry_table_number,
               FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
               FetchEntryTableCallback fetch_entry,
               FetchChainTableCallback fetch_chain,
               UpdateLinesCallback update_lines,
               ListRemovedLocationsCallback list_removed_locations);
+
+int h_compact_with_logs(int num_reindexing_before_full_set,
+                        const uint8_t *master_key_ptr,
+                        int master_key_len,
+                        const uint8_t *new_master_key_ptr,
+                        int new_master_key_len,
+                        const uint8_t *label_ptr,
+                        int label_len,
+                        unsigned int entry_table_number,
+                        FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
+                        FetchEntryTableCallback fetch_entry,
+                        FetchChainTableCallback fetch_chain,
+                        UpdateLinesCallback update_lines,
+                        ListRemovedLocationsCallback list_removed_locations);
 
 /**
  * Get the most recent error as utf-8 bytes, clearing it in the process.
