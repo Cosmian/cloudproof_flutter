@@ -22,7 +22,6 @@ def files_to_be_copied(name: str):
         f'tmp/android/x86/libcosmian_{name}.so': f'{jni_libs}/x86/libcosmian_{name}.so',
         f'tmp/android/x86_64/libcosmian_{name}.so': f'{jni_libs}/x86_64/libcosmian_{name}.so',
         f'tmp/x86_64-apple-darwin/universal/release/libcosmian_{name}.a': f'ios/libcosmian_{name}.a',
-        f'tmp/x86_64-apple-darwin/universal/release/libcosmian_{name}.a': f'example/ios/libcosmian_{name}.a',
     }
 
 
