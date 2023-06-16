@@ -38,6 +38,11 @@ jobs:
       - run: flutter pub get
       - run: python scripts/get_native_libraries.py
 
+      - name: Check path of stdlib.h
+        if: contains(runner.os, 'macOS')
+        run: |
+          find / -iname stdlib.h
+
       - name: Check build Android
         if: contains(runner.os, 'Linux')
         run: |
