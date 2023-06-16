@@ -72,7 +72,7 @@ jobs:
       - name: Display exported functions in universal lib
         if: contains(runner.os, 'macOS')
         run: |
-          otool -Tv ios/libcosmian_findex.a || true
+          nm -g ios/libcosmian_cover_crypt.a || true
           nm -g ios/libcosmian_findex.a || true
 
       - name: Run integration tests on iOS
