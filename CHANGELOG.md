@@ -2,12 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [4.2.0] - 2023-06-15
+## [4.2.0] - 2023-06-20
 
 ### Bug Fixes
 
 - Warnings related to findex bindings from findex.h including C std headers
 - Cbindgen generation (re-include C std headers)
+- Fix link problem on ios: must add a dummy function (also used in dart) in Swift file
+- Libs name on windows
 
 ### Features
 
@@ -15,7 +17,7 @@ All notable changes to this project will be documented in this file.
 
 ### Testing
 
-- Add integration test for iOS
+- [iOS] Add integration tests
 
 ## [4.1.1] - 2023-05-25
 
