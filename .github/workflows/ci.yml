@@ -81,22 +81,8 @@ jobs:
       - name: Run integration tests on iOS
         if: contains(runner.os, 'macOS')
         run: |
-          rm -f android/src/main/jniLibs/*/.git*
-          rm -f ios/.gitignore
-          rm -f resources/.gitignore
-          rm -f lib/src/cover_crypt/.gitignore
-          rm -f lib/src/findex/.gitignore
-
           cd example
           flutter test integration_test/
-          cd ..
-
-      - name: Build on iOS
-        if: contains(runner.os, 'macOS')
-        run: |
-          flutter doctor
-          cd example
-          flutter build ios --release --no-codesign
           cd ..
 
       - run: flutter analyze .
@@ -128,7 +114,6 @@ jobs:
           mkdir -p ~/.config/dart
           echo "$DART_CREDENTIALS" > ~/.config/dart/pub-credentials.json
           rm -f android/src/main/jniLibs/*/.git*
-          rm -f ios/.gitignore
           rm -f resources/.gitignore
           rm -f lib/src/cover_crypt/.gitignore
           rm -f lib/src/findex/.gitignore
