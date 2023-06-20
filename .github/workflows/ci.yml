@@ -114,6 +114,7 @@ jobs:
           mkdir -p ~/.config/dart
           echo "$DART_CREDENTIALS" > ~/.config/dart/pub-credentials.json
           rm -f android/src/main/jniLibs/*/.git*
+          rm -f ios/*.a
           rm -f resources/.gitignore
           rm -f lib/src/cover_crypt/.gitignore
           rm -f lib/src/findex/.gitignore
