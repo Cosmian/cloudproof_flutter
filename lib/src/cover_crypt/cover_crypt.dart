@@ -31,7 +31,7 @@ class CoverCrypt {
     if (Platform.isMacOS) {
       cachedLibrary = getNativeLibrary('libcosmian_cover_crypt.dylib');
     } else if (Platform.isWindows) {
-      cachedLibrary = getNativeLibrary('libcosmian_cover_crypt.dll');
+      cachedLibrary = getNativeLibrary('cosmian_cover_crypt.dll');
     } else if (Platform.isAndroid) {
       cachedLibrary = CoverCryptNativeLibrary(
           DynamicLibrary.open("libcosmian_cover_crypt.so"));

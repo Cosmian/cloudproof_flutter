@@ -44,7 +44,7 @@ class Findex {
     if (Platform.isMacOS) {
       cachedLibrary = getNativeLibrary('libcosmian_findex.dylib');
     } else if (Platform.isWindows) {
-      cachedLibrary = getNativeLibrary('libcosmian_findex.dll');
+      cachedLibrary = getNativeLibrary('cosmian_findex.dll');
     } else if (Platform.isAndroid) {
       cachedLibrary =
           FindexNativeLibrary(DynamicLibrary.open("libcosmian_findex.so"));
