@@ -13,7 +13,7 @@ def files_to_be_copied(name: str):
     """
     jni_libs = 'android/src/main/jniLibs'
     return {
-        f'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/{name}.h': f'resources/{name}.h',
+        f'tmp/x86_64-apple-darwin/{name}.h': f'resources/{name}.h',
         f'tmp/x86_64-apple-darwin/x86_64-apple-darwin/release/libcosmian_{name}.dylib': f'resources/libcosmian_{name}.dylib',
         f'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/libcosmian_{name}.so': f'resources/libcosmian_{name}.so',
         f'tmp/x86_64-pc-windows-gnu/x86_64-pc-windows-gnu/release/cosmian_{name}.dll': f'resources/cosmian_{name}.dll',
@@ -25,7 +25,7 @@ def files_to_be_copied(name: str):
     }
 
 
-def write_ios_cloudproof_plugin_header():
+def write_ios_cloudproof_plugin_header(header_path: str):
     """
     Automatically write the ios cloudproof header
     """
@@ -35,19 +35,32 @@ def write_ios_cloudproof_plugin_header():
 @interface CloudproofPlugin : NSObject<FlutterPlugin>
 @end
 """
-    if not os.path.exists('resources/findex.h') or not os.path.exists('resources/cover_crypt.h'):
+    if not os.path.exists('resources/findex.h') or not os.path.exists(
+        'resources/cover_crypt.h'
+    ):
         raise Exception('missing header file (findex.h or cover_crypt.h)')
 
-    with open('ios/Classes/CloudproofPlugin.h', 'w') as cloudproof_plugin_header_file:
+    with open(
+        header_path, 'w', encoding='utf-8'
+    ) as cloudproof_plugin_header_file:
         cloudproof_plugin_header_file.write(cloudproof_plugin_header)
-        with open('resources/cover_crypt.h', 'r') as f:
-            file_content = f.read()  # Read whole file in file_content
+        with open(
+            'resources/cover_crypt.h', 'r', encoding='utf-8'
+        ) as cover_crypt_header:
+            file_content = (
+                cover_crypt_header.read()
+            )  # Read whole file in file_content
             cloudproof_plugin_header_file.write(file_content)
             cloudproof_plugin_header_file.write('\n')
-        with open('resources/findex.h', 'r') as f:
-            file_content = f.read()  # Read whole file in file_content
+        with open(
+            'resources/findex.h', 'r', encoding='utf-8'
+        ) as findex_header:
+            file_content = (
+                findex_header.read()
+            )  # Read whole file in file_content
             cloudproof_plugin_header_file.write(file_content)
             cloudproof_plugin_header_file.write('\n')
+    print('Generate CloudproofPlugin.h done!')
 
 
 def download_native_libraries(name: str, version: str) -> bool:
@@ -72,6 +85,7 @@ def download_native_libraries(name: str, version: str) -> bool:
                          ({request.getcode()})'
                     )
                 else:
+                    print(f'Getting {name} {version}')
                     if path.exists('tmp'):
                         shutil.rmtree('tmp')
                     if path.exists('all.zip'):
@@ -87,7 +101,9 @@ def download_native_libraries(name: str, version: str) -> bool:
                         shutil.rmtree('tmp')
 
                     system('flutter pub get')
-                    system(f'flutter pub run ffigen --config ffigen_{name}.yaml')
+                    system(
+                        f'flutter pub run ffigen --config ffigen_{name}.yaml'
+                    )
 
                     remove('all.zip')
         # pylint: disable=broad-except
@@ -98,10 +114,10 @@ def download_native_libraries(name: str, version: str) -> bool:
 
 
 if __name__ == '__main__':
-    ret = download_native_libraries('findex', 'v2.0.4')
+    ret = download_native_libraries('findex', 'v2.0.5')
     if ret is False and os.getenv('GITHUB_ACTIONS'):
         download_native_libraries('findex', 'last_build')
     ret = download_native_libraries('cover_crypt', 'v8.0.2')
     if ret is False and os.getenv('GITHUB_ACTIONS'):
         download_native_libraries('cover_crypt', 'last_build')
-    # write_ios_cloudproof_plugin_header()
+    # write_ios_cloudproof_plugin_header('ios/Classes/CloudproofPlugin.h')

@@ -344,3 +344,4 @@ This table shows the minimum versions correspondences between the various compon
 | 4.0.4       | 8.0.2          | 2.0.2  |
 | 4.1.0       | 8.0.2          | 2.0.3  |
 | 4.1.1       | 8.0.2          | 2.0.4  |
+| 4.2.0       | 8.0.2          | 2.0.5  |

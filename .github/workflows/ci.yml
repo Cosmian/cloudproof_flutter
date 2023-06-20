@@ -38,6 +38,9 @@ jobs:
       - run: flutter pub get
       - run: python scripts/get_native_libraries.py
 
+      - name: uname
+        run: uname -a
+
       - name: Check build Android
         if: contains(runner.os, 'Linux')
         run: |
@@ -45,9 +48,53 @@ jobs:
           flutter build apk
           cd ..
 
-      - name: Check build iOS
+      # - name: Run integration tests
+      #   if: contains(runner.os, 'Linux')
+      #   # more info on https://github.com/ReactiveCircus/android-emulator-runner
+      #   uses: reactivecircus/android-emulator-runner@v2
+      #   with:
+      #     api-level: 29
+      #     arch: x86_64
+      #     profile: Nexus 6
+      #     script: flutter test integration_test --verbose
+
+      - name: List all simulators
+        if: contains(runner.os, 'macOS')
+        run: xcrun xctrace list devices
+
+      - name: Start Simulator
+        if: contains(runner.os, 'macOS')
+        # the command "xcrun simctl boot" expects a device identifier
+        # the assignment of the UUID variable consists of retrieving the ID of the simulator
+        # by extracting it from the command "xcrun xctrace list devices"
+        run: |
+          UUID=$(xcrun xctrace list devices | grep -m 1 "^iPhone 14 Pro Simulator (16.2)" | awk '{gsub(/[()]/,""); print $NF}')
+          echo $UUID
+          xcrun simctl boot "${UUID:?No Simulator with this name found}"
+
+      - name: Display exported functions in universal lib
         if: contains(runner.os, 'macOS')
         run: |
+          nm -g ios/libcosmian_cover_crypt.a || true
+          nm -g ios/libcosmian_findex.a || true
+
+      - name: Run integration tests on iOS
+        if: contains(runner.os, 'macOS')
+        run: |
+          rm -f android/src/main/jniLibs/*/.git*
+          rm -f ios/.gitignore
+          rm -f resources/.gitignore
+          rm -f lib/src/cover_crypt/.gitignore
+          rm -f lib/src/findex/.gitignore
+
+          cd example
+          flutter test integration_test/
+          cd ..
+
+      - name: Build on iOS
+        if: contains(runner.os, 'macOS')
+        run: |
+          flutter doctor
           cd example
           flutter build ios --release --no-codesign
           cd ..
@@ -104,7 +151,7 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
 
       - name: Upload dependencies and source
-        if: contains(runner.os, 'Linux') && startsWith(github.ref, 'refs/tags/')
+        if: contains(runner.os, 'Linux')
         uses: actions/upload-artifact@v3
         with:
           name: cloudproof_flutter_${{ github.ref_name }}

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -119,6 +120,7 @@ void main() {
       expect(
           await RedisMultiEntryTables.count(RedisTables.chains_2), equals(1));
 
+      log("\n\nSEARCH in flutter");
       final searchResults = await RedisMultiEntryTables.search(
           masterKey.k, label, [Keyword.fromString("John")],
           entryTableNumber: 2);
