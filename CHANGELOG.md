@@ -19,52 +19,6 @@ All notable changes to this project will be documented in this file.
 
 - [iOS] Add integration tests
 
-## [4.1.1] - 2023-05-25
-
-### Bug Fixes
-
-- Publish package with generated bindings
-- Serialization failing silently when output buffer not large enough
-- Tests on published package -> Missing generated ffi bindings in published package
-- Update ios h_search signature (related to ios-force-libs-link)
-
-### Documentation
-
-- Add description of 4.1.1
-
-### Testing
-
-- Add multi entry tables test for Redis (async usage) + PR review
-
-### Ci
-
-- Filter on artifact files
-
-## [4.1.0] - 2023-05-16
-
-### Bug Fixes
-
-- Download libs scripts
-- Report non-reg fix async tests
-
-### Miscellaneous Tasks
-
-- Prepare next release
-
-### Ci
-
-- Automate packaging
-
-## [4.0.4] - 2023-04-25
-
-### Bug Fixes
-
-- Rethrow findex callbacks error
-
-### Ci
-
-- Add github ci
-
 ## [4.1.1] - 2023-05-23
 
 ### Bug Fixes
