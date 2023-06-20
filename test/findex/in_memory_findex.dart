@@ -41,7 +41,7 @@ const expectedUsersIdsForFrance = [
   96
 ];
 
-class InMemoryFindex {
+class FindexInMemory {
   static Map<Uint8List, Uint8List>? entryTable;
   static Map<Uint8List, Uint8List>? chainTable;
 
@@ -194,7 +194,7 @@ class InMemoryFindex {
     int uidsNumber,
   ) {
     return Findex.wrapSyncFetchCallback(
-      InMemoryFindex.fetchEntries,
+      FindexInMemory.fetchEntries,
       outputEntryTableLinesPointer,
       outputEntryTableLinesLength,
       uidsPointer,
@@ -209,7 +209,7 @@ class InMemoryFindex {
     int uidsNumber,
   ) {
     return Findex.wrapSyncFetchCallback(
-      InMemoryFindex.fetchChains,
+      FindexInMemory.fetchChains,
       outputChainTableLinesPointer,
       outputChainTableLinesLength,
       uidsPointer,
@@ -224,7 +224,7 @@ class InMemoryFindex {
     int entriesListLength,
   ) {
     return Findex.wrapSyncUpsertEntriesCallback(
-      InMemoryFindex.upsertEntries,
+      FindexInMemory.upsertEntries,
       outputRejectedEntriesListPointer,
       outputRejectedEntriesListLength,
       entriesListPointer,
@@ -237,7 +237,7 @@ class InMemoryFindex {
     int chainsListLength,
   ) {
     return Findex.wrapSyncInsertChainsCallback(
-      InMemoryFindex.insertChains,
+      FindexInMemory.insertChains,
       chainsListPointer,
       chainsListLength,
     );

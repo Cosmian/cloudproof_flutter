@@ -13,7 +13,8 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('end-to-end test', () {
-    testWidgets('tap on the floating action button, verify counter',
+    testWidgets(
+        'run app and check link over cover_crypt and findex static libs',
         (tester) async {
       app.main();
       final encrypted = base64Decode(

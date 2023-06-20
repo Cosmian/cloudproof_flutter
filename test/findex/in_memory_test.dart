@@ -41,16 +41,16 @@ const expectedUsersIdsForFrance = [
 ];
 
 Future<void> testFunction(FindexMasterKey masterKey, Uint8List label) async {
-  InMemoryFindex.init();
+  FindexInMemory.init();
 
-  expect(InMemoryFindex.entryTable?.length, equals(0));
-  expect(InMemoryFindex.chainTable?.length, equals(0));
+  expect(FindexInMemory.entryTable?.length, equals(0));
+  expect(FindexInMemory.chainTable?.length, equals(0));
 
-  await InMemoryFindex.indexAll(masterKey, label);
-  expect(InMemoryFindex.entryTable?.length, equals(583));
-  expect(InMemoryFindex.chainTable?.length, equals(618));
+  await FindexInMemory.indexAll(masterKey, label);
+  expect(FindexInMemory.entryTable?.length, equals(583));
+  expect(FindexInMemory.chainTable?.length, equals(618));
 
-  final searchResults = await InMemoryFindex.search(
+  final searchResults = await FindexInMemory.search(
       masterKey.k, label, [Keyword.fromString("France")]);
 
   expect(searchResults.length, 1);
