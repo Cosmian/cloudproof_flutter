@@ -40,12 +40,6 @@
 #endif
 
 /**
- * A pagination is performed in order to fetch the entire Entry Table. It is
- * fetched by batches of size [`NUMBER_OF_ENTRY_TABLE_LINE_IN_BATCH`].
- */
-#define NUMBER_OF_ENTRY_TABLE_LINE_IN_BATCH 100
-
-/**
  * The Key Length: 256 bit = 32 bytes for AES 256
  */
 #define KEY_LENGTH 32

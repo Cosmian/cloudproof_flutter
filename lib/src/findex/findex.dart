@@ -83,8 +83,8 @@ class Findex {
     // FFI INPUT parameters
     //
     // Master key
-    final Pointer<Int> masterKeyPointer =
-        masterKey.k.allocateInt8Pointer().cast<Int>();
+    final Pointer<Uint8> masterKeyPointer =
+        masterKey.k.allocateInt8Pointer().cast<Uint8>();
 
     // Label
     final labelPointer = label.allocateUint8Pointer();
@@ -104,7 +104,7 @@ class Findex {
       final errorCode = library.h_upsert(
         masterKeyPointer,
         masterKey.k.length,
-        labelPointer.cast<Int>(),
+        labelPointer.cast<Uint8>(),
         label.length,
         additionsPointer.cast<Char>(),
         deletionsPointer.cast<Char>(),
@@ -130,20 +130,20 @@ class Findex {
       FetchEntryTableCallback fetchEntries,
       FetchChainTableCallback fetchChains,
       {int outputSizeInBytes = defaultOutputSizeInBytes,
-      int entryTableNumber = 1}) async {
+      int entryTableNumber = 1,
+      bool verbose = false}) async {
     return searchWithProgress(
-      k,
-      label,
-      keywords,
-      fetchEntries,
-      fetchChains,
-      Pointer.fromFunction(
-        defaultProgressCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-      outputSizeInBytes: outputSizeInBytes,
-      entryTableNumber: entryTableNumber,
-    );
+        k,
+        label,
+        keywords,
+        fetchEntries,
+        fetchChains,
+        Pointer.fromFunction(
+          defaultProgressCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        outputSizeInBytes: outputSizeInBytes,
+        entryTableNumber: entryTableNumber);
   }
 
   static Future<Map<Keyword, List<Location>>> searchWithProgress(
@@ -178,7 +178,7 @@ class Findex {
         outputLengthPointer.cast<Int>(),
         kPointer.cast<Char>(),
         k.length,
-        labelPointer.cast<Int>(),
+        labelPointer.cast<Uint8>(),
         label.length,
         keywordsPointer.cast<Char>(),
         entryTableNumber,
@@ -186,6 +186,7 @@ class Findex {
         fetchEntries,
         fetchChains,
       );
+
       final end = DateTime.now();
 
       if (errorCode != 0 && outputLengthPointer.value > outputSizeInBytes) {

@@ -10,6 +10,7 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
 
 - [Licensing](#licensing)
 - [Cryptographic primitives](#cryptographic-primitives)
+  * [Cosmian libraries functionalities overview](#cosmian-libraries-functionalities-overview)
 - [Getting started](#getting-started)
   * [CoverCrypt](#covercrypt)
   * [Findex](#findex)
@@ -46,6 +47,24 @@ The library is based on:
 - [Findex](https://github.com/Cosmian/findex) which is a cryptographic protocol designed to securely make search queries on
   an untrusted cloud server. Thanks to its encrypted indexes, large databases can
   securely be outsourced without compromising usability.
+
+- [FPE](https://github.com/Cosmian/cloudproof_rust/tree/main/crates/fpe) provides `Format Preserving Encryption` techniques for use in a zero-trust environment. These techniques are based on FPE-FF1 which is described in [NIST:800-38G](https://nvlpubs.nist.gov/nistpubs/specialpublications/nist.sp.800-38g.pdf).
+
+- [Anonymization](https://github.com/Cosmian/cloudproof_rust/tree/main/crates/anonymization): `Data anonymization` is the process of transforming data in such a way that it can no longer be used to identify individuals without the use of additional information. This is often done to protect the privacy of individuals whose data is being collected or processed.
+
+- [KMS](https://github.com/Cosmian/kms): The repository offers an implementation of the **Key Management Services** (server + client) handling the life cycle of all the symmetric and asymmetric keys.
+
+### Cosmian libraries functionalities overview
+
+The following table presents the current support of the Cosmian cryptographic primitives:
+
+|                      | CoverCrypt | Findex | KMS client | FPE | Anonymization |
+|----------------------|------------|--------|------------|-----|---------------|
+| `cloudproof_rust`    | ✅          | ✅      | ❌          | ✅   | ✅             |
+| `cloudproof_java`    | ✅          | ✅      | ✅          | ❌   | ❌             |
+| `cloudproof_python`  | ✅          | ✅      | ✅          | ✅   | ✅             |
+| `cloudproof_js`      | ✅          | ✅      | ✅          | ✅   | ✅             |
+| `cloudproof_flutter` | ✅          | ✅      | ❌          | ❌   | ❌             |
 
 ## Getting started
 
@@ -331,12 +350,12 @@ To make the flutter build succeed, 3 prerequisites are needed:
 ### Supported versions
 
 | Linux        | Flutter | Dart   | Android SDK       | NDK | Glibc | LLVM     | Smartphone Virtual Device |
-| ------------ | ------- | ------ | ----------------- | --- | ----- | -------- | ------------------------- |
+|--------------|---------|--------|-------------------|-----|-------|----------|---------------------------|
 | Ubuntu 22.04 | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.35  | 14.0.0-1 | Pixel 5 API 30            |
 | Centos 7     | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.17  | -        | -                         |
 
 | Mac      | Flutter | Dart   | OS       | LLVM   | Xcode | Smartphone Virtual Device |
-| -------- | ------- | ------ | -------- | ------ | ----- | ------------------------- |
+|----------|---------|--------|----------|--------|-------|---------------------------|
 | Catalina | 3.3.4   | 2.18.2 | Catalina | 12.0.0 |       | iPhone 12 PRO MAX         |
 
 ## Cloudproof versions Correspondence
@@ -348,7 +367,7 @@ Check the main pages of the respective projects to build the native libraries ap
 This table shows the minimum versions correspondences between the various components
 
 | Flutter Lib       | CoverCrypt lib    | Findex |
-| ----------------- | ----------------- | ------ |
+|-------------------|-------------------|--------|
 | 0.1.0             | 6.0.5             | 0.7.2  |
 | 1.0.0             | 6.0.5             | 0.7.2  |
 | 2.0.0             | 7.1.0             | 0.10.0 |
@@ -361,7 +380,8 @@ This table shows the minimum versions correspondences between the various compon
 From the version 6.0.0, `cloudproof_flutter` depends on [cloudproof_rust](https://github.com/Cosmian/cloudproof_rust) which wraps the interfaces of `CoverCrypt` and `Findex`.
 
 | Flutter Lib | Cloudproof Rust lib |
-| ----------- | ------------------- |
+|-------------|---------------------|
 | 6.0.0       | 1.0.0               |
 | 6.0.2       | 1.0.1               |
 | 7.0.0       | 2.0.1               |
+| 7.1.0       | 2.1.0               |
