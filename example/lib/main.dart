@@ -66,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     )..addListener(() {
         setState(() {});
       });
-    controller.repeat(reverse: true);
+    // controller.repeat(reverse: true);
     coverCryptHelper = CoverCryptHelper();
     indexDataForDemo();
     super.initState();

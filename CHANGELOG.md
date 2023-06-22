@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [X.X.X] - 2023-XX-XX
+
+### Features
+
+- Add findex in memory test
+
+### Testing
+
+- [iOS] Add integration tests
+
 ## [7.0.0] - 2023-06-01
 
 ### Features
