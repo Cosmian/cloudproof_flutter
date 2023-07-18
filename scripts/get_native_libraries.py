@@ -87,7 +87,7 @@ def download_native_libraries(version: str) -> bool:
 
                     write_ios_cloudproof_plugin_header()
 
-                    # remove("all.zip")
+                    remove('all.zip')
         # pylint: disable=broad-except
         except Exception as exception:
             print(f'Cannot get cloudproof_rust {version} ({exception})')
