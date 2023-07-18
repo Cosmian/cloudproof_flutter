@@ -13,7 +13,7 @@ def files_to_be_copied():
     """
     jni_libs = 'android/src/main/jniLibs'
     return {
-        'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/cloudproof.h': 'resources/cloudproof.h',
+        'tmp/x86_64-unknown-linux-gnu/cloudproof.h': 'resources/cloudproof.h',
         'tmp/x86_64-apple-darwin/x86_64-apple-darwin/release/libcloudproof.dylib': 'resources/libcloudproof.dylib',
         'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/libcloudproof.so': 'resources/libcloudproof.so',
         'tmp/x86_64-pc-windows-gnu/x86_64-pc-windows-gnu/release/cloudproof.dll': 'resources/cloudproof.dll',
