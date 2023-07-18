@@ -87,7 +87,7 @@ def download_native_libraries(version: str) -> bool:
 
                     write_ios_cloudproof_plugin_header()
 
-                    remove('all.zip')
+                    # remove("all.zip")
         # pylint: disable=broad-except
         except Exception as exception:
             print(f'Cannot get cloudproof_rust {version} ({exception})')
@@ -96,7 +96,7 @@ def download_native_libraries(version: str) -> bool:
 
 
 if __name__ == '__main__':
-    RET = download_native_libraries('v2.1.0')
+    RET = download_native_libraries('v2.1.1')
     if RET is False and os.getenv('GITHUB_ACTIONS'):
-        download_native_libraries('last_build/add_logs_on_findex_callbacks')
+        download_native_libraries('last_build/fix/binaries_archive')
     # write_ios_cloudproof_plugin_header()

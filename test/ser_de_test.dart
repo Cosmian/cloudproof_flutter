@@ -36,8 +36,8 @@ void main() {
 
     // final output = Uint8List(43);
     const expectedOutputLength = 38;
-    final outputPointer = calloc<UnsignedChar>(43);
-    final outputLength = calloc<UnsignedInt>(1);
+    final outputPointer = calloc<Uint8>(43);
+    final outputLength = calloc<Uint32>(1);
     outputLength.value = 43;
 
     UidAndValue.serialize(outputPointer, outputLength, indexTableList);

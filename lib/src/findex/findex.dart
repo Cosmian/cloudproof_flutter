@@ -61,7 +61,7 @@ class Findex {
   // Callbacks implementations
   //
   static int defaultProgressCallback(
-    Pointer<UnsignedChar> uidsListPointer,
+    Pointer<Uint8> uidsListPointer,
     int uidsListLength,
   ) {
     return 1;
@@ -106,8 +106,8 @@ class Findex {
         masterKey.k.length,
         labelPointer.cast<Uint8>(),
         label.length,
-        additionsPointer.cast<Char>(),
-        deletionsPointer.cast<Char>(),
+        additionsPointer.cast<Int8>(),
+        deletionsPointer.cast<Int8>(),
         entryTableNumber,
         fetchEntries,
         upsertEntries,
@@ -174,13 +174,13 @@ class Findex {
     try {
       final start = DateTime.now();
       final errorCode = library.h_search(
-        output.cast<Char>(),
-        outputLengthPointer.cast<Int>(),
-        kPointer.cast<Char>(),
+        output.cast<Int8>(),
+        outputLengthPointer,
+        kPointer.cast<Int8>(),
         k.length,
-        labelPointer.cast<Uint8>(),
+        labelPointer,
         label.length,
-        keywordsPointer.cast<Char>(),
+        keywordsPointer.cast<Int8>(),
         entryTableNumber,
         progressCallback,
         fetchEntries,
@@ -311,13 +311,12 @@ class Findex {
   }
 
   static String getLastError() {
-    final errorPointer = calloc<Uint8>(findexErrorMessageMaxLength);
-    final errorLength = calloc<Int>(1);
+    final errorPointer = calloc<Int8>(findexErrorMessageMaxLength);
+    final errorLength = calloc<Int32>(1);
     errorLength.value = findexErrorMessageMaxLength;
 
     try {
-      final result =
-          library.get_last_error(errorPointer.cast<Char>(), errorLength);
+      final result = library.get_last_error(errorPointer, errorLength);
 
       if (result != 0) {
         return "Fail to fetch last error…";
@@ -335,9 +334,9 @@ class Findex {
 
   static int wrapAsyncFetchCallback(
     Future<List<UidAndValue>> Function(Uids uids) callback,
-    Pointer<UnsignedChar> outputEntryTableLinesPointer,
-    Pointer<UnsignedInt> outputEntryTableLinesLength,
-    Pointer<UnsignedChar> uidsPointer,
+    Pointer<Uint8> outputEntryTableLinesPointer,
+    Pointer<Uint32> outputEntryTableLinesLength,
+    Pointer<Uint8> uidsPointer,
     int uidsNumber,
   ) {
     final donePointer = calloc<Bool>(1);
@@ -355,8 +354,8 @@ class Findex {
             final entryTableLines = await callback(uids);
 
             final ret = UidAndValue.serialize(
-                Pointer<UnsignedChar>.fromAddress(message.item1),
-                Pointer<UnsignedInt>.fromAddress(message.item2),
+                Pointer<Uint8>.fromAddress(message.item1),
+                Pointer<Uint32>.fromAddress(message.item2),
                 entryTableLines);
             if (ret != 0) {
               throw Exception(
@@ -389,9 +388,9 @@ class Findex {
 
   static int wrapAsyncUpsertEntriesCallback(
     Future<List<UidAndValue>> Function(List<UpsertData>) callback,
-    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
-    Pointer<UnsignedInt> outputRejectedEntriesListLength,
-    Pointer<UnsignedChar> entriesListPointer,
+    Pointer<Uint8> outputRejectedEntriesListPointer,
+    Pointer<Uint32> outputRejectedEntriesListLength,
+    Pointer<Uint8> entriesListPointer,
     int entriesListLength,
   ) {
     final donePointer = calloc<Bool>(1);
@@ -410,8 +409,8 @@ class Findex {
             final rejectedEntries = await callback(uidsAndValues);
 
             final ret = UidAndValue.serialize(
-                Pointer<UnsignedChar>.fromAddress(message.item4),
-                Pointer<UnsignedInt>.fromAddress(message.item3),
+                Pointer<Uint8>.fromAddress(message.item4),
+                Pointer<Uint32>.fromAddress(message.item3),
                 rejectedEntries);
             if (ret != 0) {
               throw Exception(
@@ -444,7 +443,7 @@ class Findex {
 
   static int wrapAsyncInsertChainsCallback(
     Future<void> Function(List<UidAndValue>) callback,
-    Pointer<UnsignedChar> chainsListPointer,
+    Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
     final donePointer = calloc<Bool>(1);
@@ -486,9 +485,9 @@ class Findex {
 
   static int wrapSyncFetchCallback(
     List<UidAndValue> Function(Uids uids) callback,
-    Pointer<UnsignedChar> outputEntryTableLinesPointer,
-    Pointer<UnsignedInt> outputEntryTableLinesLength,
-    Pointer<UnsignedChar> uidsPointer,
+    Pointer<Uint8> outputEntryTableLinesPointer,
+    Pointer<Uint32> outputEntryTableLinesLength,
+    Pointer<Uint8> uidsPointer,
     int uidsNumber,
   ) {
     try {
@@ -496,10 +495,8 @@ class Findex {
           Uids.deserialize(uidsPointer.cast<Uint8>().asTypedList(uidsNumber));
       final entryTableLines = callback(uids);
 
-      return UidAndValue.serialize(
-          outputEntryTableLinesPointer.cast<UnsignedChar>(),
-          outputEntryTableLinesLength,
-          entryTableLines);
+      return UidAndValue.serialize(outputEntryTableLinesPointer.cast<Uint8>(),
+          outputEntryTableLinesLength, entryTableLines);
     } catch (e, stacktrace) {
       Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during fetch callback ($callback) $e $stacktrace");
@@ -509,9 +506,9 @@ class Findex {
 
   static int wrapSyncUpsertEntriesCallback(
     List<UidAndValue> Function(List<UpsertData>) callback,
-    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
-    Pointer<UnsignedInt> outputRejectedEntriesListLength,
-    Pointer<UnsignedChar> entriesListPointer,
+    Pointer<Uint8> outputRejectedEntriesListPointer,
+    Pointer<Uint32> outputRejectedEntriesListLength,
+    Pointer<Uint8> entriesListPointer,
     int entriesListLength,
   ) {
     try {
@@ -531,7 +528,7 @@ class Findex {
 
   static int wrapSyncInsertChainsCallback(
     void Function(List<UidAndValue>) callback,
-    Pointer<UnsignedChar> chainsListPointer,
+    Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
     try {
@@ -549,7 +546,7 @@ class Findex {
 
   static int wrapProgressCallback(
     int Function(Map<Keyword, List<IndexedValue>>) callback,
-    Pointer<UnsignedChar> progressResultsPointer,
+    Pointer<Uint8> progressResultsPointer,
     int uidsListLength,
   ) {
     try {

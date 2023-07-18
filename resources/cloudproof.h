@@ -5,10 +5,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#if defined(DEFINE_WASM)
-#define MAX_CLEAR_TEXT_SIZE (1 << 30)
-#endif
-
 #if defined(DEFINE_CLOUD)
 /**
  * See `Token@index_id`
@@ -77,8 +73,8 @@
  * where `prefix` is `l` (only `Location`s are returned) and the `byte_vector`
  * is the byte representation of the location.
  */
-typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr,
-                                unsigned int intermediate_results_len);
+typedef int32_t (*ProgressCallback)(const uint8_t *intermediate_results_ptr,
+                                    uint32_t intermediate_results_len);
 
 /**
  * See [`FindexCallbacks::fetch_entry_table()`](cosmian_findex::FindexCallbacks::fetch_entry_table).
@@ -93,10 +89,10 @@ typedef int (*ProgressCallback)(const unsigned char *intermediate_results_ptr,
  *
  * `LEB128(n_entries) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr,
-                                       unsigned int *entries_len,
-                                       const unsigned char *uids_ptr,
-                                       unsigned int uids_len);
+typedef int32_t (*FetchEntryTableCallback)(uint8_t *entries_ptr,
+                                           uint32_t *entries_len,
+                                           const uint8_t *uids_ptr,
+                                           uint32_t uids_len);
 
 /**
  * See [`FindexCallbacks::fetch_chain_table()`](cosmian_findex::FindexCallbacks::fetch_chain_table).
@@ -111,10 +107,10 @@ typedef int (*FetchEntryTableCallback)(unsigned char *entries_ptr,
  *
  * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr,
-                                       unsigned int *chains_len,
-                                       const unsigned char *uids_ptr,
-                                       unsigned int uids_len);
+typedef int32_t (*FetchChainTableCallback)(uint8_t *chains_ptr,
+                                           uint32_t *chains_len,
+                                           const uint8_t *uids_ptr,
+                                           uint32_t uids_len);
 
 /**
  * See [`FindexCallbacks::upsert_entry_table()`](cosmian_findex::FindexCallbacks::upsert_entry_table).
@@ -132,10 +128,10 @@ typedef int (*FetchChainTableCallback)(unsigned char *chains_ptr,
  *
  * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*UpsertEntryTableCallback)(unsigned char *outputs_ptr,
-                                        unsigned int *outputs_len,
-                                        const unsigned char *entries_ptr,
-                                        unsigned int entries_len);
+typedef int32_t (*UpsertEntryTableCallback)(uint8_t *outputs_ptr,
+                                            uint32_t *outputs_len,
+                                            const uint8_t *entries_ptr,
+                                            uint32_t entries_len);
 
 /**
  * See [`FindexCallbacks::insert_chain_table()`](cosmian_findex::FindexCallbacks::insert_chain_table).
@@ -146,7 +142,7 @@ typedef int (*UpsertEntryTableCallback)(unsigned char *outputs_ptr,
  *
  * `LEB128(n_lines) || UID_1 || LEB128(value_1.len() || value_1 || ...`
  */
-typedef int (*InsertChainTableCallback)(const unsigned char *chains_ptr, unsigned int chains_len);
+typedef int32_t (*InsertChainTableCallback)(const uint8_t *chains_ptr, uint32_t chains_len);
 
 /**
  * See [`FindexCallbacks::fetch_all_entry_table_uids()`](cosmian_findex::FindexCallbacks::fetch_all_entry_table_uids).
@@ -155,7 +151,7 @@ typedef int (*InsertChainTableCallback)(const unsigned char *chains_ptr, unsigne
  *
  * `UID_1 || UID_2 || ... || UID_n`
  */
-typedef int (*FetchAllEntryTableUidsCallback)(unsigned char *uids_ptr, unsigned int *uids_len);
+typedef int32_t (*FetchAllEntryTableUidsCallback)(uint8_t *uids_ptr, uint32_t *uids_len);
 
 /**
  * See [`FindexCallbacks::delete_chain()`](cosmian_findex::FindexCallbacks::delete_chain).
@@ -166,7 +162,7 @@ typedef int (*FetchAllEntryTableUidsCallback)(unsigned char *uids_ptr, unsigned 
  *
  * `LEB128(n_uids) || UID_1 || UID_2 || ...`
  */
-typedef int (*DeleteChainCallback)(const unsigned char *chains_ptr, unsigned int chains_len);
+typedef int32_t (*DeleteChainCallback)(const uint8_t *chains_ptr, uint32_t chains_len);
 
 /**
  * See
@@ -181,10 +177,10 @@ typedef int (*DeleteChainCallback)(const unsigned char *chains_ptr, unsigned int
  *
  * Outputs should follow the same serialization.
  */
-typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr,
-                                            unsigned int *removed_locations_len,
-                                            const unsigned char *locations_ptr,
-                                            unsigned int locations_len);
+typedef int32_t (*ListRemovedLocationsCallback)(uint8_t *removed_locations_ptr,
+                                                uint32_t *removed_locations_len,
+                                                const uint8_t *locations_ptr,
+                                                uint32_t locations_len);
 
 /**
  * See [`FindexCallbacks::update_lines()`](cosmian_findex::FindexCallbacks::update_lines).
@@ -199,45 +195,67 @@ typedef int (*ListRemovedLocationsCallback)(unsigned char *removed_locations_ptr
  *
  * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int (*UpdateLinesCallback)(const unsigned char *chain_table_uids_to_remove_ptr,
-                                   unsigned int chain_table_uids_to_remove_len,
-                                   const unsigned char *new_encrypted_entry_table_items_ptr,
-                                   unsigned int new_encrypted_entry_table_items_len,
-                                   const unsigned char *new_encrypted_chain_table_items_ptr,
-                                   unsigned int new_encrypted_chain_table_items_len);
+typedef int32_t (*UpdateLinesCallback)(const uint8_t *chain_table_uids_to_remove_ptr,
+                                       uint32_t chain_table_uids_to_remove_len,
+                                       const uint8_t *new_encrypted_entry_table_items_ptr,
+                                       uint32_t new_encrypted_entry_table_items_len,
+                                       const uint8_t *new_encrypted_chain_table_items_ptr,
+                                       uint32_t new_encrypted_chain_table_items_len);
+
+int32_t h_aes256gcm_encrypt(uint8_t *output_ptr,
+                            int32_t *output_len,
+                            const int8_t *plaintext_ptr,
+                            int32_t plaintext_len,
+                            const int8_t *key_ptr,
+                            int32_t key_len,
+                            const int8_t *nonce_ptr,
+                            int32_t nonce_len,
+                            const int8_t *authenticated_data_ptr,
+                            int32_t authenticated_data_len);
+
+int32_t h_aes256gcm_decrypt(uint8_t *output_ptr,
+                            int32_t *output_len,
+                            const int8_t *ciphertext_ptr,
+                            int32_t ciphertext_len,
+                            const int8_t *key_ptr,
+                            int32_t key_len,
+                            const int8_t *nonce_ptr,
+                            int32_t nonce_len,
+                            const int8_t *authenticated_data_ptr,
+                            int32_t authenticated_data_len);
 
 /**
  * # Safety
  */
-int h_policy(char *policy_ptr, int *policy_len, int max_attribute_creations);
+int32_t h_policy(int8_t *policy_ptr, int32_t *policy_len, int32_t max_attribute_creations);
 
 /**
  * # Safety
  */
-int h_add_policy_axis(char *updated_policy_ptr,
-                      int *updated_policy_len,
-                      const char *current_policy_ptr,
-                      int current_policy_len,
-                      const char *axis_ptr);
+int32_t h_add_policy_axis(int8_t *updated_policy_ptr,
+                          int32_t *updated_policy_len,
+                          const int8_t *current_policy_ptr,
+                          int32_t current_policy_len,
+                          const int8_t *axis_ptr);
 
 /**
  * # Safety
  */
-int h_rotate_attribute(char *updated_policy_ptr,
-                       int *updated_policy_len,
-                       const char *current_policy_ptr,
-                       int current_policy_len,
-                       const char *attribute);
+int32_t h_rotate_attribute(int8_t *updated_policy_ptr,
+                           int32_t *updated_policy_len,
+                           const int8_t *current_policy_ptr,
+                           int32_t current_policy_len,
+                           const int8_t *attribute);
 
 /**
  * # Safety
  */
-int h_validate_boolean_expression(const char *boolean_expression_ptr);
+int32_t h_validate_boolean_expression(const int8_t *boolean_expression_ptr);
 
 /**
  * # Safety
  */
-int h_validate_attribute(const char *attribute_ptr);
+int32_t h_validate_attribute(const int8_t *attribute_ptr);
 
 /**
  * Generates the master authority keys for supplied Policy.
@@ -251,12 +269,12 @@ int h_validate_attribute(const char *attribute_ptr);
  *
  * # Safety
  */
-int h_generate_master_keys(char *msk_ptr,
-                           int *msk_len,
-                           char *mpk_ptr,
-                           int *mpk_len,
-                           const char *policy_ptr,
-                           int policy_len);
+int32_t h_generate_master_keys(int8_t *msk_ptr,
+                               int32_t *msk_len,
+                               int8_t *mpk_ptr,
+                               int32_t *mpk_len,
+                               const int8_t *policy_ptr,
+                               int32_t policy_len);
 
 /**
  * Generates a user secret key for the given access policy
@@ -270,13 +288,13 @@ int h_generate_master_keys(char *msk_ptr,
  * - `policy_len`          : length of the policy (in bytes)
  * # Safety
  */
-int h_generate_user_secret_key(char *usk_ptr,
-                               int *usk_len,
-                               const char *msk_ptr,
-                               int msk_len,
-                               const char *user_policy_ptr,
-                               const char *policy_ptr,
-                               int policy_len);
+int32_t h_generate_user_secret_key(int8_t *usk_ptr,
+                                   int32_t *usk_len,
+                                   const int8_t *msk_ptr,
+                                   int32_t msk_len,
+                                   const int8_t *user_policy_ptr,
+                                   const int8_t *policy_ptr,
+                                   int32_t policy_len);
 
 /**
  * Updates the master keys according to the given policy.
@@ -294,16 +312,16 @@ int h_generate_user_secret_key(char *usk_ptr,
  * - `policy_ptr`      : Policy to use to update the master keys (JSON)
  * # Safety
  */
-int h_update_master_keys(char *updated_msk_ptr,
-                         int *updated_msk_len,
-                         char *updated_mpk_ptr,
-                         int *updated_mpk_len,
-                         const char *current_msk_ptr,
-                         int current_msk_len,
-                         const char *current_mpk_ptr,
-                         int current_mpk_len,
-                         const char *policy_ptr,
-                         int policy_len);
+int32_t h_update_master_keys(int8_t *updated_msk_ptr,
+                             int32_t *updated_msk_len,
+                             int8_t *updated_mpk_ptr,
+                             int32_t *updated_mpk_len,
+                             const int8_t *current_msk_ptr,
+                             int32_t current_msk_len,
+                             const int8_t *current_mpk_ptr,
+                             int32_t current_mpk_len,
+                             const int8_t *policy_ptr,
+                             int32_t policy_len);
 
 /**
  * Refreshes the user secret key according to the given master key and access
@@ -327,16 +345,16 @@ int h_update_master_keys(char *updated_msk_ptr,
  *   to the rotated partitions
  * # Safety
  */
-int h_refresh_user_secret_key(char *updated_usk_ptr,
-                              int *updated_usk_len,
-                              const char *msk_ptr,
-                              int msk_len,
-                              const char *current_usk_ptr,
-                              int current_usk_len,
-                              const char *user_policy_ptr,
-                              const char *policy_ptr,
-                              int policy_len,
-                              int preserve_old_partitions_access);
+int32_t h_refresh_user_secret_key(int8_t *updated_usk_ptr,
+                                  int32_t *updated_usk_len,
+                                  const int8_t *msk_ptr,
+                                  int32_t msk_len,
+                                  const int8_t *current_usk_ptr,
+                                  int32_t current_usk_len,
+                                  const int8_t *user_policy_ptr,
+                                  const int8_t *policy_ptr,
+                                  int32_t policy_len,
+                                  int32_t preserve_old_partitions_access);
 
 /**
  * Creates a cache containing the Public Key and Policy. This cache can be
@@ -348,11 +366,11 @@ int h_refresh_user_secret_key(char *updated_usk_ptr,
  *
  * # Safety
  */
-int32_t h_create_encryption_cache(int *cache_handle,
-                                  const char *policy_ptr,
-                                  int policy_len,
-                                  const char *mpk_ptr,
-                                  int mpk_len);
+int32_t h_create_encryption_cache(int32_t *cache_handle,
+                                  const int8_t *policy_ptr,
+                                  int32_t policy_len,
+                                  const int8_t *mpk_ptr,
+                                  int32_t mpk_len);
 
 /**
  * Reclaims the memory of the cache.
@@ -361,23 +379,23 @@ int32_t h_create_encryption_cache(int *cache_handle,
  *
  * # Safety
  */
-int h_destroy_encryption_cache(int cache_handle);
+int32_t h_destroy_encryption_cache(int32_t cache_handle);
 
 /**
  * Encrypts a header using an encryption cache.
  *
  * # Safety
  */
-int h_encrypt_header_using_cache(char *symmetric_key_ptr,
-                                 int *symmetric_key_len,
-                                 char *header_bytes_ptr,
-                                 int *header_bytes_len,
-                                 int cache_handle,
-                                 const char *encryption_policy_ptr,
-                                 const char *header_metadata_ptr,
-                                 int header_metadata_len,
-                                 const char *authentication_data_ptr,
-                                 int authentication_data_len);
+int32_t h_encrypt_header_using_cache(int8_t *symmetric_key_ptr,
+                                     int32_t *symmetric_key_len,
+                                     int8_t *header_bytes_ptr,
+                                     int32_t *header_bytes_len,
+                                     int32_t cache_handle,
+                                     const int8_t *encryption_policy_ptr,
+                                     const int8_t *header_metadata_ptr,
+                                     int32_t header_metadata_len,
+                                     const int8_t *authentication_data_ptr,
+                                     int32_t authentication_data_len);
 
 /**
  * Encrypts a header without using an encryption cache.
@@ -386,19 +404,19 @@ int h_encrypt_header_using_cache(char *symmetric_key_ptr,
  * The symmetric key and header bytes are returned in the first OUT parameters
  * # Safety
  */
-int h_encrypt_header(char *symmetric_key_ptr,
-                     int *symmetric_key_len,
-                     char *header_bytes_ptr,
-                     int *header_bytes_len,
-                     const char *policy_ptr,
-                     int policy_len,
-                     const char *mpk_ptr,
-                     int mpk_len,
-                     const char *encryption_policy_ptr,
-                     const char *header_metadata_ptr,
-                     int header_metadata_len,
-                     const char *authentication_data_ptr,
-                     int authentication_data_len);
+int32_t h_encrypt_header(int8_t *symmetric_key_ptr,
+                         int32_t *symmetric_key_len,
+                         int8_t *header_bytes_ptr,
+                         int32_t *header_bytes_len,
+                         const int8_t *policy_ptr,
+                         int32_t policy_len,
+                         const int8_t *mpk_ptr,
+                         int32_t mpk_len,
+                         const int8_t *encryption_policy_ptr,
+                         const int8_t *header_metadata_ptr,
+                         int32_t header_metadata_len,
+                         const int8_t *authentication_data_ptr,
+                         int32_t authentication_data_len);
 
 /**
  * Creates a cache containing the user secret key. This cache can be reused
@@ -411,14 +429,14 @@ int h_encrypt_header(char *symmetric_key_ptr,
  *
  * # Safety
  */
-int32_t h_create_decryption_cache(int *cache_handle, const char *usk_ptr, int usk_len);
+int32_t h_create_decryption_cache(int32_t *cache_handle, const int8_t *usk_ptr, int32_t usk_len);
 
 /**
  * Reclaims decryption cache memory.
  *
  * # Safety
  */
-int h_destroy_decryption_cache(int cache_handle);
+int32_t h_destroy_decryption_cache(int32_t cache_handle);
 
 /**
  * Decrypts an encrypted header using a cache. Returns the symmetric key and
@@ -428,15 +446,15 @@ int h_destroy_decryption_cache(int cache_handle);
  *
  * # Safety
  */
-int h_decrypt_header_using_cache(char *symmetric_key_ptr,
-                                 int *symmetric_key_len,
-                                 char *header_metadata_ptr,
-                                 int *header_metadata_len,
-                                 const char *encrypted_header_ptr,
-                                 int encrypted_header_len,
-                                 const char *authentication_data_ptr,
-                                 int authentication_data_len,
-                                 int cache_handle);
+int32_t h_decrypt_header_using_cache(int8_t *symmetric_key_ptr,
+                                     int32_t *symmetric_key_len,
+                                     int8_t *header_metadata_ptr,
+                                     int32_t *header_metadata_len,
+                                     const int8_t *encrypted_header_ptr,
+                                     int32_t encrypted_header_len,
+                                     const int8_t *authentication_data_ptr,
+                                     int32_t authentication_data_len,
+                                     int32_t cache_handle);
 
 /**
  * Decrypts an encrypted header, returning the symmetric key and header
@@ -446,67 +464,67 @@ int h_decrypt_header_using_cache(char *symmetric_key_ptr,
  *
  * # Safety
  */
-int h_decrypt_header(char *symmetric_key_ptr,
-                     int *symmetric_key_len,
-                     char *header_metadata_ptr,
-                     int *header_metadata_len,
-                     const char *encrypted_header_ptr,
-                     int encrypted_header_len,
-                     const char *authentication_data_ptr,
-                     int authentication_data_len,
-                     const char *usk_ptr,
-                     int usk_len);
+int32_t h_decrypt_header(int8_t *symmetric_key_ptr,
+                         int32_t *symmetric_key_len,
+                         int8_t *header_metadata_ptr,
+                         int32_t *header_metadata_len,
+                         const int8_t *encrypted_header_ptr,
+                         int32_t encrypted_header_len,
+                         const int8_t *authentication_data_ptr,
+                         int32_t authentication_data_len,
+                         const int8_t *usk_ptr,
+                         int32_t usk_len);
 
 /**
  *
  * # Safety
  */
-int h_symmetric_encryption_overhead(void);
+int32_t h_symmetric_encryption_overhead(void);
 
 /**
  *
  * # Safety
  */
-int h_dem_encrypt(char *ciphertext_ptr,
-                  int *ciphertext_len,
-                  const char *symmetric_key_ptr,
-                  int symmetric_key_len,
-                  const char *authentication_data_ptr,
-                  int authentication_data_len,
-                  const char *plaintext_ptr,
-                  int plaintext_len);
+int32_t h_dem_encrypt(int8_t *ciphertext_ptr,
+                      int32_t *ciphertext_len,
+                      const int8_t *symmetric_key_ptr,
+                      int32_t symmetric_key_len,
+                      const int8_t *authentication_data_ptr,
+                      int32_t authentication_data_len,
+                      const int8_t *plaintext_ptr,
+                      int32_t plaintext_len);
 
 /**
  *
  * # Safety
  */
-int h_dem_decrypt(char *plaintext_ptr,
-                  int *plaintext_len,
-                  const char *symmetric_key_ptr,
-                  int symmetric_key_len,
-                  const char *authentication_data_ptr,
-                  int authentication_data_len,
-                  const char *ciphertext_ptr,
-                  int ciphertext_len);
+int32_t h_dem_decrypt(int8_t *plaintext_ptr,
+                      int32_t *plaintext_len,
+                      const int8_t *symmetric_key_ptr,
+                      int32_t symmetric_key_len,
+                      const int8_t *authentication_data_ptr,
+                      int32_t authentication_data_len,
+                      const int8_t *ciphertext_ptr,
+                      int32_t ciphertext_len);
 
 /**
  * Hybrid encrypt some content
  *
  * # Safety
  */
-int h_hybrid_encrypt(char *ciphertext_ptr,
-                     int *ciphertext_len,
-                     const char *policy_ptr,
-                     int policy_len,
-                     const char *mpk_ptr,
-                     int mpk_len,
-                     const char *encryption_policy_ptr,
-                     const char *plaintext_ptr,
-                     int plaintext_len,
-                     const char *header_metadata_ptr,
-                     int header_metadata_len,
-                     const char *authentication_data_ptr,
-                     int authentication_data_len);
+int32_t h_hybrid_encrypt(int8_t *ciphertext_ptr,
+                         int32_t *ciphertext_len,
+                         const int8_t *policy_ptr,
+                         int32_t policy_len,
+                         const int8_t *mpk_ptr,
+                         int32_t mpk_len,
+                         const int8_t *encryption_policy_ptr,
+                         const int8_t *plaintext_ptr,
+                         int32_t plaintext_len,
+                         const int8_t *header_metadata_ptr,
+                         int32_t header_metadata_len,
+                         const int8_t *authentication_data_ptr,
+                         int32_t authentication_data_len);
 
 /**
  * Hybrid decrypt some content.
@@ -515,16 +533,16 @@ int h_hybrid_encrypt(char *ciphertext_ptr,
  *
  * # Safety
  */
-int h_hybrid_decrypt(char *plaintext_ptr,
-                     int *plaintext_len,
-                     char *header_metadata_ptr,
-                     int *header_metadata_len,
-                     const char *ciphertext_ptr,
-                     int ciphertext_len,
-                     const char *authentication_data_ptr,
-                     int authentication_data_len,
-                     const char *usk_ptr,
-                     int usk_len);
+int32_t h_hybrid_decrypt(int8_t *plaintext_ptr,
+                         int32_t *plaintext_len,
+                         int8_t *header_metadata_ptr,
+                         int32_t *header_metadata_len,
+                         const int8_t *ciphertext_ptr,
+                         int32_t ciphertext_len,
+                         const int8_t *authentication_data_ptr,
+                         int32_t authentication_data_len,
+                         const int8_t *usk_ptr,
+                         int32_t usk_len);
 
 /**
  * Externally sets the last error recorded on the Rust side.
@@ -540,7 +558,7 @@ int h_hybrid_decrypt(char *plaintext_ptr,
  *
  * - `error_message_ptr`   : pointer to the error message to set
  */
-int32_t h_set_error(const char *error_message_ptr);
+int32_t h_set_error(const int8_t *error_message_ptr);
 
 /**
  * Externally gets the most recent error recorded on the Rust side, clearing
@@ -557,7 +575,32 @@ int32_t h_set_error(const char *error_message_ptr);
  * - `error_ptr`: pointer to the buffer to which to write the error
  * - `error_len`: size of the allocated memory
  */
-int h_get_error(char *error_ptr, int *error_len);
+int32_t h_get_error(int8_t *error_ptr, int32_t *error_len);
+
+int32_t h_ecies_x25519_generate_key_pair(uint8_t *public_key_ptr,
+                                         int32_t *public_key_len,
+                                         uint8_t *private_key_ptr,
+                                         int32_t *private_key_len);
+
+int32_t h_ecies_salsa_seal_box_encrypt(uint8_t *output_ptr,
+                                       int32_t *output_len,
+                                       const int8_t *plaintext_ptr,
+                                       int32_t plaintext_len,
+                                       const int8_t *public_key_ptr,
+                                       int32_t public_key_len,
+                                       const int8_t *authentication_data_ptr,
+                                       int32_t authentication_data_len);
+
+uint32_t h_ecies_salsa_seal_box_get_encryption_overhead(void);
+
+int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
+                                       int32_t *output_len,
+                                       const int8_t *ciphertext_ptr,
+                                       int32_t ciphertext_len,
+                                       const int8_t *private_key_ptr,
+                                       int32_t private_key_len,
+                                       const int8_t *authentication_data_ptr,
+                                       int32_t authentication_data_len);
 
 /**
  * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
@@ -569,7 +612,7 @@ int h_get_error(char *error_ptr, int *error_len);
  *
  * It's unsafe.
  */
-int get_last_error(char *error_ptr, int *error_len);
+int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
 
 /**
  * Recursively searches Findex graphs for values indexed by the given keywords.
@@ -599,17 +642,17 @@ int get_last_error(char *error_ptr, int *error_len);
  *
  * Cannot be safe since using FFI.
  */
-int h_search(char *search_results_ptr,
-             int *search_results_len,
-             const char *master_key_ptr,
-             int master_key_len,
-             const uint8_t *label_ptr,
-             int label_len,
-             const char *keywords_ptr,
-             unsigned int entry_table_number,
-             ProgressCallback progress_callback,
-             FetchEntryTableCallback fetch_entry_callback,
-             FetchChainTableCallback fetch_chain_callback);
+int32_t h_search(int8_t *search_results_ptr,
+                 int32_t *search_results_len,
+                 const int8_t *master_key_ptr,
+                 int32_t master_key_len,
+                 const uint8_t *label_ptr,
+                 int32_t label_len,
+                 const int8_t *keywords_ptr,
+                 uint32_t entry_table_number,
+                 ProgressCallback progress_callback,
+                 FetchEntryTableCallback fetch_entry_callback,
+                 FetchChainTableCallback fetch_chain_callback);
 
 /**
  * Index the given values for the given keywords. After upserting, any
@@ -649,16 +692,16 @@ int h_search(char *search_results_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int h_upsert(const uint8_t *master_key_ptr,
-             int master_key_len,
-             const uint8_t *label_ptr,
-             int label_len,
-             const char *additions_ptr,
-             const char *deletions_ptr,
-             unsigned int entry_table_number,
-             FetchEntryTableCallback fetch_entry,
-             UpsertEntryTableCallback upsert_entry,
-             InsertChainTableCallback insert_chain);
+int32_t h_upsert(const uint8_t *master_key_ptr,
+                 int32_t master_key_len,
+                 const uint8_t *label_ptr,
+                 int32_t label_len,
+                 const int8_t *additions_ptr,
+                 const int8_t *deletions_ptr,
+                 uint32_t entry_table_number,
+                 FetchEntryTableCallback fetch_entry,
+                 UpsertEntryTableCallback upsert_entry,
+                 InsertChainTableCallback insert_chain);
 
 /**
  * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
@@ -691,15 +734,15 @@ int h_upsert(const uint8_t *master_key_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int h_live_compact(const uint8_t *master_key_ptr,
-                   int master_key_len,
-                   int num_reindexing_before_full_set,
-                   unsigned int entry_table_number,
-                   FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
-                   FetchEntryTableCallback fetch_entry,
-                   FetchChainTableCallback fetch_chain,
-                   DeleteChainCallback delete_chain,
-                   ListRemovedLocationsCallback filter_removed_locations);
+int32_t h_live_compact(const uint8_t *master_key_ptr,
+                       int32_t master_key_len,
+                       int32_t num_reindexing_before_full_set,
+                       uint32_t entry_table_number,
+                       FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
+                       FetchEntryTableCallback fetch_entry,
+                       FetchChainTableCallback fetch_chain,
+                       DeleteChainCallback delete_chain,
+                       ListRemovedLocationsCallback filter_removed_locations);
 
 /**
  * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
@@ -732,19 +775,19 @@ int h_live_compact(const uint8_t *master_key_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int h_compact(const uint8_t *old_master_key_ptr,
-              int old_master_key_len,
-              const uint8_t *new_master_key_ptr,
-              int new_master_key_len,
-              const uint8_t *new_label_ptr,
-              int new_label_len,
-              int num_reindexing_before_full_set,
-              unsigned int entry_table_number,
-              FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
-              FetchEntryTableCallback fetch_entry,
-              FetchChainTableCallback fetch_chain,
-              UpdateLinesCallback update_lines,
-              ListRemovedLocationsCallback list_removed_locations);
+int32_t h_compact(const uint8_t *old_master_key_ptr,
+                  int32_t old_master_key_len,
+                  const uint8_t *new_master_key_ptr,
+                  int32_t new_master_key_len,
+                  const uint8_t *new_label_ptr,
+                  int32_t new_label_len,
+                  int32_t num_reindexing_before_full_set,
+                  uint32_t entry_table_number,
+                  FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
+                  FetchEntryTableCallback fetch_entry,
+                  FetchChainTableCallback fetch_chain,
+                  UpdateLinesCallback update_lines,
+                  ListRemovedLocationsCallback list_removed_locations);
 
 #if defined(DEFINE_CLOUD)
 /**
@@ -772,13 +815,13 @@ int h_compact(const uint8_t *old_master_key_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int h_search_cloud(char *search_results_ptr,
-                   int *search_results_len,
-                   const char *token_ptr,
-                   const uint8_t *label_ptr,
-                   int label_len,
-                   const char *keywords_ptr,
-                   const char *base_url_ptr);
+int32_t h_search_cloud(int8_t *search_results_ptr,
+                       int32_t *search_results_len,
+                       const int8_t *token_ptr,
+                       const uint8_t *label_ptr,
+                       int32_t label_len,
+                       const int8_t *keywords_ptr,
+                       const int8_t *base_url_ptr);
 #endif
 
 #if defined(DEFINE_CLOUD)
@@ -817,12 +860,12 @@ int h_search_cloud(char *search_results_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int h_upsert_cloud(const char *token_ptr,
-                   const uint8_t *label_ptr,
-                   int label_len,
-                   const char *additions_ptr,
-                   const char *deletions_ptr,
-                   const char *base_url_ptr);
+int32_t h_upsert_cloud(const int8_t *token_ptr,
+                       const uint8_t *label_ptr,
+                       int32_t label_len,
+                       const int8_t *additions_ptr,
+                       const int8_t *deletions_ptr,
+                       const int8_t *base_url_ptr);
 #endif
 
 #if defined(DEFINE_CLOUD)
@@ -838,17 +881,17 @@ int h_upsert_cloud(const char *token_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int h_generate_new_token(uint8_t *token_ptr,
-                         int *token_len,
-                         const char *index_id_ptr,
-                         const uint8_t *fetch_entries_seed_ptr,
-                         int fetch_entries_seed_len,
-                         const uint8_t *fetch_chains_seed_ptr,
-                         int fetch_chains_seed_len,
-                         const uint8_t *upsert_entries_seed_ptr,
-                         int upsert_entries_seed_len,
-                         const uint8_t *insert_chains_seed_ptr,
-                         int insert_chains_seed_len);
+int32_t h_generate_new_token(uint8_t *token_ptr,
+                             int32_t *token_len,
+                             const int8_t *index_id_ptr,
+                             const uint8_t *fetch_entries_seed_ptr,
+                             int32_t fetch_entries_seed_len,
+                             const uint8_t *fetch_chains_seed_ptr,
+                             int32_t fetch_chains_seed_len,
+                             const uint8_t *upsert_entries_seed_ptr,
+                             int32_t upsert_entries_seed_len,
+                             const uint8_t *insert_chains_seed_ptr,
+                             int32_t insert_chains_seed_len);
 #endif
 
 /**
@@ -862,11 +905,11 @@ int h_generate_new_token(uint8_t *token_ptr,
  *
  * # Arguments
  *
- * * `output_ptr` - a pointer to the buffer where the encrypted string will be
- *   written.
- * * `output_len` - a pointer to the variable that stores the maximum size of
- *   the `output_ptr` buffer. After the function call, the variable will be
- *   updated with the actual size of the encrypted string.
+ * * `plaintext_ptr` - a pointer to the buffer where the encrypted string will
+ *   be written.
+ * * `plaintext_len` - a pointer to the variable that stores the maximum size
+ *   of the `plaintext_ptr` buffer. After the function call, the variable will
+ *   be updated with the actual size of the encrypted string.
  * * `alphabet_id_ptr` - a pointer to a C string that represents the ID of the
  *   alphabet used for encryption.
  * * `input_ptr` - a pointer to a C string that represents the plaintext to be
@@ -885,15 +928,15 @@ int h_generate_new_token(uint8_t *token_ptr,
  * An integer that indicates whether the encryption was successful. A value of
  * `0` means success, while a non-zero value represents an error code.
  */
-int h_fpe_encrypt_alphabet(unsigned char *output_ptr,
-                           int *output_len,
-                           const char *alphabet_id_ptr,
-                           const char *input_ptr,
-                           const char *key_ptr,
-                           int key_len,
-                           const char *tweak_ptr,
-                           int tweak_len,
-                           const char *additional_characters_ptr);
+int32_t h_fpe_encrypt_alphabet(uint8_t *plaintext_ptr,
+                               int32_t *plaintext_len,
+                               const int8_t *alphabet_id_ptr,
+                               const int8_t *input_ptr,
+                               const int8_t *key_ptr,
+                               int32_t key_len,
+                               const int8_t *tweak_ptr,
+                               int32_t tweak_len,
+                               const int8_t *additional_characters_ptr);
 
 /**
  * Decrypts a string using Format Preserving Encryption (FPE) algorithm with
@@ -906,11 +949,11 @@ int h_fpe_encrypt_alphabet(unsigned char *output_ptr,
  *
  * # Arguments
  *
- * * `output_ptr` - a pointer to the buffer where the encrypted string will be
- *   written.
- * * `output_len` - a pointer to the variable that stores the maximum size of
- *   the `output_ptr` buffer. After the function call, the variable will be
- *   updated with the actual size of the encrypted string.
+ * * `ciphertext_ptr` - a pointer to the buffer where the encrypted string will
+ *   be written.
+ * * `ciphertext_len` - a pointer to the variable that stores the maximum size
+ *   of the `ciphertext_ptr` buffer. After the function call, the variable will
+ *   be updated with the actual size of the encrypted string.
  * * `alphabet_id_ptr` - a pointer to a C string that represents the ID of the
  *   alphabet used for encryption.
  * * `input_ptr` - a pointer to a C string that represents the plaintext to be
@@ -929,51 +972,51 @@ int h_fpe_encrypt_alphabet(unsigned char *output_ptr,
  * An integer that indicates whether the encryption was successful. A value of
  * `0` means success, while a non-zero value represents an error code.
  */
-int h_fpe_decrypt_alphabet(unsigned char *output_ptr,
-                           int *output_len,
-                           const char *alphabet_id_ptr,
-                           const char *input_ptr,
-                           const char *key_ptr,
-                           int key_len,
-                           const char *tweak_ptr,
-                           int tweak_len,
-                           const char *additional_characters_ptr);
+int32_t h_fpe_decrypt_alphabet(uint8_t *ciphertext_ptr,
+                               int32_t *ciphertext_len,
+                               const int8_t *alphabet_id_ptr,
+                               const int8_t *input_ptr,
+                               const int8_t *key_ptr,
+                               int32_t key_len,
+                               const int8_t *tweak_ptr,
+                               int32_t tweak_len,
+                               const int8_t *additional_characters_ptr);
 
 /**
- * Encrypts the input `c_double` using the FPE algorithm with the given key and
+ * Encrypts the input `f64` using the FPE algorithm with the given key and
  * tweak, and stores the result in the `output` pointer. The length of the key
  * and tweak must be specified in `key_len` and `tweak_len` respectively. The
- * function returns an `c_int` indicating success (0) or failure (-1).
+ * function returns an `i32` indicating success (0) or failure (-1).
  *
  * # Safety
  *
  * This function is marked as `unsafe` because it accepts pointers to raw
  * memory.
  */
-int h_fpe_encrypt_float(double *output,
-                        double input,
-                        const char *key_ptr,
-                        int key_len,
-                        const char *tweak_ptr,
-                        int tweak_len);
+int32_t h_fpe_encrypt_float(double *output,
+                            double input,
+                            const int8_t *key_ptr,
+                            int32_t key_len,
+                            const int8_t *tweak_ptr,
+                            int32_t tweak_len);
 
 /**
- * Decrypts the input `c_double` using the FPE algorithm with the given key and
+ * Decrypts the input `f64` using the FPE algorithm with the given key and
  * tweak, and stores the result in the `output` pointer. The length of the key
  * and tweak must be specified in `key_len` and `tweak_len` respectively. The
- * function returns an `c_int` indicating success (0) or failure (-1).
+ * function returns an `i32` indicating success (0) or failure (-1).
  *
  * # Safety
  *
  * This function is marked as `unsafe` because it accepts pointers to raw
  * memory.
  */
-int h_fpe_decrypt_float(double *output,
-                        double input,
-                        const char *key_ptr,
-                        int key_len,
-                        const char *tweak_ptr,
-                        int tweak_len);
+int32_t h_fpe_decrypt_float(double *output,
+                            double input,
+                            const int8_t *key_ptr,
+                            int32_t key_len,
+                            const int8_t *tweak_ptr,
+                            int32_t tweak_len);
 
 /**
  * Encrypts an integer using the format-preserving encryption (FPE) algorithm.
@@ -1001,14 +1044,14 @@ int h_fpe_decrypt_float(double *output,
  * return value of 0 indicates success, while any other value indicates an
  * error.
  */
-int h_fpe_encrypt_integer(unsigned long long *output,
-                          unsigned long long input,
-                          unsigned int radix,
-                          unsigned int digits,
-                          const char *key_ptr,
-                          int key_len,
-                          const char *tweak_ptr,
-                          int tweak_len);
+int32_t h_fpe_encrypt_integer(uint64_t *output,
+                              uint64_t input,
+                              uint32_t radix,
+                              uint32_t digits,
+                              const int8_t *key_ptr,
+                              int32_t key_len,
+                              const int8_t *tweak_ptr,
+                              int32_t tweak_len);
 
 /**
  * Decrypts an integer using the format-preserving encryption (FPE) algorithm.
@@ -1036,14 +1079,14 @@ int h_fpe_encrypt_integer(unsigned long long *output,
  * return value of 0 indicates success, while any other value indicates an
  * error.
  */
-int h_fpe_decrypt_integer(unsigned long long *output,
-                          unsigned long long input,
-                          unsigned int radix,
-                          unsigned int digits,
-                          const char *key_ptr,
-                          int key_len,
-                          const char *tweak_ptr,
-                          int tweak_len);
+int32_t h_fpe_decrypt_integer(uint64_t *output,
+                              uint64_t input,
+                              uint32_t radix,
+                              uint32_t digits,
+                              const int8_t *key_ptr,
+                              int32_t key_len,
+                              const int8_t *tweak_ptr,
+                              int32_t tweak_len);
 
 /**
  * Encrypts an input big integer using the FPE algorithm and returns the
@@ -1074,15 +1117,15 @@ int h_fpe_decrypt_integer(unsigned long long *output,
  *
  * Returns 0 on success, -1 on error.
  */
-int h_fpe_encrypt_big_integer(unsigned char *output_ptr,
-                              int *output_len,
-                              const char *input_ptr,
-                              unsigned int radix,
-                              unsigned int digits,
-                              const char *key_ptr,
-                              int key_len,
-                              const char *tweak_ptr,
-                              int tweak_len);
+int32_t h_fpe_encrypt_big_integer(uint8_t *output_ptr,
+                                  int32_t *output_len,
+                                  const int8_t *input_ptr,
+                                  uint32_t radix,
+                                  uint32_t digits,
+                                  const int8_t *key_ptr,
+                                  int32_t key_len,
+                                  const int8_t *tweak_ptr,
+                                  int32_t tweak_len);
 
 /**
  * Decrypts an input big integer using the FPE algorithm and returns the
@@ -1113,12 +1156,12 @@ int h_fpe_encrypt_big_integer(unsigned char *output_ptr,
  *
  * Returns 0 on success, -1 on error.
  */
-int h_fpe_decrypt_big_integer(unsigned char *output_ptr,
-                              int *output_len,
-                              const char *input_ptr,
-                              unsigned int radix,
-                              unsigned int digits,
-                              const char *key_ptr,
-                              int key_len,
-                              const char *tweak_ptr,
-                              int tweak_len);
+int32_t h_fpe_decrypt_big_integer(uint8_t *output_ptr,
+                                  int32_t *output_len,
+                                  const int8_t *input_ptr,
+                                  uint32_t radix,
+                                  uint32_t digits,
+                                  const int8_t *key_ptr,
+                                  int32_t key_len,
+                                  const int8_t *tweak_ptr,
+                                  int32_t tweak_len);

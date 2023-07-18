@@ -304,9 +304,9 @@ class RedisMultiEntryTables {
   }
 
   static int fetchEntriesCallback(
-    Pointer<UnsignedChar> outputEntryTableLinesPointer,
-    Pointer<UnsignedInt> outputEntryTableLinesLength,
-    Pointer<UnsignedChar> uidsPointer,
+    Pointer<Uint8> outputEntryTableLinesPointer,
+    Pointer<Uint32> outputEntryTableLinesLength,
+    Pointer<Uint8> uidsPointer,
     int uidsNumber,
   ) {
     return Findex.wrapAsyncFetchCallback(
@@ -319,9 +319,9 @@ class RedisMultiEntryTables {
   }
 
   static int fetchEntriesCallbackDb1(
-    Pointer<UnsignedChar> outputEntryTableLinesPointer,
-    Pointer<UnsignedInt> outputEntryTableLinesLength,
-    Pointer<UnsignedChar> uidsPointer,
+    Pointer<Uint8> outputEntryTableLinesPointer,
+    Pointer<Uint32> outputEntryTableLinesLength,
+    Pointer<Uint8> uidsPointer,
     int uidsNumber,
   ) {
     return Findex.wrapAsyncFetchCallback(
@@ -334,9 +334,9 @@ class RedisMultiEntryTables {
   }
 
   static int fetchEntriesCallbackDb2(
-    Pointer<UnsignedChar> outputEntryTableLinesPointer,
-    Pointer<UnsignedInt> outputEntryTableLinesLength,
-    Pointer<UnsignedChar> uidsPointer,
+    Pointer<Uint8> outputEntryTableLinesPointer,
+    Pointer<Uint32> outputEntryTableLinesLength,
+    Pointer<Uint8> uidsPointer,
     int uidsNumber,
   ) {
     return Findex.wrapAsyncFetchCallback(
@@ -349,9 +349,9 @@ class RedisMultiEntryTables {
   }
 
   static int fetchChainsCallback(
-    Pointer<UnsignedChar> outputChainTableLinesPointer,
-    Pointer<UnsignedInt> outputChainTableLinesLength,
-    Pointer<UnsignedChar> uidsPointer,
+    Pointer<Uint8> outputChainTableLinesPointer,
+    Pointer<Uint32> outputChainTableLinesLength,
+    Pointer<Uint8> uidsPointer,
     int uidsNumber,
   ) {
     return Findex.wrapAsyncFetchCallback(
@@ -364,9 +364,9 @@ class RedisMultiEntryTables {
   }
 
   static int upsertEntriesCallbackDb1(
-    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
-    Pointer<UnsignedInt> outputRejectedEntriesListLength,
-    Pointer<UnsignedChar> entriesListPointer,
+    Pointer<Uint8> outputRejectedEntriesListPointer,
+    Pointer<Uint32> outputRejectedEntriesListLength,
+    Pointer<Uint8> entriesListPointer,
     int entriesListLength,
   ) {
     return Findex.wrapAsyncUpsertEntriesCallback(
@@ -379,9 +379,9 @@ class RedisMultiEntryTables {
   }
 
   static int upsertEntriesCallbackDb2(
-    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
-    Pointer<UnsignedInt> outputRejectedEntriesListLength,
-    Pointer<UnsignedChar> entriesListPointer,
+    Pointer<Uint8> outputRejectedEntriesListPointer,
+    Pointer<Uint32> outputRejectedEntriesListLength,
+    Pointer<Uint8> entriesListPointer,
     int entriesListLength,
   ) {
     return Findex.wrapAsyncUpsertEntriesCallback(
@@ -394,7 +394,7 @@ class RedisMultiEntryTables {
   }
 
   static int upsertChainsCallbackDb1(
-    Pointer<UnsignedChar> chainsListPointer,
+    Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
     return Findex.wrapAsyncInsertChainsCallback(
@@ -405,7 +405,7 @@ class RedisMultiEntryTables {
   }
 
   static int upsertChainsCallbackDb2(
-    Pointer<UnsignedChar> chainsListPointer,
+    Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
     return Findex.wrapAsyncInsertChainsCallback(

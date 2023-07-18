@@ -189,9 +189,9 @@ class FindexInMemory {
   }
 
   static int fetchEntriesCallback(
-    Pointer<UnsignedChar> outputEntryTableLinesPointer,
-    Pointer<UnsignedInt> outputEntryTableLinesLength,
-    Pointer<UnsignedChar> uidsPointer,
+    Pointer<Uint8> outputEntryTableLinesPointer,
+    Pointer<Uint32> outputEntryTableLinesLength,
+    Pointer<Uint8> uidsPointer,
     int uidsNumber,
   ) {
     return Findex.wrapSyncFetchCallback(
@@ -204,9 +204,9 @@ class FindexInMemory {
   }
 
   static int fetchChainsCallback(
-    Pointer<UnsignedChar> outputChainTableLinesPointer,
-    Pointer<UnsignedInt> outputChainTableLinesLength,
-    Pointer<UnsignedChar> uidsPointer,
+    Pointer<Uint8> outputChainTableLinesPointer,
+    Pointer<Uint32> outputChainTableLinesLength,
+    Pointer<Uint8> uidsPointer,
     int uidsNumber,
   ) {
     return Findex.wrapSyncFetchCallback(
@@ -219,9 +219,9 @@ class FindexInMemory {
   }
 
   static int upsertEntriesCallback(
-    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
-    Pointer<UnsignedInt> outputRejectedEntriesListLength,
-    Pointer<UnsignedChar> entriesListPointer,
+    Pointer<Uint8> outputRejectedEntriesListPointer,
+    Pointer<Uint32> outputRejectedEntriesListLength,
+    Pointer<Uint8> entriesListPointer,
     int entriesListLength,
   ) {
     return Findex.wrapSyncUpsertEntriesCallback(
@@ -234,7 +234,7 @@ class FindexInMemory {
   }
 
   static int insertChainsCallback(
-    Pointer<UnsignedChar> chainsListPointer,
+    Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
     return Findex.wrapSyncInsertChainsCallback(
