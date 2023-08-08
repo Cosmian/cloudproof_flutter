@@ -50,26 +50,24 @@ class CoverCrypt {
   static PlaintextHeader decryptWithAuthenticationData(Uint8List userSecretKey,
       Uint8List ciphertext, Uint8List authenticationData) {
     // FFI INPUT parameters
-    final authenticationDataPointer =
-        authenticationData.allocateInt8Pointer().cast<Char>();
-    final userSecretKeyPointer =
-        userSecretKey.allocateInt8Pointer().cast<Char>();
-    final ciphertextPointer = ciphertext.allocateInt8Pointer().cast<Char>();
+    final authenticationDataPointer = authenticationData.allocateInt8Pointer();
+    final userSecretKeyPointer = userSecretKey.allocateInt8Pointer();
+    final ciphertextPointer = ciphertext.allocateInt8Pointer();
 
     // FFI OUTPUT parameters
-    final plaintextPointer = calloc<Uint8>(ciphertext.length);
-    final plaintextLength = calloc<Int>(1);
+    final plaintextPointer = calloc<Int8>(ciphertext.length);
+    final plaintextLength = calloc<Int32>(1);
     plaintextLength.value = ciphertext.length;
     final headerMetadataPointer =
-        calloc<Uint8>(defaultHeaderMetadataSizeInBytes);
-    final headerMetadataLength = calloc<Int>(1);
+        calloc<Int8>(defaultHeaderMetadataSizeInBytes);
+    final headerMetadataLength = calloc<Int32>(1);
     headerMetadataLength.value = defaultHeaderMetadataSizeInBytes;
 
     try {
       final result = library.h_hybrid_decrypt(
-          plaintextPointer.cast<Char>(),
+          plaintextPointer,
           plaintextLength,
-          headerMetadataPointer.cast<Char>(),
+          headerMetadataPointer,
           headerMetadataLength,
           ciphertextPointer,
           ciphertext.length,
@@ -113,24 +111,22 @@ class CoverCrypt {
       Uint8List headerMetaData,
       Uint8List authenticationData) {
     // FFI INPUT parameters
-    final policyPointer = policy.toBytes().allocateInt8Pointer().cast<Char>();
+    final policyPointer = policy.toBytes().allocateInt8Pointer();
     final encryptionPolicyPointer =
-        encryptionPolicy.toNativeUtf8().cast<Char>();
-    final publicKeyPointer = publicKey.allocateInt8Pointer().cast<Char>();
-    final plaintextPointer = plaintext.allocateInt8Pointer().cast<Char>();
-    final headerMetaDataPointer =
-        headerMetaData.allocateInt8Pointer().cast<Char>();
-    final authenticationDataPointer =
-        authenticationData.allocateInt8Pointer().cast<Char>();
+        encryptionPolicy.toNativeUtf8().cast<Int8>();
+    final publicKeyPointer = publicKey.allocateInt8Pointer();
+    final plaintextPointer = plaintext.allocateInt8Pointer();
+    final headerMetaDataPointer = headerMetaData.allocateInt8Pointer();
+    final authenticationDataPointer = authenticationData.allocateInt8Pointer();
 
     // FFI OUTPUT parameters
-    final ciphertextPointer = calloc<Uint8>(8192 + plaintext.length);
-    final ciphertextLength = calloc<Int>(1);
+    final ciphertextPointer = calloc<Int8>(8192 + plaintext.length);
+    final ciphertextLength = calloc<Int32>(1);
     ciphertextLength.value = 8192 + plaintext.length;
 
     try {
       final result = library.h_hybrid_encrypt(
-          ciphertextPointer.cast<Char>(),
+          ciphertextPointer.cast<Int8>(),
           ciphertextLength,
           policyPointer,
           policy.toBytes().length,
@@ -168,13 +164,12 @@ class CoverCrypt {
   }
 
   static String getLastError() {
-    final errorPointer = calloc<Uint8>(coverCryptErrorMessageMaxLength);
-    final errorLength = calloc<Int>(1);
+    final errorPointer = calloc<Int8>(coverCryptErrorMessageMaxLength);
+    final errorLength = calloc<Int32>(1);
     errorLength.value = coverCryptErrorMessageMaxLength;
 
     try {
-      final result =
-          library.h_get_error(errorPointer.cast<Char>(), errorLength);
+      final result = library.h_get_error(errorPointer, errorLength);
 
       if (result != 0) {
         return "Fail to fetch last error…";
@@ -190,22 +185,22 @@ class CoverCrypt {
 
   static CoverCryptMasterKeys generateMasterKeys(Policy policy) {
     // FFI INPUT parameters
-    final policyPointer = policy.toBytes().allocateInt8Pointer().cast<Char>();
+    final policyPointer = policy.toBytes().allocateInt8Pointer();
 
     // FFI OUTPUT parameters
     const arbitraryLargeSize = 8192;
-    final masterSecretKeyPointer = calloc<Uint8>(arbitraryLargeSize);
-    final masterSecretKeyLength = calloc<Int>(1);
+    final masterSecretKeyPointer = calloc<Int8>(arbitraryLargeSize);
+    final masterSecretKeyLength = calloc<Int32>(1);
     masterSecretKeyLength.value = arbitraryLargeSize;
-    final masterPublicKeyPointer = calloc<Uint8>(arbitraryLargeSize);
-    final masterPublicKeyLength = calloc<Int>(1);
+    final masterPublicKeyPointer = calloc<Int8>(arbitraryLargeSize);
+    final masterPublicKeyLength = calloc<Int32>(1);
     masterPublicKeyLength.value = arbitraryLargeSize;
 
     try {
       final result = library.h_generate_master_keys(
-          masterSecretKeyPointer.cast<Char>(),
+          masterSecretKeyPointer,
           masterSecretKeyLength,
-          masterPublicKeyPointer.cast<Char>(),
+          masterPublicKeyPointer,
           masterPublicKeyLength,
           policyPointer,
           policy.toBytes().length);
@@ -232,20 +227,19 @@ class CoverCrypt {
   static Uint8List generateUserSecretKey(
       String booleanAccessPolicy, Policy policy, Uint8List masterSecretKey) {
     // FFI INPUT parameters
-    final accessPolicyPointer = booleanAccessPolicy.toNativeUtf8().cast<Char>();
-    final policyPointer = policy.toBytes().allocateInt8Pointer().cast<Char>();
+    final accessPolicyPointer = booleanAccessPolicy.toNativeUtf8().cast<Int8>();
+    final policyPointer = policy.toBytes().allocateInt8Pointer();
 
-    final masterSecretKeyPointer =
-        masterSecretKey.allocateInt8Pointer().cast<Char>();
+    final masterSecretKeyPointer = masterSecretKey.allocateInt8Pointer();
 
     // FFI OUTPUT parameters
-    final userPrivateKeyPointer = calloc<Uint8>(8192);
-    final userPrivateKeyLength = calloc<Int>(1);
+    final userPrivateKeyPointer = calloc<Int8>(8192);
+    final userPrivateKeyLength = calloc<Int32>(1);
     userPrivateKeyLength.value = 8192;
 
     try {
       final result = library.h_generate_user_secret_key(
-          userPrivateKeyPointer.cast<Char>(),
+          userPrivateKeyPointer,
           userPrivateKeyLength,
           masterSecretKeyPointer,
           masterSecretKey.length,
@@ -271,13 +265,13 @@ class CoverCrypt {
   static Uint8List generatePolicy(int maxAttributesCreation) {
     // FFI OUTPUT parameters
     const arbitraryLargeSize = 8192;
-    final policyPointer = calloc<Uint8>(arbitraryLargeSize);
-    final policyLength = calloc<Int>(1);
+    final policyPointer = calloc<Int8>(arbitraryLargeSize);
+    final policyLength = calloc<Int32>(1);
     policyLength.value = arbitraryLargeSize;
 
     try {
-      final result = library.h_policy(
-          policyPointer.cast<Char>(), policyLength, maxAttributesCreation);
+      final result =
+          library.h_policy(policyPointer, policyLength, maxAttributesCreation);
       if (result != 0) {
         throw Exception("Call to `h_policy` fail. ${getLastError()}");
       }
@@ -291,23 +285,23 @@ class CoverCrypt {
 
   static Uint8List addPolicyAxis(Policy currentPolicy, PolicyAxis axis) {
     // FFI INPUT parameters
-    final currentPolicyPointer =
-        currentPolicy.toBytes().allocateInt8Pointer().cast<Char>();
-    final axisPointer = axis.toString().toNativeUtf8().cast<Char>();
+    final currentPolicyPointer = currentPolicy.toBytes().allocateInt8Pointer();
+    final axisPointer = axis.toString().toNativeUtf8();
 
     // FFI OUTPUT parameters
     const arbitraryLargeSize = 8192;
-    final outputPolicyPointer = calloc<Uint8>(arbitraryLargeSize);
-    final outputPolicyLength = calloc<Int>(1);
+    final outputPolicyPointer = calloc<Int8>(arbitraryLargeSize);
+    final outputPolicyLength = calloc<Int32>(1);
     outputPolicyLength.value = arbitraryLargeSize;
 
     try {
       final result = library.h_add_policy_axis(
-          outputPolicyPointer.cast<Char>(),
-          outputPolicyLength,
-          currentPolicyPointer,
-          currentPolicy.toBytes().length,
-          axisPointer);
+        outputPolicyPointer.cast<Int8>(),
+        outputPolicyLength,
+        currentPolicyPointer,
+        currentPolicy.toBytes().length,
+        axisPointer.cast<Int8>(),
+      );
       if (result != 0) {
         throw Exception("Call to `h_add_policy_axis` fail. ${getLastError()}");
       }

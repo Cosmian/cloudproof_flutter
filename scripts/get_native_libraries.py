@@ -13,7 +13,7 @@ def files_to_be_copied():
     """
     jni_libs = 'android/src/main/jniLibs'
     return {
-        'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/cloudproof.h': 'resources/cloudproof.h',
+        'tmp/x86_64-unknown-linux-gnu/cloudproof.h': 'resources/cloudproof.h',
         'tmp/x86_64-apple-darwin/x86_64-apple-darwin/release/libcloudproof.dylib': 'resources/libcloudproof.dylib',
         'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/libcloudproof.so': 'resources/libcloudproof.so',
         'tmp/x86_64-pc-windows-gnu/x86_64-pc-windows-gnu/release/cloudproof.dll': 'resources/cloudproof.dll',
@@ -96,7 +96,7 @@ def download_native_libraries(version: str) -> bool:
 
 
 if __name__ == '__main__':
-    RET = download_native_libraries('v2.1.0')
+    RET = download_native_libraries('v2.1.1')
     if RET is False and os.getenv('GITHUB_ACTIONS'):
-        download_native_libraries('last_build/add_logs_on_findex_callbacks')
+        download_native_libraries('last_build/fix/binaries_archive')
     # write_ios_cloudproof_plugin_header()

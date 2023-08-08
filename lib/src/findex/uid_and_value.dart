@@ -76,8 +76,8 @@ class UidAndValue {
     }
   }
 
-  static int serialize(Pointer<UnsignedChar> outputPointer,
-      Pointer<UnsignedInt> outputLength, List<UidAndValue> values) {
+  static int serialize(Pointer<Uint8> outputPointer,
+      Pointer<Uint32> outputLength, List<UidAndValue> values) {
     if (outputLength.value == 0) {
       throw Exception("Unable to serialize: output length value is 0");
     }
