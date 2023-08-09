@@ -46,7 +46,9 @@ Future<void> testFunction(FindexMasterKey masterKey, Uint8List label) async {
   expect(FindexInMemory.entryTable?.length, equals(0));
   expect(FindexInMemory.chainTable?.length, equals(0));
 
-  await FindexInMemory.indexAll(masterKey, label);
+  final upsertResults = await FindexInMemory.indexAll(masterKey, label);
+  expect(upsertResults.length, 583);
+
   expect(FindexInMemory.entryTable?.length, equals(583));
   expect(FindexInMemory.chainTable?.length, equals(618));
 

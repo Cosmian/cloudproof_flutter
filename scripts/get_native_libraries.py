@@ -96,7 +96,7 @@ def download_native_libraries(version: str) -> bool:
 
 
 if __name__ == '__main__':
-    RET = download_native_libraries('v2.1.1')
+    RET = download_native_libraries('v2.2.0')
     if RET is False and os.getenv('GITHUB_ACTIONS'):
-        download_native_libraries('last_build/fix/binaries_archive')
+        download_native_libraries('last_build/feature/findex_5_0_0')
     # write_ios_cloudproof_plugin_header()

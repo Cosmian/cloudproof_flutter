@@ -53,7 +53,8 @@ void main() {
       final masterKey = FindexMasterKey.fromJson(jsonDecode(
           await File('test/resources/findex/master_key.json').readAsString()));
       final label = Uint8List.fromList(utf8.encode("Some Label"));
-      await SqliteFindex.indexAll(masterKey, label);
+      final upsertResults = await SqliteFindex.indexAll(masterKey, label);
+      expect(upsertResults.length, 583);
 
       try {
         SqliteFindex.throwInsideFetchEntries = true;
@@ -353,7 +354,8 @@ void main() {
       expect(SqliteFindex.count('entry_table'), equals(0));
       expect(SqliteFindex.count('chain_table'), equals(0));
 
-      await SqliteFindex.indexAll(masterKey, label);
+      final upsertResults = await SqliteFindex.indexAll(masterKey, label);
+      expect(upsertResults.length, 583);
 
       expect(SqliteFindex.count('entry_table'), equals(583));
       expect(SqliteFindex.count('chain_table'), equals(618));
