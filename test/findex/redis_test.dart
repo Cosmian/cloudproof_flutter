@@ -58,7 +58,9 @@ void main() {
       expect(
           await FindexRedisImplementation.count(RedisTable.chains), equals(0));
 
-      await FindexRedisImplementation.indexAll(masterKey, label);
+      final upsertResults =
+          await FindexRedisImplementation.indexAll(masterKey, label);
+      expect(upsertResults.length, 583);
 
       expect(await FindexRedisImplementation.count(RedisTable.entries),
           equals(583));
@@ -88,7 +90,9 @@ void main() {
       final label = Uint8List.fromList(utf8.encode("Some Label"));
 
       await FindexRedisImplementation.init();
-      await FindexRedisImplementation.indexAll(masterKey, label);
+      final upsertResults =
+          await FindexRedisImplementation.indexAll(masterKey, label);
+      expect(upsertResults.length, 583);
 
       await FindexRedisImplementation.setThrowInsideFetch();
       try {

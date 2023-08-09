@@ -70,7 +70,7 @@ class Findex {
   //
   // FFI functions
   //
-  static Future<void> upsert(
+  static Future<Set<Keyword>> upsert(
       FindexMasterKey masterKey,
       Uint8List label,
       Map<IndexedValue, List<Keyword>> additions,
@@ -78,7 +78,8 @@ class Findex {
       FetchEntryTableCallback fetchEntries,
       UpsertEntryTableCallback upsertEntries,
       InsertChainTableCallback insertChains,
-      {int entryTableNumber = 1}) async {
+      {int entryTableNumber = 1,
+      int outputSizeInBytes = defaultOutputSizeInBytes}) async {
     //
     // FFI INPUT parameters
     //
@@ -99,9 +100,18 @@ class Findex {
             MapEntry(key.toBase64(), value.map((e) => e.toBase64()).toList())))
         .toNativeUtf8(allocator: malloc);
 
+    //
+    // FFI OUTPUT parameters
+    //
+    final output = calloc<Uint8>(defaultOutputSizeInBytes);
+    final outputLengthPointer = calloc<Int32>(1);
+    outputLengthPointer.value = defaultOutputSizeInBytes;
+
     try {
       final start = DateTime.now();
       final errorCode = library.h_upsert(
+        output.cast<Int8>(),
+        outputLengthPointer,
         masterKeyPointer,
         masterKey.k.length,
         labelPointer.cast<Uint8>(),
@@ -115,8 +125,21 @@ class Findex {
       );
       final end = DateTime.now();
 
+      if (errorCode != 0 &&
+          outputLengthPointer.value > defaultOutputSizeInBytes) {
+        return upsert(masterKey, label, additions, deletions, fetchEntries,
+            upsertEntries, insertChains,
+            outputSizeInBytes: outputLengthPointer.value);
+      }
+
       await throwOnErrorCode(errorCode, start, end);
+
+      return deserializeUpsertResults(
+        output.asTypedList(outputLengthPointer.value),
+      );
     } finally {
+      calloc.free(output);
+      calloc.free(outputLengthPointer);
       calloc.free(labelPointer);
       malloc.free(additionsPointer);
       malloc.free(deletionsPointer);
@@ -262,6 +285,25 @@ class Findex {
     });
 
     return errorPort;
+  }
+
+  static Set<Keyword> deserializeUpsertResults(Uint8List bytes) {
+    Set<Keyword> result = {};
+
+    Iterator<int> iterator = bytes.iterator;
+    final length = Leb128.decodeUnsigned(iterator);
+    if (length == 0) {
+      return {};
+    }
+
+    for (int idx = 0; idx < length; idx++) {
+      // Get Keyword
+      final keyword = Keyword.deserialize(iterator);
+
+      result.add(keyword);
+    }
+
+    return result;
   }
 
   static Map<Keyword, List<Location>> deserializeSearchResults(

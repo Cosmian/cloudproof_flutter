@@ -69,14 +69,14 @@ class FindexInMemory {
     return true;
   }
 
-  static Future<void> indexAll(
+  static Future<Set<Keyword>> indexAll(
       FindexMasterKey masterKey, Uint8List label) async {
     final indexedValuesAndKeywords = {
       for (final user in Users.getUsers())
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 
-    await upsert(masterKey, label, indexedValuesAndKeywords);
+    return upsert(masterKey, label, indexedValuesAndKeywords);
   }
 
   static List<UidAndValue> fetchEntries(Uids uids) {
@@ -163,12 +163,12 @@ class FindexInMemory {
     );
   }
 
-  static Future<void> upsert(
+  static Future<Set<Keyword>> upsert(
     FindexMasterKey masterKey,
     Uint8List label,
     Map<IndexedValue, List<Keyword>> additions,
   ) async {
-    await Findex.upsert(
+    return Findex.upsert(
       masterKey,
       label,
       additions,

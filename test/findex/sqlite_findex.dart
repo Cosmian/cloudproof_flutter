@@ -202,7 +202,7 @@ class SqliteFindex {
     throw Exception("Database not initialized");
   }
 
-  static Future<void> indexAll(
+  static Future<Set<Keyword>> indexAll(
       FindexMasterKey masterKey, Uint8List label) async {
     final users = allUsers();
 
@@ -211,7 +211,7 @@ class SqliteFindex {
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 
-    await upsert(masterKey, label, indexedValuesAndKeywords, {});
+    return upsert(masterKey, label, indexedValuesAndKeywords, {});
   }
 
   static Future<void> indexAllFromFile(
@@ -386,13 +386,13 @@ class SqliteFindex {
         entryTableNumber: entryTableNumber);
   }
 
-  static Future<void> upsert(
+  static Future<Set<Keyword>> upsert(
     FindexMasterKey masterKey,
     Uint8List label,
     Map<IndexedValue, List<Keyword>> additions,
     Map<IndexedValue, List<Keyword>> deletions,
   ) async {
-    await Findex.upsert(
+    return Findex.upsert(
       masterKey,
       label,
       additions,

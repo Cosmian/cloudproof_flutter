@@ -158,15 +158,24 @@ typedef int32_t (*InsertChainTableCallback)(const uint8_t *chains_ptr, uint32_t 
 typedef int32_t (*FetchAllEntryTableUidsCallback)(uint8_t *uids_ptr, uint32_t *uids_len);
 
 /**
- * See [`FindexCallbacks::delete_chain()`](cosmian_findex::FindexCallbacks::delete_chain).
+ * See [`FindexCallbacks::update_lines()`](cosmian_findex::FindexCallbacks::update_lines).
  *
  * # Serialization
  *
- * The input is serialized as follows:
+ * The removed Chain Table UIDs are serialized as follows:
  *
- * `LEB128(n_uids) || UID_1 || UID_2 || ...`
+ * `LEB128(n_uids) || UID_1 || ...`
+ *
+ * The new table items are serialized as follows:
+ *
+ * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int32_t (*DeleteChainCallback)(const uint8_t *chains_ptr, uint32_t chains_len);
+typedef int32_t (*UpdateLinesCallback)(const uint8_t *chain_table_uids_to_remove_ptr,
+                                       uint32_t chain_table_uids_to_remove_len,
+                                       const uint8_t *new_encrypted_entry_table_items_ptr,
+                                       uint32_t new_encrypted_entry_table_items_len,
+                                       const uint8_t *new_encrypted_chain_table_items_ptr,
+                                       uint32_t new_encrypted_chain_table_items_len);
 
 /**
  * See
@@ -186,25 +195,9 @@ typedef int32_t (*ListRemovedLocationsCallback)(uint8_t *removed_locations_ptr,
                                                 const uint8_t *locations_ptr,
                                                 uint32_t locations_len);
 
-/**
- * See [`FindexCallbacks::update_lines()`](cosmian_findex::FindexCallbacks::update_lines).
- *
- * # Serialization
- *
- * The removed Chain Table UIDs are serialized as follows:
- *
- * `LEB128(n_uids) || UID_1 || ...`
- *
- * The new table items are serialized as follows:
- *
- * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
- */
-typedef int32_t (*UpdateLinesCallback)(const uint8_t *chain_table_uids_to_remove_ptr,
-                                       uint32_t chain_table_uids_to_remove_len,
-                                       const uint8_t *new_encrypted_entry_table_items_ptr,
-                                       uint32_t new_encrypted_entry_table_items_len,
-                                       const uint8_t *new_encrypted_chain_table_items_ptr,
-                                       uint32_t new_encrypted_chain_table_items_len);
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
 int32_t h_aes256gcm_encrypt(uint8_t *output_ptr,
                             int32_t *output_len,
@@ -680,8 +673,16 @@ int32_t h_search(int8_t *search_results_ptr,
  *
  * `LEB128(keyword_bytes.len()) || base64(keyword_bytes)`
  *
+ * The results are serialized as follows:
+ *
+ * `LEB128(n_values) || serialized_value_1 || ... || serialized_value_n`
+ *
+ * and `serialized_value_i` is serialized as follows:
+ * `LEB128(keyword_bytes.len()) || keyword_bytes`
+ *
  * # Parameters
  *
+ * - `upsert_results`  : Returns the list of new keywords added to the index
  * - `master_key`      : Findex master key
  * - `label`           : additional information used to derive Entry Table UIDs
  * TODO (TBZ): explain the serialization in the doc
@@ -696,7 +697,9 @@ int32_t h_search(int8_t *search_results_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_upsert(const uint8_t *master_key_ptr,
+int32_t h_upsert(int8_t *upsert_results_ptr,
+                 int32_t *upsert_results_len,
+                 const uint8_t *master_key_ptr,
                  int32_t master_key_len,
                  const uint8_t *label_ptr,
                  int32_t label_len,
@@ -737,18 +740,6 @@ int32_t h_upsert(const uint8_t *master_key_ptr,
  * # Safety
  *
  * Cannot be safe since using FFI.
- */
-int32_t h_live_compact(const uint8_t *master_key_ptr,
-                       int32_t master_key_len,
-                       int32_t num_reindexing_before_full_set,
-                       uint32_t entry_table_number,
-                       FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
-                       FetchEntryTableCallback fetch_entry,
-                       FetchChainTableCallback fetch_chain,
-                       DeleteChainCallback delete_chain,
-                       ListRemovedLocationsCallback filter_removed_locations);
-
-/**
  * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
  * using the given label and the KMAC key derived from the new master key. The
  * values are decrypted using the DEM key derived from the master key and
@@ -851,20 +842,30 @@ int32_t h_search_cloud(int8_t *search_results_ptr,
  *
  * `LEB128(keyword_bytes.len()) || base64(keyword_bytes)`
  *
+ * The results are serialized as follows:
+ *
+ * `LEB128(n_values) || serialized_value_1 || ... || serialized_value_n`
+ *
+ * and `serialized_value_i` is serialized as follows:
+ * `LEB128(keyword_bytes.len()) || keyword_bytes`
+ *
  * # Parameters
  *
- * - `token`       : Findex Cloud token
- * - `label`       : additional information used to derive Entry Table UIDs
- * - `additions`   : serialized list of new indexed values
- * - `deletions`   : serialized list of removed indexed values
- * - `base_url`    : base URL for Findex Cloud (with http prefix and port if
+ * - `upsert_results` : Returns the list of new keywords added to the index
+ * - `token`          : Findex Cloud token
+ * - `label`          : additional information used to derive Entry Table UIDs
+ * - `additions`      : serialized list of new indexed values
+ * - `deletions`      : serialized list of removed indexed values
+ * - `base_url`       : base URL for Findex Cloud (with http prefix and port if
  *   required). If null, use the default Findex Cloud server.
  *
  * # Safety
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_upsert_cloud(const int8_t *token_ptr,
+int32_t h_upsert_cloud(int8_t *upsert_results_ptr,
+                       int32_t *upsert_results_len,
+                       const int8_t *token_ptr,
                        const uint8_t *label_ptr,
                        int32_t label_len,
                        const int8_t *additions_ptr,
@@ -1169,3 +1170,7 @@ int32_t h_fpe_decrypt_big_integer(uint8_t *output_ptr,
                                   int32_t key_len,
                                   const int8_t *tweak_ptr,
                                   int32_t tweak_len);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif // __cplusplus

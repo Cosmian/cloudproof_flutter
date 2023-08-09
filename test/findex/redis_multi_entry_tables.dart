@@ -251,13 +251,13 @@ class RedisMultiEntryTables {
         entryTableNumber: entryTableNumber);
   }
 
-  static Future<void> upsert_1(
+  static Future<Set<Keyword>> upsert_1(
     FindexMasterKey masterKey,
     Uint8List label,
     Map<IndexedValue, List<Keyword>> additions,
     Map<IndexedValue, List<Keyword>> deletions,
   ) async {
-    await Findex.upsert(
+    return Findex.upsert(
       masterKey,
       label,
       additions,
@@ -277,13 +277,13 @@ class RedisMultiEntryTables {
     );
   }
 
-  static Future<void> upsert_2(
+  static Future<Set<Keyword>> upsert_2(
     FindexMasterKey masterKey,
     Uint8List label,
     Map<IndexedValue, List<Keyword>> additions,
     Map<IndexedValue, List<Keyword>> deletions,
   ) async {
-    await Findex.upsert(
+    return Findex.upsert(
       masterKey,
       label,
       additions,
