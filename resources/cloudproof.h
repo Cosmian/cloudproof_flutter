@@ -598,8 +598,8 @@ int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
 /**
  * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
  * `get_last_error` name The `h_get_error` is available inside the final lib
- * (but tools like ffigen seems to not parse it…) Maybe we can find a solution
- * by changing the function name inside the clients.
+ * (but tools like `ffigen` seems to not parse it…) Maybe we can find a
+ * solution by changing the function name inside the clients.
  *
  * # Safety
  *
@@ -796,7 +796,7 @@ int32_t h_compact(const uint8_t *old_master_key_ptr,
  * # Parameters
  *
  * - `search_results`          : (output) search result
- * - `token`                   : findex cloud token
+ * - `token`                   : Findex cloud token
  * - `label`                   : public information used to derive UIDs
  * - `keywords`                : `serde` serialized list of base64 keywords
  * - `base_url`                : base URL for Findex Cloud (with http prefix

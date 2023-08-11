@@ -79,7 +79,7 @@ class Findex {
       UpsertEntryTableCallback upsertEntries,
       InsertChainTableCallback insertChains,
       {int entryTableNumber = 1,
-      int outputSizeInBytes = defaultOutputSizeInBytes}) async {
+      int outputSizeInBytes = 0}) async {
     //
     // FFI INPUT parameters
     //
@@ -103,9 +103,9 @@ class Findex {
     //
     // FFI OUTPUT parameters
     //
-    final output = calloc<Uint8>(defaultOutputSizeInBytes);
+    final output = calloc<Uint8>(outputSizeInBytes);
     final outputLengthPointer = calloc<Int32>(1);
-    outputLengthPointer.value = defaultOutputSizeInBytes;
+    outputLengthPointer.value = outputSizeInBytes;
 
     try {
       final start = DateTime.now();
@@ -125,18 +125,24 @@ class Findex {
       );
       final end = DateTime.now();
 
-      if (errorCode != 0 &&
-          outputLengthPointer.value > defaultOutputSizeInBytes) {
+      if (errorCode != 1) {
+        await throwOnErrorCode(errorCode, start, end);
+      }
+      if (outputSizeInBytes == 0 &&
+          errorCode == 1 &&
+          outputLengthPointer.value > 0) {
         return upsert(masterKey, label, additions, deletions, fetchEntries,
             upsertEntries, insertChains,
             outputSizeInBytes: outputLengthPointer.value);
       }
 
-      await throwOnErrorCode(errorCode, start, end);
+      if (outputSizeInBytes != 0 && errorCode == 0) {
+        return deserializeUpsertResults(
+          output.asTypedList(outputLengthPointer.value),
+        );
+      }
 
-      return deserializeUpsertResults(
-        output.asTypedList(outputLengthPointer.value),
-      );
+      return {};
     } finally {
       calloc.free(output);
       calloc.free(outputLengthPointer);
