@@ -49,8 +49,23 @@ Future<void> testFunction(FindexMasterKey masterKey, Uint8List label) async {
   final upsertResults = await FindexInMemory.indexAll(masterKey, label);
   expect(upsertResults.length, 583);
 
-  expect(FindexInMemory.entryTable?.length, equals(583));
-  expect(FindexInMemory.chainTable?.length, equals(618));
+  Map<IndexedValue, List<Keyword>> additions = {};
+  additions[IndexedValue.fromLocation(Location.fromNumber(0))] = [
+    Keyword.fromString("Felix")
+  ];
+  final secondInsertion = await FindexInMemory.upsert(
+    masterKey,
+    label,
+    additions,
+  );
+  expect(secondInsertion.length, 0);
+
+  final upsertResultsFromSameBatch =
+      await FindexInMemory.indexAll(masterKey, label);
+  expect(upsertResultsFromSameBatch.length, 0);
+
+  expect(FindexInMemory.entryTable?.length, equals(583 + 1));
+  expect(FindexInMemory.chainTable?.length, equals(618 + 1));
 
   final searchResults = await FindexInMemory.search(
       masterKey.k, label, [Keyword.fromString("France")]);
