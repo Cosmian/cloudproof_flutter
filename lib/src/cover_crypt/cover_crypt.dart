@@ -262,7 +262,7 @@ class CoverCrypt {
     }
   }
 
-  static Uint8List generatePolicy(int maxAttributesCreation) {
+  static Uint8List generatePolicy() {
     // FFI OUTPUT parameters
     const arbitraryLargeSize = 8192;
     final policyPointer = calloc<Int8>(arbitraryLargeSize);
@@ -270,8 +270,7 @@ class CoverCrypt {
     policyLength.value = arbitraryLargeSize;
 
     try {
-      final result =
-          library.h_policy(policyPointer, policyLength, maxAttributesCreation);
+      final result = library.h_policy(policyPointer, policyLength);
       if (result != 0) {
         throw Exception("Call to `h_policy` fail. ${getLastError()}");
       }
