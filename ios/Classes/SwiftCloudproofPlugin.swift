@@ -16,7 +16,7 @@ public class SwiftCloudproofPlugin: NSObject, FlutterPlugin {
     // This will never be executed :PreventTreeShaking
     h_symmetric_encryption_overhead();
     h_generate_master_keys(nil,nil,nil,nil,nil,0);
-    h_policy(nil,nil,0);
+    h_policy(nil,nil);
   }
 
   public func dummyMethodToEnforceFindexBundling() {

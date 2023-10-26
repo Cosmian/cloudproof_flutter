@@ -218,9 +218,42 @@ int32_t h_aes256gcm_decrypt(uint8_t *output_ptr,
                             int32_t authenticated_data_len);
 
 /**
+ * Externally sets the last error recorded on the Rust side.
+ *
+ * # Safety
+ *
+ * The pointer must point to a null-terminated string.
+ *
+ * This function is meant to be called from the Foreign Function
+ * Interface.
+ *
+ * # Parameters
+ *
+ * - `error_message_ptr`   : pointer to the error message to set
+ */
+int32_t h_set_error(const int8_t *error_message_ptr);
+
+/**
+ * Externally gets the most recent error recorded on the Rust side, clearing
+ * it in the process.
+ *
+ * # Safety
+ *
+ * The pointer `error_ptr` should point to a buffer which has been allocated
+ * `error_len` bytes. If the allocated size is smaller than `error_len`, a
+ * call to this function may result in a buffer overflow.
+ *
+ * # Parameters
+ *
+ * - `error_ptr`: pointer to the buffer to which to write the error
+ * - `error_len`: size of the allocated memory
+ */
+int32_t h_get_error(int8_t *error_ptr, int32_t *error_len);
+
+/**
  * # Safety
  */
-int32_t h_policy(int8_t *policy_ptr, int32_t *policy_len, int32_t max_attribute_creations);
+int32_t h_policy(int8_t *policy_ptr, int32_t *policy_len);
 
 /**
  * # Safety
@@ -234,11 +267,64 @@ int32_t h_add_policy_axis(int8_t *updated_policy_ptr,
 /**
  * # Safety
  */
+int32_t h_remove_policy_axis(int8_t *updated_policy_ptr,
+                             int32_t *updated_policy_len,
+                             const int8_t *current_policy_ptr,
+                             int32_t current_policy_len,
+                             const int8_t *axis_name_ptr);
+
+/**
+ * # Safety
+ */
+int32_t h_add_policy_attribute(int8_t *updated_policy_ptr,
+                               int32_t *updated_policy_len,
+                               const int8_t *current_policy_ptr,
+                               int32_t current_policy_len,
+                               const int8_t *attribute,
+                               bool is_hybridized);
+
+/**
+ * # Safety
+ */
+int32_t h_remove_policy_attribute(int8_t *updated_policy_ptr,
+                                  int32_t *updated_policy_len,
+                                  const int8_t *current_policy_ptr,
+                                  int32_t current_policy_len,
+                                  const int8_t *attribute);
+
+/**
+ * # Safety
+ */
+int32_t h_disable_policy_attribute(int8_t *updated_policy_ptr,
+                                   int32_t *updated_policy_len,
+                                   const int8_t *current_policy_ptr,
+                                   int32_t current_policy_len,
+                                   const int8_t *attribute);
+
+int32_t h_rename_policy_attribute(int8_t *updated_policy_ptr,
+                                  int32_t *updated_policy_len,
+                                  const int8_t *current_policy_ptr,
+                                  int32_t current_policy_len,
+                                  const int8_t *attribute,
+                                  const int8_t *new_attribute_name_ptr);
+
+/**
+ * # Safety
+ */
 int32_t h_rotate_attribute(int8_t *updated_policy_ptr,
                            int32_t *updated_policy_len,
                            const int8_t *current_policy_ptr,
                            int32_t current_policy_len,
                            const int8_t *attribute);
+
+/**
+ * # Safety
+ */
+int32_t h_clear_old_attribute_values(int8_t *updated_policy_ptr,
+                                     int32_t *updated_policy_len,
+                                     const int8_t *current_policy_ptr,
+                                     int32_t current_policy_len,
+                                     const int8_t *attribute);
 
 /**
  * # Safety
@@ -536,39 +622,6 @@ int32_t h_hybrid_decrypt(int8_t *plaintext_ptr,
                          int32_t authentication_data_len,
                          const int8_t *usk_ptr,
                          int32_t usk_len);
-
-/**
- * Externally sets the last error recorded on the Rust side.
- *
- * # Safety
- *
- * The pointer must point to a null-terminated string.
- *
- * This function is meant to be called from the Foreign Function
- * Interface.
- *
- * # Parameters
- *
- * - `error_message_ptr`   : pointer to the error message to set
- */
-int32_t h_set_error(const int8_t *error_message_ptr);
-
-/**
- * Externally gets the most recent error recorded on the Rust side, clearing
- * it in the process.
- *
- * # Safety
- *
- * The pointer `error_ptr` should point to a buffer which has been allocated
- * `error_len` bytes. If the allocated size is smaller than `error_len`, a
- * call to this function may result in a buffer overflow.
- *
- * # Parameters
- *
- * - `error_ptr`: pointer to the buffer to which to write the error
- * - `error_len`: size of the allocated memory
- */
-int32_t h_get_error(int8_t *error_ptr, int32_t *error_len);
 
 int32_t h_ecies_x25519_generate_key_pair(uint8_t *public_key_ptr,
                                          int32_t *public_key_len,
