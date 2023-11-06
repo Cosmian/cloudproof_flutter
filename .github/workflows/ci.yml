@@ -166,7 +166,7 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_java_in_docker.yml@develop
     with:
-      branch: v6.0.0
+      branch: feat/edit_policy
       target: x86_64-unknown-linux-gnu
       extension: so
       destination: linux-x86-64
@@ -182,7 +182,7 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_js.yml@develop
     with:
-      branch: v9.0.0
+      branch: feat/edit_policy
       target: wasm32-unknown-unknown
       kms-version: 4.5.0
       findex-cloud-version: 0.1.0
@@ -195,7 +195,7 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_python.yml@develop
     with:
-      branch: v4.1.0
+      branch: feat/edit_policy
       target: x86_64-unknown-linux-gnu
       kms-version: 4.5.0
       copy_fresh_build: false
