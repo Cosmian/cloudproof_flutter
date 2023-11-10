@@ -34,7 +34,7 @@ void main() {
     });
 
     test('encrypt decrypt', () async {
-      final policy = Policy.withMaxAttributeCreations(100)
+      final policy = Policy.init()
           .addAxis(
               "Security Level",
               [

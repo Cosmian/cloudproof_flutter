@@ -35,21 +35,18 @@ class PolicyAxis {
 
 class Policy {
   Uint8List rawPolicy;
-  int maxAttributeCreations;
   Map<String, PolicyAxis> axes;
 
-  Policy(this.rawPolicy, this.maxAttributeCreations, this.axes) {
-    rawPolicy = CoverCrypt.generatePolicy(maxAttributeCreations);
+  Policy(this.rawPolicy, this.axes) {
+    rawPolicy = CoverCrypt.generatePolicy();
   }
 
-  Policy.withMaxAttributeCreations(int maxAttributeCreations)
+  Policy.init()
       : this(
           defaultRawPolicy,
-          maxAttributeCreations,
           defaultAxes,
         );
 
-  static int get defaultMaxAttributeCreations => 2 ^ 32 - 1;
   static Uint8List get defaultRawPolicy => Uint8List.fromList([]);
   static Map<String, PolicyAxis> get defaultAxes => {};
 

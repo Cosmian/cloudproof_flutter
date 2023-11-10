@@ -63,7 +63,7 @@ class NonRegressionTestVectors {
   }
 
   static NonRegressionTestVectors generate() {
-    final policy = Policy.withMaxAttributeCreations(100)
+    final policy = Policy.init()
         .addAxis(
             "Security Level",
             [
