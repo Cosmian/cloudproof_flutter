@@ -60,24 +60,24 @@ class Findex {
   //
   // Callbacks implementations
   //
-  static int defaultProgressCallback(
+  static int defaultInterruptCallback(
     Pointer<Uint8> uidsListPointer,
     int uidsListLength,
   ) {
-    return 1;
+    return 0;
   }
 
   //
   // FFI functions
   //
   static Future<Set<Keyword>> upsert(
-      FindexMasterKey masterKey,
+      FindexKey findexKey,
       Uint8List label,
-      Map<IndexedValue, List<Keyword>> additions,
-      Map<IndexedValue, List<Keyword>> deletions,
-      FetchEntryTableCallback fetchEntries,
-      UpsertEntryTableCallback upsertEntries,
-      InsertChainTableCallback insertChains,
+      Map<IndexedValue, Set<Keyword>> additions,
+      Map<IndexedValue, Set<Keyword>> deletions,
+      Fetch fetchEntries,
+      Upsert upsertEntries,
+      Insert insertChains,
       {int entryTableNumber = 1,
       int outputSizeInBytes = 0}) async {
     //
@@ -85,20 +85,34 @@ class Findex {
     //
     // Master key
     final Pointer<Uint8> masterKeyPointer =
-        masterKey.k.allocateInt8Pointer().cast<Uint8>();
+        findexKey.key.allocateInt8Pointer().cast<Uint8>();
 
     // Label
     final labelPointer = label.allocateUint8Pointer();
 
-    // Data to index to encode in base64 and JSON
-    final Pointer<Utf8> additionsPointer = jsonEncode(additions.map((key,
-                value) =>
-            MapEntry(key.toBase64(), value.map((e) => e.toBase64()).toList())))
-        .toNativeUtf8(allocator: malloc);
-    final Pointer<Utf8> deletionsPointer = jsonEncode(deletions.map((key,
-                value) =>
-            MapEntry(key.toBase64(), value.map((e) => e.toBase64()).toList())))
-        .toNativeUtf8(allocator: malloc);
+    log("upsert: entryTableNumber: $entryTableNumber");
+
+    // Serialize data to index
+    log("upsert: additions len: ${additions.length}");
+    log("upsert: deletions len: ${deletions.length}");
+    final deletionsBytes =
+        Uint8List(IndexedValueToKeywordsMap.boundSerializedSize(deletions));
+    final deletionsSerializedSize =
+        IndexedValueToKeywordsMap.serialize(deletionsBytes, deletions);
+    log("upsert: serialization deletions OK: $deletionsSerializedSize");
+    final deletionsPointer = deletionsBytes.allocateUint8Pointer();
+
+    final additionsBytes =
+        Uint8List(IndexedValueToKeywordsMap.boundSerializedSize(additions));
+    final additionsSerializedSize =
+        IndexedValueToKeywordsMap.serialize(additionsBytes, additions);
+    final additionsPointer = additionsBytes.allocateUint8Pointer();
+    log("upsert: serialization additions OK: $additionsSerializedSize");
+
+    log("upsert: end serialization");
+
+    log("upsert: additions len: ${additionsBytes.length}");
+    log("upsert: deletions len: ${deletionsBytes.length}");
 
     //
     // FFI OUTPUT parameters
@@ -109,15 +123,18 @@ class Findex {
 
     try {
       final start = DateTime.now();
+      log("upsert with: outputLengthPointer.value: ${outputLengthPointer.value}");
       final errorCode = library.h_upsert(
         output.cast<Int8>(),
         outputLengthPointer,
         masterKeyPointer,
-        masterKey.k.length,
+        findexKey.key.length,
         labelPointer.cast<Uint8>(),
         label.length,
         additionsPointer.cast<Int8>(),
+        additionsSerializedSize,
         deletionsPointer.cast<Int8>(),
+        deletionsSerializedSize,
         entryTableNumber,
         fetchEntries,
         upsertEntries,
@@ -126,16 +143,19 @@ class Findex {
       final end = DateTime.now();
 
       if (errorCode != 1) {
+        log("\n\n\nhahahahaahahahahaha: $errorCode");
         await throwOnErrorCode(errorCode, start, end);
       }
       if (outputSizeInBytes == 0 &&
           errorCode == 1 &&
           outputLengthPointer.value > 0) {
-        return upsert(masterKey, label, additions, deletions, fetchEntries,
+        log("\n\n\nretrying: outputSizeInBytes == 0, outputLengthPointer.value: ${outputLengthPointer.value}");
+
+        return upsert(findexKey, label, additions, deletions, fetchEntries,
             upsertEntries, insertChains,
             outputSizeInBytes: outputLengthPointer.value);
       }
-
+      log("upsert: exiting");
       if (outputSizeInBytes != 0 && errorCode == 0) {
         return deserializeUpsertResults(
           output.asTypedList(outputLengthPointer.value),
@@ -152,36 +172,36 @@ class Findex {
     }
   }
 
-  static Future<Map<Keyword, List<Location>>> search(
-      Uint8List k,
+  static Future<Map<Keyword, Set<Location>>> search(
+      Uint8List key,
       Uint8List label,
-      List<Keyword> keywords,
-      FetchEntryTableCallback fetchEntries,
-      FetchChainTableCallback fetchChains,
+      Set<Keyword> keywords,
+      Fetch fetchEntries,
+      Fetch fetchChains,
       {int outputSizeInBytes = defaultOutputSizeInBytes,
       int entryTableNumber = 1,
       bool verbose = false}) async {
     return searchWithProgress(
-        k,
+        key,
         label,
         keywords,
         fetchEntries,
         fetchChains,
         Pointer.fromFunction(
-          defaultProgressCallback,
+          defaultInterruptCallback,
           errorCodeInCaseOfCallbackException,
         ),
         outputSizeInBytes: outputSizeInBytes,
         entryTableNumber: entryTableNumber);
   }
 
-  static Future<Map<Keyword, List<Location>>> searchWithProgress(
+  static Future<Map<Keyword, Set<Location>>> searchWithProgress(
       Uint8List k,
       Uint8List label,
-      List<Keyword> keywords,
-      FetchEntryTableCallback fetchEntries,
-      FetchChainTableCallback fetchChains,
-      ProgressCallback progressCallback,
+      Set<Keyword> keywords,
+      Fetch fetchEntries,
+      Fetch fetchChains,
+      Interrupt progressCallback,
       {int outputSizeInBytes = defaultOutputSizeInBytes,
       int entryTableNumber = 1}) async {
     //
@@ -189,9 +209,15 @@ class Findex {
     //
     final kPointer = k.allocateUint8Pointer();
     final labelPointer = label.allocateUint8Pointer();
-    final Pointer<Utf8> keywordsPointer =
-        jsonEncode(keywords.map((value) => value.toBase64()).toList())
-            .toNativeUtf8();
+
+    final keywordsBytes = Uint8List(Keywords.boundSerializedSize(keywords));
+    final keywordsSerializedSize = Keywords.serialize(keywordsBytes, keywords);
+    log("search: serialization keywords OK: $keywordsSerializedSize");
+    final keywordsPointer = keywordsBytes.allocateUint8Pointer();
+
+    // final Pointer<Utf8> keywordsPointer =
+    //     jsonEncode(keywords.map((value) => value.toBase64()).toList())
+    //         .toNativeUtf8();
 
     //
     // FFI OUTPUT parameters
@@ -203,13 +229,15 @@ class Findex {
     try {
       final start = DateTime.now();
       final errorCode = library.h_search(
-        output.cast<Int8>(),
+        output,
         outputLengthPointer,
-        kPointer.cast<Int8>(),
+        kPointer,
         k.length,
         labelPointer,
         label.length,
-        keywordsPointer.cast<Int8>(),
+        keywordsPointer.cast<Uint8>(),
+        keywordsSerializedSize,
+        // keywordsBytes.length,
         entryTableNumber,
         progressCallback,
         fetchEntries,
@@ -312,9 +340,8 @@ class Findex {
     return result;
   }
 
-  static Map<Keyword, List<Location>> deserializeSearchResults(
-      Uint8List bytes) {
-    Map<Keyword, List<Location>> result = {};
+  static Map<Keyword, Set<Location>> deserializeSearchResults(Uint8List bytes) {
+    Map<Keyword, Set<Location>> result = {};
 
     Iterator<int> iterator = bytes.iterator;
     final length = Leb128.decodeUnsigned(iterator);
@@ -410,6 +437,7 @@ class Findex {
                   "Isolate wrapAsyncFetchCallback exception: Unable to serialize callback results: serialize error code: $ret. Rust output buffer is too small. Is the number of entry tables correct?");
             }
           } finally {
+            log("[wrapAsyncFetchCallback]: exiting successfully");
             Pointer<Bool>.fromAddress(message.item4).value = true;
           }
         },
@@ -428,6 +456,7 @@ class Findex {
       return 0;
     } catch (e, stacktrace) {
       log("Exception during fetch callback ($callback) $e $stacktrace");
+      // return 1;
       rethrow;
     } finally {
       calloc.free(donePointer);
@@ -435,11 +464,13 @@ class Findex {
   }
 
   static int wrapAsyncUpsertEntriesCallback(
-    Future<List<UidAndValue>> Function(List<UpsertData>) callback,
+    Future<List<UidAndValue>> Function(UpsertData) callback,
     Pointer<Uint8> outputRejectedEntriesListPointer,
     Pointer<Uint32> outputRejectedEntriesListLength,
-    Pointer<Uint8> entriesListPointer,
-    int entriesListLength,
+    Pointer<Uint8> oldValuesPointer,
+    int oldValuesLength,
+    Pointer<Uint8> newValuesPointer,
+    int newValuesLength,
   ) {
     final donePointer = calloc<Bool>(1);
     donePointer.value = false;
@@ -449,27 +480,36 @@ class Findex {
         (message) async {
           try {
             // Cast to list
-            final inputArray = Pointer<Uint8>.fromAddress(message.item1)
-                .asTypedList(entriesListLength);
+            log("[wrapAsyncUpsertEntriesCallback] entering");
 
-            final uidsAndValues = UpsertData.deserialize(inputArray);
+            final oldValues = Pointer<Uint8>.fromAddress(message.item1)
+                .asTypedList(oldValuesLength);
+            final newValues = Pointer<Uint8>.fromAddress(message.item2)
+                .asTypedList(newValuesLength);
+            final upsertData = UpsertData.deserialize(oldValues, newValues);
 
-            final rejectedEntries = await callback(uidsAndValues);
+            log("[wrapAsyncUpsertEntriesCallback] oldValues: $oldValues");
+            log("[wrapAsyncUpsertEntriesCallback] newValues: $newValues");
+            log("[wrapAsyncUpsertEntriesCallback] upsertData length: ${upsertData.map.length}");
+            final rejectedEntries = await callback(upsertData);
 
-            final ret = UidAndValue.serialize(
-                Pointer<Uint8>.fromAddress(message.item4),
-                Pointer<Uint32>.fromAddress(message.item3),
+            log("[wrapAsyncUpsertEntriesCallback] rejectedEntries: $rejectedEntries");
+            final returnCode = UidAndValue.serialize(
+                Pointer<Uint8>.fromAddress(message.item3),
+                Pointer<Uint32>.fromAddress(message.item4),
                 rejectedEntries);
-            if (ret != 0) {
+            log("[wrapAsyncUpsertEntriesCallback] exiting with return code: $returnCode");
+            if (returnCode != 0) {
               throw Exception(
-                  "Isolate wrapAsyncUpsertEntriesCallback exception: Unable to serialize callback results: serialize error code: $ret. Rust output buffer is too small. Is the number of entry tables correct?");
+                  "Isolate wrapAsyncUpsertEntriesCallback exception: Unable to serialize callback results: serialize error code: $returnCode. Rust output buffer is too small. Is the number of entry tables correct?");
             }
           } finally {
-            Pointer<Bool>.fromAddress(message.item4).value = true;
+            Pointer<Bool>.fromAddress(message.item5).value = true;
           }
         },
-        Tuple4(
-          entriesListPointer.address,
+        Tuple5(
+          oldValuesPointer.address,
+          newValuesPointer.address,
           outputRejectedEntriesListPointer.address,
           outputRejectedEntriesListLength.address,
           donePointer.address,
@@ -479,6 +519,7 @@ class Findex {
 
       while (!donePointer.value) {
         sleep(const Duration(milliseconds: 10));
+        log("sleep(10)");
       }
       return 0;
     } catch (e, stacktrace) {
@@ -553,20 +594,35 @@ class Findex {
   }
 
   static int wrapSyncUpsertEntriesCallback(
-    List<UidAndValue> Function(List<UpsertData>) callback,
+    List<UidAndValue> Function(UpsertData) callback,
     Pointer<Uint8> outputRejectedEntriesListPointer,
     Pointer<Uint32> outputRejectedEntriesListLength,
-    Pointer<Uint8> entriesListPointer,
-    int entriesListLength,
+    Pointer<Uint8> oldValuesPointer,
+    int oldValuesLength,
+    Pointer<Uint8> newValuesPointer,
+    int newValuesLength,
   ) {
     try {
       // Deserialize uids and values
-      final uidsAndValues = UpsertData.deserialize(
-          entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
+      log("[wrapSyncUpsertEntriesCallback] entering");
 
-      final rejectedEntries = callback(uidsAndValues);
-      return UidAndValue.serialize(outputRejectedEntriesListPointer,
+      final oldValues =
+          oldValuesPointer.cast<Uint8>().asTypedList(oldValuesLength);
+      final newValues =
+          newValuesPointer.cast<Uint8>().asTypedList(newValuesLength);
+      final upsertData = UpsertData.deserialize(oldValues, newValues);
+
+      log("[wrapSyncUpsertEntriesCallback] oldValues: $oldValues");
+      log("[wrapSyncUpsertEntriesCallback] newValues: $newValues");
+
+      log("[wrapSyncUpsertEntriesCallback] upsertData length: ${upsertData.map.length}");
+
+      final rejectedEntries = callback(upsertData);
+      log("[wrapSyncUpsertEntriesCallback] rejectedEntries: $rejectedEntries");
+      final returnCode = UidAndValue.serialize(outputRejectedEntriesListPointer,
           outputRejectedEntriesListLength, rejectedEntries);
+      log("[wrapSyncUpsertEntriesCallback] exiting with return code: $returnCode");
+      return returnCode;
     } catch (e, stacktrace) {
       Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during upsertEntriesCallback $e $stacktrace");

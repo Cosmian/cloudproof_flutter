@@ -1,6 +1,6 @@
 # Cloudproof Flutter Library
 
-![workflow](https://github.com/Cosmian/cloudproof_flutter/actions/workflows/ci.yml/badge.svg)
+![workflow](https://github.com/Cosmian/cloudproof_flutter/actions/workflows/ci.yml/badge.svg?branch=main)
 
 The Cloudproof Flutter library provides a Flutter-friendly API to the [Cosmian Cloudproof Encryption product](https://docs.cosmian.com/cloudproof_encryption/use_cases_benefits/).
 
@@ -28,6 +28,7 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
     + [Android](#android)
     + [iOS](#ios)
   * [Supported versions](#supported-versions)
+    + [Downgrade Flutter version with snap installation](#downgrade-flutter-version-with-snap-installation)
 - [Cloudproof versions Correspondence](#cloudproof-versions-correspondence)
 
 <!-- tocstop -->
@@ -59,12 +60,12 @@ The library is based on:
 The following table presents the current support of the Cosmian cryptographic primitives:
 
 |                      | CoverCrypt | Findex | KMS client | FPE | Anonymization |
-|----------------------|------------|--------|------------|-----|---------------|
-| `cloudproof_rust`    | ✅          | ✅      | ❌          | ✅   | ✅             |
-| `cloudproof_java`    | ✅          | ✅      | ✅          | ❌   | ❌             |
-| `cloudproof_python`  | ✅          | ✅      | ✅          | ✅   | ✅             |
-| `cloudproof_js`      | ✅          | ✅      | ✅          | ✅   | ✅             |
-| `cloudproof_flutter` | ✅          | ✅      | ❌          | ❌   | ❌             |
+| -------------------- | ---------- | ------ | ---------- | --- | ------------- |
+| `cloudproof_rust`    | ✅         | ✅     | ❌         | ✅  | ✅            |
+| `cloudproof_java`    | ✅         | ✅     | ✅         | ❌  | ❌            |
+| `cloudproof_python`  | ✅         | ✅     | ✅         | ✅  | ✅            |
+| `cloudproof_js`      | ✅         | ✅     | ✅         | ✅  | ✅            |
+| `cloudproof_flutter` | ✅         | ✅     | ❌         | ❌  | ❌            |
 
 ## Getting started
 
@@ -100,7 +101,7 @@ To search, you need:
   static Future<Map<Keyword, List<IndexedValue>>> search(
     Uint8List keyK,
     Uint8List label,
-    List<Keyword> words,
+    Set<Keyword> words,
   ) async {
     return await Findex.search(
       keyK,
@@ -172,12 +173,12 @@ To upsert, you need:
   // --------------------------------------------------
 
   static Future<Set<Keyword>> upsert(
-    FindexMasterKey masterKey,
+    FindexKey findexKey,
     Uint8List label,
-    Map<IndexedValue, List<Keyword>> additions,
+    Map<IndexedValue, Set<Keyword>> additions,
   ) async {
     return Findex.upsert(
-      masterKey,
+      findexKey,
       label,
       additions,
       {},
@@ -349,13 +350,20 @@ To make the flutter build succeed, 3 prerequisites are needed:
 ### Supported versions
 
 | Linux        | Flutter | Dart   | Android SDK       | NDK | Glibc | LLVM     | Smartphone Virtual Device |
-|--------------|---------|--------|-------------------|-----|-------|----------|---------------------------|
+| ------------ | ------- | ------ | ----------------- | --- | ----- | -------- | ------------------------- |
 | Ubuntu 22.04 | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.35  | 14.0.0-1 | Pixel 5 API 30            |
 | Centos 7     | 3.3.4   | 2.18.2 | Chipmunk 2021.2.1 | r25 | 2.17  | -        | -                         |
 
 | Mac      | Flutter | Dart   | OS       | LLVM   | Xcode | Smartphone Virtual Device |
-|----------|---------|--------|----------|--------|-------|---------------------------|
+| -------- | ------- | ------ | -------- | ------ | ----- | ------------------------- |
 | Catalina | 3.3.4   | 2.18.2 | Catalina | 12.0.0 |       | iPhone 12 PRO MAX         |
+
+#### Downgrade Flutter version with snap installation
+
+```bash
+cd ~/snap/flutter/common/flutter/
+git checkout 3.3.4
+```
 
 ## Cloudproof versions Correspondence
 
@@ -366,7 +374,7 @@ Check the main pages of the respective projects to build the native libraries ap
 This table shows the minimum versions correspondences between the various components
 
 | Flutter Lib       | CoverCrypt lib    | Findex |
-|-------------------|-------------------|--------|
+| ----------------- | ----------------- | ------ |
 | 0.1.0             | 6.0.5             | 0.7.2  |
 | 1.0.0             | 6.0.5             | 0.7.2  |
 | 2.0.0             | 7.1.0             | 0.10.0 |
@@ -379,8 +387,8 @@ This table shows the minimum versions correspondences between the various compon
 From the version 6.0.0, `cloudproof_flutter` depends on [cloudproof_rust](https://github.com/Cosmian/cloudproof_rust) which wraps the interfaces of `CoverCrypt` and `Findex`.
 
 | Flutter Lib | Cloudproof Rust lib |
-|-------------|---------------------|
+| ----------- | ------------------- |
 | 6.0.0       | 1.0.0               |
 | 6.0.2       | 1.0.1               |
 | 7.0.0       | 2.0.1               |
-| 7.1.0       | 2.1.0               |
+| 8.0.0       | 2.4.0               |

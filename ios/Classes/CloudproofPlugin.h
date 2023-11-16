@@ -9,36 +9,24 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#if defined(DEFINE_CLOUD)
 /**
- * See `Token@index_id`
- */
-#define INDEX_ID_LENGTH 5
-#endif
-
-#if defined(DEFINE_CLOUD)
-/**
- * The callback signature is a kmac of the body of the request.
- * It is used to assert the client can call this callback.
- */
-#define CALLBACK_SIGNATURE_LENGTH 32
-#endif
-
-#if defined(DEFINE_CLOUD)
-/**
- * The number of seconds of validity of the requests to the Findex Cloud
- * backend. After this time, the request cannot be accepted by the backend.
- * This is done to prevent replay attacks.
+ * The number of seconds of validity of the requests to the `FindexREST` server.
+ * After this time, the request cannot be accepted by the backend. This is done
+ * to prevent replay attacks.
  */
 #define REQUEST_SIGNATURE_TIMEOUT_AS_SECS 60
-#endif
 
-#if defined(DEFINE_CLOUD)
 /**
- * This seed is used to derive a new 32 bytes Kmac key.
+ * Callback signature length.
+ */
+#define SIGNATURE_LENGTH 32
+
+/**
+ * Seed used to generate KMAC keys.
  */
 #define SIGNATURE_SEED_LENGTH 16
-#endif
+
+#define INDEX_ID_LENGTH 5
 
 /**
  * The Key Length: 256 bit = 32 bytes for AES 256
@@ -50,150 +38,66 @@
  */
 #define RECOMMENDED_THRESHOLD 1000000
 
-/**
- * See [`FindexCallbacks::progress()`](cosmian_findex::FindexCallbacks::progress).
- *
- * # Serialization
- *
- * The intermediate results are serialized as follows:
- *
- * `LEB128(n_keywords) || LEB128(keyword_1)
- *     || keyword_1 || LEB128(n_associated_results)
- *     || LEB128(associated_result_1) || associated_result_1
- *     || ...`
- *
- * With the serialization of a keyword being:
- *
- * `LEB128(keyword.len()) || keyword`
- *
- * the serialization of the values associated to a keyword:
- *
- * `LEB128(serialized_results_for_keyword.len()) || serialized_result_1 || ...`
- *
- * and the serialization of a result:
- *
- * `LEB128(byte_vector.len() + 1) || prefix || byte_vector`
- *
- * where `prefix` is `l` (only `Location`s are returned) and the `byte_vector`
- * is the byte representation of the location.
- */
-typedef int32_t (*ProgressCallback)(const uint8_t *intermediate_results_ptr,
-                                    uint32_t intermediate_results_len);
+typedef int32_t (*Interrupt)(const uint8_t *intermediate_results_ptr,
+                             uint32_t intermediate_results_len);
 
 /**
- * See [`FindexCallbacks::fetch_entry_table()`](cosmian_findex::FindexCallbacks::fetch_entry_table).
- *
  * # Serialization
  *
- * The input is serialized as follows:
- *
+ * Input:
  * `LEB128(n_uids) || UID_1 || ...`
  *
- * The output should be deserialized as follows:
- *
+ * Output:
  * `LEB128(n_entries) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int32_t (*FetchEntryTableCallback)(uint8_t *entries_ptr,
-                                           uint32_t *entries_len,
-                                           const uint8_t *uids_ptr,
-                                           uint32_t uids_len);
+typedef int32_t (*Fetch)(uint8_t *output_ptr,
+                         uint32_t *output_len,
+                         const uint8_t *uids_ptr,
+                         uint32_t uids_len);
 
 /**
- * See [`FindexCallbacks::fetch_chain_table()`](cosmian_findex::FindexCallbacks::fetch_chain_table).
- *
  * # Serialization
  *
- * The input is serialized as follows:
+ * Input:
+ * `LEB128(n_values) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  *
- * `LEB128(n_uids) || UID_1 || ...`
- *
- * The output should be serialized as follows:
- *
+ * Output:
  * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
  */
-typedef int32_t (*FetchChainTableCallback)(uint8_t *chains_ptr,
-                                           uint32_t *chains_len,
-                                           const uint8_t *uids_ptr,
-                                           uint32_t uids_len);
+typedef int32_t (*Upsert)(uint8_t *indexed_values_ptr,
+                          uint32_t *indexed_values_len,
+                          const uint8_t *old_values_ptr,
+                          uint32_t old_values_len,
+                          const uint8_t *new_values_ptr,
+                          uint32_t new_values_len);
 
 /**
- * See [`FindexCallbacks::upsert_entry_table()`](cosmian_findex::FindexCallbacks::upsert_entry_table).
- *
  * # Serialization
  *
- * The input is serialized as follows:
- *
- * ` LEB128(entries.len()) || UID_1
- *     || LEB128(old_value_1.len()) || old_value_1
- *     || LEB128(new_value_1.len()) || new_value_1
- *     || ...`
- *
- * The output should be serialized as follows:
- *
- * `LEB128(n_lines) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
+ * Input:
+ * `LEB128(n_values) || UID_1 || LEB128(value_1.len() || value_1 || ...`
  */
-typedef int32_t (*UpsertEntryTableCallback)(uint8_t *outputs_ptr,
-                                            uint32_t *outputs_len,
-                                            const uint8_t *entries_ptr,
-                                            uint32_t entries_len);
+typedef int32_t (*Insert)(const uint8_t *input_ptr, uint32_t input_len);
 
 /**
- * See [`FindexCallbacks::insert_chain_table()`](cosmian_findex::FindexCallbacks::insert_chain_table).
- *
  * # Serialization
  *
- * The input is serialized as follows:
- *
- * `LEB128(n_lines) || UID_1 || LEB128(value_1.len() || value_1 || ...`
+ * Input:
+ * `LEB128(n_values) || UID_1 || LEB128(value_1.len() || value_1 || ...`
  */
-typedef int32_t (*InsertChainTableCallback)(const uint8_t *chains_ptr, uint32_t chains_len);
+typedef int32_t (*Delete)(const uint8_t *input_ptr, uint32_t input_len);
 
 /**
- * See [`FindexCallbacks::fetch_all_entry_table_uids()`](cosmian_findex::FindexCallbacks::fetch_all_entry_table_uids).
- *
- * The output should be deserialized as follows:
- *
- * `UID_1 || UID_2 || ... || UID_n`
- */
-typedef int32_t (*FetchAllEntryTableUidsCallback)(uint8_t *uids_ptr, uint32_t *uids_len);
-
-/**
- * See [`FindexCallbacks::update_lines()`](cosmian_findex::FindexCallbacks::update_lines).
- *
  * # Serialization
  *
- * The removed Chain Table UIDs are serialized as follows:
- *
- * `LEB128(n_uids) || UID_1 || ...`
- *
- * The new table items are serialized as follows:
- *
- * `LEB128(n_items) || UID_1 || LEB128(value_1.len()) || value_1 || ...`
+ * Output: `LEB128(n_uids) || UID_1 || ... || UID_n`
  */
-typedef int32_t (*UpdateLinesCallback)(const uint8_t *chain_table_uids_to_remove_ptr,
-                                       uint32_t chain_table_uids_to_remove_len,
-                                       const uint8_t *new_encrypted_entry_table_items_ptr,
-                                       uint32_t new_encrypted_entry_table_items_len,
-                                       const uint8_t *new_encrypted_chain_table_items_ptr,
-                                       uint32_t new_encrypted_chain_table_items_len);
+typedef int32_t (*DumpTokens)(uint8_t *uids_ptr, uint32_t *uids_len);
 
-/**
- * See
- * [`FindexCallbacks::list_removed_locations()`](cosmian_findex::FindexCallbacks::list_removed_locations).
- *
- * # Serialization
- *
- * The input is serialized as follows:
- *
- * `LEB128(locations.len()) || LEB128(location_bytes_1.len()
- *     || location_bytes_1 || ...`
- *
- * Outputs should follow the same serialization.
- */
-typedef int32_t (*ListRemovedLocationsCallback)(uint8_t *removed_locations_ptr,
-                                                uint32_t *removed_locations_len,
-                                                const uint8_t *locations_ptr,
-                                                uint32_t locations_len);
+typedef int32_t (*FilterObsoleteData)(uint8_t *output_locations_ptr,
+                                      uint32_t *output_locations_len,
+                                      const uint8_t *locations_ptr,
+                                      uint32_t locations_len);
 
 #ifdef __cplusplus
 extern "C" {
@@ -652,6 +556,7 @@ int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
                                        const int8_t *authentication_data_ptr,
                                        int32_t authentication_data_len);
 
+#if defined(DEFINE_WASM)
 /**
  * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
  * `get_last_error` name The `h_get_error` is available inside the final lib
@@ -663,7 +568,9 @@ int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
  * It's unsafe.
  */
 int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
+#endif
 
+#if defined(DEFINE_WASM)
 /**
  * Recursively searches Findex graphs for values indexed by the given keywords.
  *
@@ -679,12 +586,11 @@ int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
  * # Parameters
  *
  * - `search_results`          : (output) search result
- * - `master_key`              : master key
+ * - `key`                     : Findex key
  * - `label`                   : public information used to derive UIDs
- * - `keywords`                : `serde` serialized list of base64 keywords
+ * - `keywords`                : serialized list of keywords
  * - `entry_table_number`      : number of different entry tables
- * - `progress_callback`       : callback used to retrieve intermediate results
- *   and transmit user interrupt
+ * - `interrupt`               : user interrupt called at each search iteration
  * - `fetch_entry_callback`    : callback used to fetch the Entry Table
  * - `fetch_chain_callback`    : callback used to fetch the Chain Table
  *
@@ -692,18 +598,21 @@ int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_search(int8_t *search_results_ptr,
+int32_t h_search(uint8_t *search_results_ptr,
                  int32_t *search_results_len,
-                 const int8_t *master_key_ptr,
-                 int32_t master_key_len,
+                 const uint8_t *key_ptr,
+                 uint32_t key_len,
                  const uint8_t *label_ptr,
-                 int32_t label_len,
-                 const int8_t *keywords_ptr,
+                 uint32_t label_len,
+                 const uint8_t *keywords_ptr,
+                 uint32_t keywords_len,
                  uint32_t entry_table_number,
-                 ProgressCallback progress_callback,
-                 FetchEntryTableCallback fetch_entry_callback,
-                 FetchChainTableCallback fetch_chain_callback);
+                 Interrupt interrupt,
+                 Fetch fetch_entry_callback,
+                 Fetch fetch_chain_callback);
+#endif
 
+#if defined(DEFINE_WASM)
 /**
  * Index the given values for the given keywords. After upserting, any
  * search for such a keyword will result in finding (at least) the
@@ -736,7 +645,7 @@ int32_t h_search(int8_t *search_results_ptr,
  * # Parameters
  *
  * - `upsert_results`  : Returns the list of new keywords added to the index
- * - `master_key`      : Findex master key
+ * - `key`      : Findex key
  * - `label`           : additional information used to derive Entry Table UIDs
  * TODO (TBZ): explain the serialization in the doc
  * - `additions`       : serialized list of new indexed values
@@ -752,22 +661,26 @@ int32_t h_search(int8_t *search_results_ptr,
  */
 int32_t h_upsert(int8_t *upsert_results_ptr,
                  int32_t *upsert_results_len,
-                 const uint8_t *master_key_ptr,
-                 int32_t master_key_len,
+                 const uint8_t *key_ptr,
+                 int32_t key_len,
                  const uint8_t *label_ptr,
                  int32_t label_len,
                  const int8_t *additions_ptr,
+                 int32_t additions_len,
                  const int8_t *deletions_ptr,
+                 int32_t deletions_len,
                  uint32_t entry_table_number,
-                 FetchEntryTableCallback fetch_entry,
-                 UpsertEntryTableCallback upsert_entry,
-                 InsertChainTableCallback insert_chain);
+                 Fetch fetch_entry,
+                 Upsert upsert_entry,
+                 Insert insert_chain);
+#endif
 
+#if defined(DEFINE_WASM)
 /**
  * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
- * using the given label and the KMAC key derived from the new master key. The
- * values are decrypted using the DEM key derived from the master key and
- * re-encrypted using the DEM key derived from the new master key.
+ * using the given label and the KMAC key derived from the new key. The
+ * values are decrypted using the DEM key derived from the key and
+ * re-encrypted using the DEM key derived from the new key.
  *
  * Randomly selects index entries and recompact their associated chains. Chains
  * indexing no existing location are removed. Others are recomputed from a new
@@ -777,37 +690,8 @@ int32_t h_upsert(int8_t *upsert_results_ptr,
  *
  * # Parameters
  *
- * - `old_master_key`                  : old Findex master key
- * - `new_master_key`                  : new Findex master key
- * - `new_label`                       : public information used to derive UIDs
- * - `num_reindexing_before_full_set`  : number of compact operation needed to
- *   compact all the Chain Table
- * - `entry_table_number`              : number of different entry tables
- * - `fetch_entry`                     : callback used to fetch the Entry Table
- * - `fetch_chain`                     : callback used to fetch the Chain Table
- * - `update_lines`                    : callback used to update lines in both
- *   tables
- * - `filter_removed_locations`        : callback used to list removed
- *   locations among the ones given
- *
- * # Safety
- *
- * Cannot be safe since using FFI.
- * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
- * using the given label and the KMAC key derived from the new master key. The
- * values are decrypted using the DEM key derived from the master key and
- * re-encrypted using the DEM key derived from the new master key.
- *
- * Randomly selects index entries and recompact their associated chains. Chains
- * indexing no existing location are removed. Others are recomputed from a new
- * keying material. This removes unneeded paddings. New UIDs are derived for
- * the chain and values are re-encrypted using a DEM key derived from the new
- * keying material.
- *
- * # Parameters
- *
- * - `old_master_key`                  : old Findex master key
- * - `new_master_key`                  : new Findex master key
+ * - `old_key`                         : old Findex key
+ * - `new_key`                         : new Findex key
  * - `new_label`                       : public information used to derive UIDs
  * - `num_reindexing_before_full_set`  : number of compact operation needed to
  *   compact all the Chain Table
@@ -823,21 +707,27 @@ int32_t h_upsert(int8_t *upsert_results_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_compact(const uint8_t *old_master_key_ptr,
-                  int32_t old_master_key_len,
-                  const uint8_t *new_master_key_ptr,
-                  int32_t new_master_key_len,
+int32_t h_compact(const uint8_t *old_key_ptr,
+                  int32_t old_key_len,
+                  const uint8_t *new_key_ptr,
+                  int32_t new_key_len,
+                  const uint8_t *old_label_ptr,
+                  int32_t old_label_len,
                   const uint8_t *new_label_ptr,
                   int32_t new_label_len,
-                  int32_t num_reindexing_before_full_set,
+                  uint32_t n_compact_to_full,
                   uint32_t entry_table_number,
-                  FetchAllEntryTableUidsCallback fetch_all_entry_table_uids,
-                  FetchEntryTableCallback fetch_entry,
-                  FetchChainTableCallback fetch_chain,
-                  UpdateLinesCallback update_lines,
-                  ListRemovedLocationsCallback list_removed_locations);
+                  Fetch fetch_entry,
+                  Fetch fetch_chain,
+                  Upsert upsert_entry,
+                  Insert insert_chain,
+                  Delete delete_entry,
+                  Delete delete_chain,
+                  DumpTokens dump_tokens_entry,
+                  FilterObsoleteData filter_obsolete_data);
+#endif
 
-#if defined(DEFINE_CLOUD)
+#if (defined(DEFINE_WASM) && defined(DEFINE_CLOUD))
 /**
  * Recursively searches Findex graphs for values indexed by the given keywords.
  *
@@ -853,11 +743,12 @@ int32_t h_compact(const uint8_t *old_master_key_ptr,
  * # Parameters
  *
  * - `search_results`          : (output) search result
- * - `token`                   : Findex cloud token
+ * - `token`                   : FindexREST token
  * - `label`                   : public information used to derive UIDs
  * - `keywords`                : `serde` serialized list of base64 keywords
- * - `base_url`                : base URL for Findex Cloud (with http prefix
- *   and port if required). If null, use the default Findex Cloud server.
+ * - `base_url`                : FindexREST server URL (with http prefix and
+ *   port if required). If null, use the default FindexREST server.
+ * - `interrupt`               : user interrupt called at each search iteration
  *
  * # Safety
  *
@@ -868,11 +759,13 @@ int32_t h_search_cloud(int8_t *search_results_ptr,
                        const int8_t *token_ptr,
                        const uint8_t *label_ptr,
                        int32_t label_len,
-                       const int8_t *keywords_ptr,
-                       const int8_t *base_url_ptr);
+                       const uint8_t *keywords_ptr,
+                       uint32_t keywords_len,
+                       const int8_t *base_url_ptr,
+                       Interrupt interrupt);
 #endif
 
-#if defined(DEFINE_CLOUD)
+#if (defined(DEFINE_WASM) && defined(DEFINE_CLOUD))
 /**
  * Index the given values for the given keywords. After upserting, any
  * search for such a keyword will result in finding (at least) the
@@ -905,12 +798,12 @@ int32_t h_search_cloud(int8_t *search_results_ptr,
  * # Parameters
  *
  * - `upsert_results` : Returns the list of new keywords added to the index
- * - `token`          : Findex Cloud token
+ * - `token`          : FindexREST authorization token
  * - `label`          : additional information used to derive Entry Table UIDs
  * - `additions`      : serialized list of new indexed values
  * - `deletions`      : serialized list of removed indexed values
- * - `base_url`       : base URL for Findex Cloud (with http prefix and port if
- *   required). If null, use the default Findex Cloud server.
+ * - `base_url`       : FindexREST server URL (with http prefix and port if
+ *   required). If null, use the default FindexREST server.
  *
  * # Safety
  *
@@ -922,14 +815,16 @@ int32_t h_upsert_cloud(int8_t *upsert_results_ptr,
                        const uint8_t *label_ptr,
                        int32_t label_len,
                        const int8_t *additions_ptr,
+                       int32_t additions_len,
                        const int8_t *deletions_ptr,
+                       int32_t deletions_len,
                        const int8_t *base_url_ptr);
 #endif
 
-#if defined(DEFINE_CLOUD)
+#if (defined(DEFINE_WASM) && defined(DEFINE_CLOUD))
 /**
  * Generate a new Findex token from the provided index ID and signature seeds,
- * and a randomly generated Findex master key inside Rust.
+ * and a randomly generated Findex key inside Rust.
  *
  * The token is output inside `token_ptr`, `token_len` is updated to match the
  * token length (this length should always be the same, right now, the length

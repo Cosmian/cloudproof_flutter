@@ -41,7 +41,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool loading = true;
 
-  late FindexMasterKey masterKey;
+  late FindexKey findexKey;
   late Uint8List label;
   late CoverCryptHelper coverCryptHelper;
 
@@ -75,9 +75,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   void indexDataForDemo() async {
     try {
       label = Uint8List.fromList(utf8.encode("NewLabel"));
-      masterKey = FindexMasterKey(Uint8List(16));
+      findexKey = FindexKey(Uint8List(16));
       await FindexRedisImplementation.init(coverCryptHelper);
-      await FindexRedisImplementation.indexAll(masterKey, label);
+      await FindexRedisImplementation.indexAll(findexKey, label);
 
       setState(() => loading = false);
 
@@ -94,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  List<Uint8List> getAllLocations(Iterable<List<Location>> searchResult) {
+  List<Uint8List> getAllLocations(Iterable<Set<Location>> searchResult) {
     List<Uint8List> res = [];
     for (final locations in searchResult) {
       for (final loc in locations) {
@@ -111,9 +111,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       try {
         final stopwatch = Stopwatch()..start();
         final searchResult = await FindexRedisImplementation.search(
-          masterKey.k,
+          findexKey.key,
           label,
-          [Keyword.fromString(query)],
+          {Keyword.fromString(query)},
         );
 
         final newSearchDuration = stopwatch.elapsed;

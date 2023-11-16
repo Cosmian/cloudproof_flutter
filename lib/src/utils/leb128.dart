@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+const maxLeb128EncodingSize = 8;
+
 /// This class contains static methods you can use to encode and decode
 /// integers that follow LEB128 compression format.
 class Leb128 {

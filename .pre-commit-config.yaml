@@ -72,7 +72,7 @@ repos:
       - id: shellcheck
 
   - repo: https://github.com/Cretezy/flutter-format-pre-commit
-    rev: 35be2187259c39889e2ac1936399b8a1ae6a5a00
+    rev: master
     hooks:
       - id: flutter-format
 
