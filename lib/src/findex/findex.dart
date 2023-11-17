@@ -143,13 +143,12 @@ class Findex {
       final end = DateTime.now();
 
       if (errorCode != 1) {
-        log("\n\n\nhahahahaahahahahaha: $errorCode");
         await throwOnErrorCode(errorCode, start, end);
       }
       if (outputSizeInBytes == 0 &&
           errorCode == 1 &&
           outputLengthPointer.value > 0) {
-        log("\n\n\nretrying: outputSizeInBytes == 0, outputLengthPointer.value: ${outputLengthPointer.value}");
+        log("retrying: outputSizeInBytes == 0, outputLengthPointer.value: ${outputLengthPointer.value}");
 
         return upsert(findexKey, label, additions, deletions, fetchEntries,
             upsertEntries, insertChains,
@@ -215,10 +214,6 @@ class Findex {
     log("search: serialization keywords OK: $keywordsSerializedSize");
     final keywordsPointer = keywordsBytes.allocateUint8Pointer();
 
-    // final Pointer<Utf8> keywordsPointer =
-    //     jsonEncode(keywords.map((value) => value.toBase64()).toList())
-    //         .toNativeUtf8();
-
     //
     // FFI OUTPUT parameters
     //
@@ -237,7 +232,6 @@ class Findex {
         label.length,
         keywordsPointer.cast<Uint8>(),
         keywordsSerializedSize,
-        // keywordsBytes.length,
         entryTableNumber,
         progressCallback,
         fetchEntries,
