@@ -220,9 +220,8 @@ class FindexRedisImplementation {
     final db = await FindexRedisImplementation.db;
     if (await FindexRedisImplementation.shouldThrowInsideFetch()) {
       log("Redis Should Throw Exception");
-      throw Exception("Redis Should Throw Exception"); // :ExceptionLine
+      throw UnsupportedError("Redis Should Throw Exception"); // :ExceptionLine
     }
-
     final values = await mget(db, table, uids.uids);
 
     for (final entry in uids.uids.asMap().entries) {

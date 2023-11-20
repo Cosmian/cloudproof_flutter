@@ -83,55 +83,48 @@ void main() {
       expect(usersIds, equals(expectedUsersIdsForFrance));
     }, tags: 'redis');
 
-    // test('exceptions', () async {
-    //   final findexKey = FindexKey.fromJson(jsonDecode(
-    //       await File('test/resources/findex/master_key.json').readAsString()));
-    //   final label = Uint8List.fromList(utf8.encode("Some Label"));
+    test('exceptions', () async {
+      final findexKey = FindexKey.fromJson(jsonDecode(
+          await File('test/resources/findex/master_key.json').readAsString()));
+      final label = Uint8List.fromList(utf8.encode("Some Label"));
 
-    //   await FindexRedisImplementation.init(findexKey, label);
-    //   final upsertResults =
-    //       await FindexRedisImplementation.indexAll(findexKey, label);
-    //   expect(upsertResults.length, 583);
+      await FindexRedisImplementation.init(findexKey, label);
+      final upsertResults = await FindexRedisImplementation.indexAll();
+      expect(upsertResults.length, 583);
 
-    //   await FindexRedisImplementation.setThrowInsideFetch();
-    //   try {
-    //     await FindexRedisImplementation.search({Keyword.fromString("France")});
-    //     sleep(const Duration(milliseconds: 1000));
+      await FindexRedisImplementation.setThrowInsideFetch();
+      try {
+        await FindexRedisImplementation.search({Keyword.fromString("France")});
+        sleep(const Duration(milliseconds: 1000));
+      } catch (e, stacktrace) {
+        // When an exception is thrown inside a callback
+        // we should rethrow the exception from our functions
+        // instead of throwing a generic Findex exception.
+        // The message should be the same
+        // The stacktrace should point to the correct line inside the user callback.
+        // This is working saving by the exceptions during the callbacks runs, returning a
+        // specific error code, Findex forwards the specific error code, Flutter catch the
+        // error code at the end of the search/upsert operation and find the saved exception
+        // to rethrow.
+        expect(
+          e.toString(),
+          "Unsupported operation: Redis Should Throw Exception",
+        );
+        expect(stacktrace.toString(),
+            contains("FindexRedisImplementation.fetchEntriesOrChains"));
+        expect(
+          stacktrace.toString(),
+          contains(
+              "test/findex/redis_findex.dart:223:7"), // When moving lines inside the Findex implementation this could fail, put the line of the tag :ExceptionLine
+        );
 
-    //     print(
-    //         "[redis_test] search exceptions length: ${Findex.exceptions.length}");
-    //     for (final e in Findex.exceptions) {
-    //       print("[redis_test] search exception: ${e.e} \n ${e.stacktrace}");
-    //     }
-    //   } catch (e, stacktrace) {
-    //     // When an exception is thrown inside a callback
-    //     // we should rethrow the exception from our functions
-    //     // instead of throwing a generic Findex exception.
-    //     // The message should be the same
-    //     // The stacktrace should point to the correct line inside the user callback.
-    //     // This is working saving by the exceptions during the callbacks runs, returning a
-    //     // specific error code, Findex forwards the specific error code, Flutter catch the
-    //     // error code at the end of the search/upsert operation and find the saved exception
-    //     // to rethrow.
-    //     expect(
-    //       e.toString(),
-    //       "Unsupported operation: Redis Should Throw Exception",
-    //     );
-    //     expect(stacktrace.toString(),
-    //         contains("FindexRedisImplementation.fetchEntriesOrChains"));
-    //     expect(
-    //       stacktrace.toString(),
-    //       contains(
-    //           "test/findex/redis_findex.dart:170:7"), // When moving lines inside the Findex implementation this could fail, put the line of the tag :ExceptionLine
-    //     );
+        return;
+      } finally {
+        await FindexRedisImplementation.resetThrowInsideFetch();
+      }
 
-    //     return;
-    //   } finally {
-    //     await FindexRedisImplementation.resetThrowInsideFetch();
-    //   }
-
-    //   expect(true, false);
-    // }, tags: 'exceptions');
+      expect(true, false);
+    }, tags: 'exceptions');
 
     test('redis multi entry tables', () async {
       final findexKey = FindexKey.fromJson(jsonDecode(

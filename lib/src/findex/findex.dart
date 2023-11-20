@@ -298,21 +298,11 @@ class Findex {
 
       final end = DateTime.now();
 
-      // print(
-      //     "[from $start to $end]search exceptions length: ${exceptions.length}");
-      // for (final e in exceptions) {
-      //   print(
-      //       "search exception: e: ${e.e} stack: ${e.stacktrace} date: ${e.datetime}\n\n\n");
-      // }
-
       if (errorCode != 0 && outputLengthPointer.value > outputSizeInBytes) {
         return searchWithInterruption(keywords, interruptCallback,
             outputSizeInBytes: outputLengthPointer.value, findexHandle: handle);
       }
 
-      // print(
-      //     "[from $start to $end]search exceptions length: ${exceptions.length}");
-      // await throwOnErrorCode(43, start, end);
       await throwOnErrorCode(errorCode, start, end);
 
       return SearchResults.deserialize(
@@ -414,7 +404,9 @@ class Findex {
     int uidsNumber,
   ) {
     final donePointer = calloc<Bool>(1);
+    final exceptionIndicatorPointer = calloc<Bool>(1);
     donePointer.value = false;
+    exceptionIndicatorPointer.value = false;
 
     try {
       Isolate.spawn(
@@ -435,16 +427,20 @@ class Findex {
               throw Exception(
                   "Isolate wrapAsyncFetchCallback exception: Unable to serialize callback results: serialize error code: $ret. Rust output buffer is too small. Is the number of entry tables correct?");
             }
+          } catch (e, stacktrace) {
+            Pointer<Bool>.fromAddress(message.item5).value = true;
+            log("[wrapperAsyncFetchCallback] exception caught: $e $stacktrace");
+            rethrow;
           } finally {
             Pointer<Bool>.fromAddress(message.item4).value = true;
           }
         },
-        Tuple4(
-          outputEntryTableLinesPointer.address,
-          outputEntryTableLinesLength.address,
-          uidsPointer.address,
-          donePointer.address,
-        ),
+        Tuple5(
+            outputEntryTableLinesPointer.address,
+            outputEntryTableLinesLength.address,
+            uidsPointer.address,
+            donePointer.address,
+            exceptionIndicatorPointer.address),
         onError: Findex.isolateErrorPort().sendPort,
       );
 
@@ -452,12 +448,17 @@ class Findex {
         sleep(const Duration(milliseconds: 10));
       }
 
+      if (exceptionIndicatorPointer.value) {
+        throw Exception(
+            "Exception indicator raised: exception during fetch callback");
+      }
       return 0;
     } catch (e, stacktrace) {
       log("Exception during fetch callback ($callback) $e $stacktrace");
       rethrow;
     } finally {
       calloc.free(donePointer);
+      calloc.free(exceptionIndicatorPointer);
     }
   }
 
@@ -471,7 +472,9 @@ class Findex {
     int newValuesLength,
   ) {
     final donePointer = calloc<Bool>(1);
+    final exceptionIndicatorPointer = calloc<Bool>(1);
     donePointer.value = false;
+    exceptionIndicatorPointer.value = false;
 
     try {
       Isolate.spawn(
@@ -502,17 +505,21 @@ class Findex {
               throw Exception(
                   "Isolate wrapAsyncUpsertEntriesCallback exception: Unable to serialize callback results: serialize error code: $returnCode. Rust output buffer is too small. Is the number of entry tables correct?");
             }
+          } catch (e, stacktrace) {
+            Pointer<Bool>.fromAddress(message.item6).value = true;
+            log("[wrapperAsyncUpsertCallback] exception caught: $e $stacktrace");
+            rethrow;
           } finally {
             Pointer<Bool>.fromAddress(message.item5).value = true;
           }
         },
-        Tuple5(
-          oldValuesPointer.address,
-          newValuesPointer.address,
-          outputRejectedEntriesListPointer.address,
-          outputRejectedEntriesListLength.address,
-          donePointer.address,
-        ),
+        Tuple6(
+            oldValuesPointer.address,
+            newValuesPointer.address,
+            outputRejectedEntriesListPointer.address,
+            outputRejectedEntriesListLength.address,
+            donePointer.address,
+            exceptionIndicatorPointer.address),
         onError: Findex.isolateErrorPort().sendPort,
       );
 
@@ -520,12 +527,18 @@ class Findex {
         sleep(const Duration(milliseconds: 10));
         log("sleep(10)");
       }
+      if (exceptionIndicatorPointer.value) {
+        throw Exception(
+            "Exception indicator raised: exception during upsert callback");
+      }
+
       return 0;
     } catch (e, stacktrace) {
       log("Exception during upsertEntriesCallback $e $stacktrace");
       rethrow;
     } finally {
       calloc.free(donePointer);
+      calloc.free(exceptionIndicatorPointer);
     }
   }
 
@@ -535,7 +548,9 @@ class Findex {
     int chainsListLength,
   ) {
     final donePointer = calloc<Bool>(1);
+    final exceptionIndicatorPointer = calloc<Bool>(1);
     donePointer.value = false;
+    exceptionIndicatorPointer.value = false;
 
     try {
       Isolate.spawn(
@@ -548,26 +563,35 @@ class Findex {
             final uidsAndValues = UidAndValue.deserialize(inputArray);
 
             await callback(uidsAndValues);
+          } catch (e, stacktrace) {
+            Pointer<Bool>.fromAddress(message.item3).value = true;
+            log("[wrapAsyncInsertChainsCallback] exception caught: $e $stacktrace");
+            rethrow;
           } finally {
             Pointer<Bool>.fromAddress(message.item2).value = true;
           }
         },
-        Tuple2(
-          chainsListPointer.address,
-          donePointer.address,
-        ),
+        Tuple3(chainsListPointer.address, donePointer.address,
+            exceptionIndicatorPointer.address),
         onError: Findex.isolateErrorPort().sendPort,
       );
 
       while (!donePointer.value) {
         sleep(const Duration(milliseconds: 10));
       }
+
+      if (exceptionIndicatorPointer.value) {
+        throw Exception(
+            "Exception indicator raised: exception during insert callback");
+      }
+
       return 0;
     } catch (e, stacktrace) {
       log("Exception during insertChainsCallback $e $stacktrace");
       rethrow;
     } finally {
       calloc.free(donePointer);
+      calloc.free(exceptionIndicatorPointer);
     }
   }
 
