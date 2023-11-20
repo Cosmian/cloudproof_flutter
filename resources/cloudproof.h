@@ -646,8 +646,9 @@ int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
- * Creates a new Findex instance using custom FFI backends. Stores this instance in a cache for
- * later use. Returns the cache handle of the new instance.
+ * Creates a new Findex instance using a custom FFI backend.
+ *
+ * The new instance is stored in a cache and the handle returned.
  *
  * # Safety
  *
@@ -669,43 +670,36 @@ int32_t h_instantiate_with_ffi_backend(int32_t *findex_handle,
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
-int32_t h_instantiate_with_rest_backend(int32_t *findex_handle,
-                                        const uint8_t *label_ptr,
-                                        int32_t label_len,
-                                        const int8_t *token_ptr,
-                                        const int8_t *base_url_ptr);
-#endif
-
-#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
- * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
- * `get_last_error` name The `h_get_error` is available inside the final lib
- * (but tools like `ffigen` seems to not parse it…) Maybe we can find a
- * solution by changing the function name inside the clients.
+ * Instantiate a Findex using a REST backend.
+ *
+ * # Parameters
+ *
+ * - `label`   : label used by Findex
+ * - `token`   : token containing authentication keys
+ * - `url`     : REST server URL
  *
  * # Safety
  *
  * Cannot be safe since using FFI.
  */
-int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
+int32_t h_instantiate_with_rest_backend(int32_t *findex_handle,
+                                        const uint8_t *label_ptr,
+                                        int32_t label_len,
+                                        const int8_t *token_ptr,
+                                        const int8_t *url_ptr);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
- * Recursively searches Findex graphs for values indexed by the given keywords.
+ * Searches the index for the given keywords.
  *
- * # Serialization
- *
- * Le output is serialized as follows:
- *
- * `LEB128(n_keywords) || LEB128(keyword_1)
- *     || keyword_1 || LEB128(n_associated_results)
- *     || LEB128(associated_result_1) || associated_result_1
- *     || ...`
+ * At each search recursion, the passed `interrupt` function is called with the results from the
+ * current recursion level. The search is interrupted is `true` is returned.
  *
  * # Parameters
  *
- * - `search_results`  : (output) search result
+ * - `results`         : (output) search result
  * - `findex_handle`   : Findex handle on the instance cache
  * - `keywords`        : serialized list of keywords
  * - `interrupt`       : user interrupt called at each search iteration
@@ -714,8 +708,8 @@ int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_search(uint8_t *search_results_ptr,
-                 int32_t *search_results_len,
+int32_t h_search(uint8_t *results_ptr,
+                 int32_t *results_len,
                  int32_t findex_handle,
                  const uint8_t *keywords_ptr,
                  int32_t keywords_len,
@@ -724,37 +718,13 @@ int32_t h_search(uint8_t *search_results_ptr,
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
- * Index the given values for the given keywords. Any subsequent search for such a keyword will
- * result in finding (at least) the values added that way.
- *
- * # Serialization
- *
- * The list of values to index for the associated keywords should be serialized as follows:
- *
- * `LEB128(n_values) || serialized_value_1
- *     || LEB128(n_associated_keywords) || serialized_keyword_1 || ...`
- *
- * where values serialized as follows:
- *
- * `LEB128(value_bytes.len() + 1) || base64(prefix || value_bytes)`
- *
- * with `prefix` being `l` for a `Location` and `w` for a `NextKeyword`, and
- * where keywords are serialized as follows:
- *
- * `LEB128(keyword_bytes.len()) || base64(keyword_bytes)`
- *
- * The results are serialized as follows:
- *
- * `LEB128(n_values) || serialized_value_1 || ... || serialized_value_n`
- *
- * and `serialized_value_i` is serialized as follows:
- * `LEB128(keyword_bytes.len()) || keyword_bytes`
+ * Adds the given associations to the index.
  *
  * # Parameters
  *
- * - `upsert_results`  : Returns the list of new keywords added to the index
+ * - `results`         : (output) list of new keywords added to the index
  * - `findex_handle`   : Findex handle on the instance cache
- * - `additions`       : serialized list of new indexed values
+ * - `associations`    : map of values to sets of keywords
  *
  * # Safety
  *
@@ -763,43 +733,19 @@ int32_t h_search(uint8_t *search_results_ptr,
 int32_t h_add(uint8_t *results_ptr,
               int32_t *results_len,
               int32_t findex_handle,
-              const uint8_t *additions_ptr,
-              int32_t additions_len);
+              const uint8_t *associations_ptr,
+              int32_t associations_len);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
- * Remove the given values for the given keywords from the index. Any subsequent search for such a
- * keyword will result in finding (at least) *none* of the values removed that way.
- *
- * # Serialization
- *
- * The list of values to index for the associated keywords should be serialized as follows:
- *
- * `LEB128(n_values) || serialized_value_1
- *     || LEB128(n_associated_keywords) || serialized_keyword_1 || ...`
- *
- * where values serialized as follows:
- *
- * `LEB128(value_bytes.len() + 1) || base64(prefix || value_bytes)`
- *
- * with `prefix` being `l` for a `Location` and `w` for a `NextKeyword`, and
- * where keywords are serialized as follows:
- *
- * `LEB128(keyword_bytes.len()) || base64(keyword_bytes)`
- *
- * The results are serialized as follows:
- *
- * `LEB128(n_values) || serialized_value_1 || ... || serialized_value_n`
- *
- * and `serialized_value_i` is serialized as follows:
- * `LEB128(keyword_bytes.len()) || keyword_bytes`
+ * Removes the given associations from the index.
  *
  * # Parameters
  *
- * - `upsert_results`  : Returns the list of new keywords added to the index
+ * - `results`         : Returns the list of new keywords added to the index
  * - `findex_handle`   : Findex handle on the instance cache
- * - `deletions`       : serialized list of removed indexed values
+ * - `associations`    : map of values to sets of keywords
  *
  * # Safety
  *
@@ -808,8 +754,8 @@ int32_t h_add(uint8_t *results_ptr,
 int32_t h_delete(uint8_t *results_ptr,
                  int32_t *results_len,
                  int32_t findex_handle,
-                 const uint8_t *deletions_ptr,
-                 int32_t deletions_len);
+                 const uint8_t *associations_ptr,
+                 int32_t associations_len);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
@@ -870,6 +816,20 @@ int32_t h_generate_new_token(uint8_t *token_ptr,
                              int32_t upsert_entries_seed_len,
                              const uint8_t *insert_chains_seed_ptr,
                              int32_t insert_chains_seed_len);
+#endif
+
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
+/**
+ * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
+ * `get_last_error` name The `h_get_error` is available inside the final lib
+ * (but tools like `ffigen` seems to not parse it…) Maybe we can find a
+ * solution by changing the function name inside the clients.
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
 #endif
 
 #if defined(DEFINE_FFI)

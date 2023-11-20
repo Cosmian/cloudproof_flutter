@@ -97,7 +97,7 @@ void main() {
         expect(
             e.toString(),
             startsWith(
-              "callback error: serialization: serialization error: crypto error: incorrect length for encrypted value: 32 bytes give, 114 bytes expected",
+              "findex `search` error: callback error: serialization: serialization error: crypto error: incorrect length for encrypted value: 32 bytes give, 114 bytes expected",
             ));
       } finally {
         SqliteFindex.returnOnlyUidInsideFetchChains = false;
@@ -128,7 +128,7 @@ void main() {
         expect(
             e.toString(),
             startsWith(
-                "callback error: serialization: serialization error: crypto error: incorrect length for encrypted value: 32 bytes give, 108 bytes expected"));
+                "findex `search` error: callback error: serialization: serialization error: crypto error: incorrect length for encrypted value: 32 bytes give, 108 bytes expected"));
       } finally {
         SqliteFindex.returnOnlyUidInsideFetchEntries = false;
       }
