@@ -15,3 +15,5 @@ export 'src/findex/keywords.dart';
 export 'src/findex/location.dart';
 export 'src/findex/indexed_value.dart';
 export 'src/findex/indexed_value_to_keywords.dart';
+export 'src/findex/search_results.dart';
+export 'src/findex/keyword_to_indexed_value_map.dart';

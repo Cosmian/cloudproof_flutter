@@ -8,25 +8,35 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#define DEFINE_FFI 1
+#define DEFINE_BACKEND_FFI
 
+#if defined(DEFINE_BACKEND_REST)
 /**
  * The number of seconds of validity of the requests to the `FindexREST` server.
  * After this time, the request cannot be accepted by the backend. This is done
  * to prevent replay attacks.
  */
 #define REQUEST_SIGNATURE_TIMEOUT_AS_SECS 60
+#endif
 
+#if defined(DEFINE_BACKEND_REST)
 /**
  * Callback signature length.
  */
 #define SIGNATURE_LENGTH 32
+#endif
 
+#if defined(DEFINE_BACKEND_REST)
 /**
  * Seed used to generate KMAC keys.
  */
 #define SIGNATURE_SEED_LENGTH 16
+#endif
 
+#if defined(DEFINE_BACKEND_REST)
 #define INDEX_ID_LENGTH 5
+#endif
 
 /**
  * The Key Length: 256 bit = 32 bytes for AES 256
@@ -38,9 +48,7 @@
  */
 #define RECOMMENDED_THRESHOLD 1000000
 
-typedef int32_t (*Interrupt)(const uint8_t *intermediate_results_ptr,
-                             uint32_t intermediate_results_len);
-
+#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
 /**
  * # Serialization
  *
@@ -54,7 +62,9 @@ typedef int32_t (*Fetch)(uint8_t *output_ptr,
                          uint32_t *output_len,
                          const uint8_t *uids_ptr,
                          uint32_t uids_len);
+#endif
 
+#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
 /**
  * # Serialization
  *
@@ -70,7 +80,9 @@ typedef int32_t (*Upsert)(uint8_t *indexed_values_ptr,
                           uint32_t old_values_len,
                           const uint8_t *new_values_ptr,
                           uint32_t new_values_len);
+#endif
 
+#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
 /**
  * # Serialization
  *
@@ -78,7 +90,9 @@ typedef int32_t (*Upsert)(uint8_t *indexed_values_ptr,
  * `LEB128(n_values) || UID_1 || LEB128(value_1.len() || value_1 || ...`
  */
 typedef int32_t (*Insert)(const uint8_t *input_ptr, uint32_t input_len);
+#endif
 
+#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
 /**
  * # Serialization
  *
@@ -86,23 +100,34 @@ typedef int32_t (*Insert)(const uint8_t *input_ptr, uint32_t input_len);
  * `LEB128(n_values) || UID_1 || LEB128(value_1.len() || value_1 || ...`
  */
 typedef int32_t (*Delete)(const uint8_t *input_ptr, uint32_t input_len);
+#endif
 
+#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
 /**
  * # Serialization
  *
  * Output: `LEB128(n_uids) || UID_1 || ... || UID_n`
  */
 typedef int32_t (*DumpTokens)(uint8_t *uids_ptr, uint32_t *uids_len);
+#endif
 
+#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
+typedef int32_t (*Interrupt)(const uint8_t *intermediate_results_ptr,
+                             uint32_t intermediate_results_len);
+#endif
+
+#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
 typedef int32_t (*FilterObsoleteData)(uint8_t *output_locations_ptr,
                                       uint32_t *output_locations_len,
                                       const uint8_t *locations_ptr,
                                       uint32_t locations_len);
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
+#if defined(DEFINE_FFI)
 int32_t h_aes256gcm_encrypt(uint8_t *output_ptr,
                             int32_t *output_len,
                             const int8_t *plaintext_ptr,
@@ -113,7 +138,9 @@ int32_t h_aes256gcm_encrypt(uint8_t *output_ptr,
                             int32_t nonce_len,
                             const int8_t *authenticated_data_ptr,
                             int32_t authenticated_data_len);
+#endif
 
+#if defined(DEFINE_FFI)
 int32_t h_aes256gcm_decrypt(uint8_t *output_ptr,
                             int32_t *output_len,
                             const int8_t *ciphertext_ptr,
@@ -124,6 +151,7 @@ int32_t h_aes256gcm_decrypt(uint8_t *output_ptr,
                             int32_t nonce_len,
                             const int8_t *authenticated_data_ptr,
                             int32_t authenticated_data_len);
+#endif
 
 /**
  * Externally sets the last error recorded on the Rust side.
@@ -158,11 +186,14 @@ int32_t h_set_error(const int8_t *error_message_ptr);
  */
 int32_t h_get_error(int8_t *error_ptr, int32_t *error_len);
 
+#if defined(DEFINE_FFI)
 /**
  * # Safety
  */
 int32_t h_policy(int8_t *policy_ptr, int32_t *policy_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * # Safety
  */
@@ -171,7 +202,9 @@ int32_t h_add_policy_axis(int8_t *updated_policy_ptr,
                           const int8_t *current_policy_ptr,
                           int32_t current_policy_len,
                           const int8_t *axis_ptr);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * # Safety
  */
@@ -180,7 +213,9 @@ int32_t h_remove_policy_axis(int8_t *updated_policy_ptr,
                              const int8_t *current_policy_ptr,
                              int32_t current_policy_len,
                              const int8_t *axis_name_ptr);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * # Safety
  */
@@ -190,7 +225,9 @@ int32_t h_add_policy_attribute(int8_t *updated_policy_ptr,
                                int32_t current_policy_len,
                                const int8_t *attribute,
                                bool is_hybridized);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * # Safety
  */
@@ -199,7 +236,9 @@ int32_t h_remove_policy_attribute(int8_t *updated_policy_ptr,
                                   const int8_t *current_policy_ptr,
                                   int32_t current_policy_len,
                                   const int8_t *attribute);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * # Safety
  */
@@ -208,14 +247,18 @@ int32_t h_disable_policy_attribute(int8_t *updated_policy_ptr,
                                    const int8_t *current_policy_ptr,
                                    int32_t current_policy_len,
                                    const int8_t *attribute);
+#endif
 
+#if defined(DEFINE_FFI)
 int32_t h_rename_policy_attribute(int8_t *updated_policy_ptr,
                                   int32_t *updated_policy_len,
                                   const int8_t *current_policy_ptr,
                                   int32_t current_policy_len,
                                   const int8_t *attribute,
                                   const int8_t *new_attribute_name_ptr);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * # Safety
  */
@@ -224,7 +267,9 @@ int32_t h_rotate_attribute(int8_t *updated_policy_ptr,
                            const int8_t *current_policy_ptr,
                            int32_t current_policy_len,
                            const int8_t *attribute);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * # Safety
  */
@@ -233,17 +278,23 @@ int32_t h_clear_old_attribute_values(int8_t *updated_policy_ptr,
                                      const int8_t *current_policy_ptr,
                                      int32_t current_policy_len,
                                      const int8_t *attribute);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * # Safety
  */
 int32_t h_validate_boolean_expression(const int8_t *boolean_expression_ptr);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * # Safety
  */
 int32_t h_validate_attribute(const int8_t *attribute_ptr);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Generates the master authority keys for supplied Policy.
  *
@@ -262,7 +313,9 @@ int32_t h_generate_master_keys(int8_t *msk_ptr,
                                int32_t *mpk_len,
                                const int8_t *policy_ptr,
                                int32_t policy_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Generates a user secret key for the given access policy
  *
@@ -282,7 +335,9 @@ int32_t h_generate_user_secret_key(int8_t *usk_ptr,
                                    const int8_t *user_policy_ptr,
                                    const int8_t *policy_ptr,
                                    int32_t policy_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Updates the master keys according to the given policy.
  *
@@ -309,7 +364,9 @@ int32_t h_update_master_keys(int8_t *updated_msk_ptr,
                              int32_t current_mpk_len,
                              const int8_t *policy_ptr,
                              int32_t policy_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Refreshes the user secret key according to the given master key and access
  * policy.
@@ -342,7 +399,9 @@ int32_t h_refresh_user_secret_key(int8_t *updated_usk_ptr,
                                   const int8_t *policy_ptr,
                                   int32_t policy_len,
                                   int32_t preserve_old_partitions_access);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Creates a cache containing the Public Key and Policy. This cache can be
  * reused when encrypting messages which avoids passing these objects to Rust
@@ -358,7 +417,9 @@ int32_t h_create_encryption_cache(int32_t *cache_handle,
                                   int32_t policy_len,
                                   const int8_t *mpk_ptr,
                                   int32_t mpk_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Reclaims the memory of the cache.
  *
@@ -367,7 +428,9 @@ int32_t h_create_encryption_cache(int32_t *cache_handle,
  * # Safety
  */
 int32_t h_destroy_encryption_cache(int32_t cache_handle);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Encrypts a header using an encryption cache.
  *
@@ -383,7 +446,9 @@ int32_t h_encrypt_header_using_cache(int8_t *symmetric_key_ptr,
                                      int32_t header_metadata_len,
                                      const int8_t *authentication_data_ptr,
                                      int32_t authentication_data_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Encrypts a header without using an encryption cache.
  * It is slower but does not require destroying any cache when done.
@@ -404,7 +469,9 @@ int32_t h_encrypt_header(int8_t *symmetric_key_ptr,
                          int32_t header_metadata_len,
                          const int8_t *authentication_data_ptr,
                          int32_t authentication_data_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Creates a cache containing the user secret key. This cache can be reused
  * when decrypting messages which avoids passing this key to Rust in each call.
@@ -417,14 +484,18 @@ int32_t h_encrypt_header(int8_t *symmetric_key_ptr,
  * # Safety
  */
 int32_t h_create_decryption_cache(int32_t *cache_handle, const int8_t *usk_ptr, int32_t usk_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Reclaims decryption cache memory.
  *
  * # Safety
  */
 int32_t h_destroy_decryption_cache(int32_t cache_handle);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Decrypts an encrypted header using a cache. Returns the symmetric key and
  * header metadata if any.
@@ -442,7 +513,9 @@ int32_t h_decrypt_header_using_cache(int8_t *symmetric_key_ptr,
                                      const int8_t *authentication_data_ptr,
                                      int32_t authentication_data_len,
                                      int32_t cache_handle);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Decrypts an encrypted header, returning the symmetric key and header
  * metadata if any.
@@ -461,13 +534,17 @@ int32_t h_decrypt_header(int8_t *symmetric_key_ptr,
                          int32_t authentication_data_len,
                          const int8_t *usk_ptr,
                          int32_t usk_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  *
  * # Safety
  */
 int32_t h_symmetric_encryption_overhead(void);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  *
  * # Safety
@@ -480,7 +557,9 @@ int32_t h_dem_encrypt(int8_t *ciphertext_ptr,
                       int32_t authentication_data_len,
                       const int8_t *plaintext_ptr,
                       int32_t plaintext_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  *
  * # Safety
@@ -493,7 +572,9 @@ int32_t h_dem_decrypt(int8_t *plaintext_ptr,
                       int32_t authentication_data_len,
                       const int8_t *ciphertext_ptr,
                       int32_t ciphertext_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Hybrid encrypt some content
  *
@@ -512,7 +593,9 @@ int32_t h_hybrid_encrypt(int8_t *ciphertext_ptr,
                          int32_t header_metadata_len,
                          const int8_t *authentication_data_ptr,
                          int32_t authentication_data_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Hybrid decrypt some content.
  *
@@ -530,12 +613,16 @@ int32_t h_hybrid_decrypt(int8_t *plaintext_ptr,
                          int32_t authentication_data_len,
                          const int8_t *usk_ptr,
                          int32_t usk_len);
+#endif
 
+#if defined(DEFINE_FFI)
 int32_t h_ecies_x25519_generate_key_pair(uint8_t *public_key_ptr,
                                          int32_t *public_key_len,
                                          uint8_t *private_key_ptr,
                                          int32_t *private_key_len);
+#endif
 
+#if defined(DEFINE_FFI)
 int32_t h_ecies_salsa_seal_box_encrypt(uint8_t *output_ptr,
                                        int32_t *output_len,
                                        const int8_t *plaintext_ptr,
@@ -544,9 +631,13 @@ int32_t h_ecies_salsa_seal_box_encrypt(uint8_t *output_ptr,
                                        int32_t public_key_len,
                                        const int8_t *authentication_data_ptr,
                                        int32_t authentication_data_len);
+#endif
 
+#if defined(DEFINE_FFI)
 uint32_t h_ecies_salsa_seal_box_get_encryption_overhead(void);
+#endif
 
+#if defined(DEFINE_FFI)
 int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
                                        int32_t *output_len,
                                        const int8_t *ciphertext_ptr,
@@ -555,127 +646,123 @@ int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
                                        int32_t private_key_len,
                                        const int8_t *authentication_data_ptr,
                                        int32_t authentication_data_len);
-
-#if defined(DEFINE_WASM)
-/**
- * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
- * `get_last_error` name The `h_get_error` is available inside the final lib
- * (but tools like `ffigen` seems to not parse it…) Maybe we can find a
- * solution by changing the function name inside the clients.
- *
- * # Safety
- *
- * It's unsafe.
- */
-int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
 #endif
 
-#if defined(DEFINE_WASM)
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
- * Recursively searches Findex graphs for values indexed by the given keywords.
+ * Creates a new Findex instance using a custom FFI backend.
  *
- * # Serialization
- *
- * Le output is serialized as follows:
- *
- * `LEB128(n_keywords) || LEB128(keyword_1)
- *     || keyword_1 || LEB128(n_associated_results)
- *     || LEB128(associated_result_1) || associated_result_1
- *     || ...`
- *
- * # Parameters
- *
- * - `search_results`          : (output) search result
- * - `key`                     : Findex key
- * - `label`                   : public information used to derive UIDs
- * - `keywords`                : serialized list of keywords
- * - `entry_table_number`      : number of different entry tables
- * - `interrupt`               : user interrupt called at each search iteration
- * - `fetch_entry_callback`    : callback used to fetch the Entry Table
- * - `fetch_chain_callback`    : callback used to fetch the Chain Table
+ * The new instance is stored in a cache and the handle returned.
  *
  * # Safety
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_search(uint8_t *search_results_ptr,
-                 int32_t *search_results_len,
-                 const uint8_t *key_ptr,
-                 uint32_t key_len,
-                 const uint8_t *label_ptr,
-                 uint32_t label_len,
+int32_t h_instantiate_with_ffi_backend(int32_t *findex_handle,
+                                       const uint8_t *key_ptr,
+                                       int32_t key_len,
+                                       const uint8_t *label_ptr,
+                                       int32_t label_len,
+                                       uint32_t entry_table_number,
+                                       Fetch fetch_entry,
+                                       Fetch fetch_chain,
+                                       Upsert upsert_entry,
+                                       Insert insert_chain,
+                                       Delete delete_entry,
+                                       Delete delete_chain,
+                                       DumpTokens dump_tokens);
+#endif
+
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
+/**
+ * Instantiate a Findex using a REST backend.
+ *
+ * # Parameters
+ *
+ * - `label`   : label used by Findex
+ * - `token`   : token containing authentication keys
+ * - `url`     : REST server URL
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_instantiate_with_rest_backend(int32_t *findex_handle,
+                                        const uint8_t *label_ptr,
+                                        int32_t label_len,
+                                        const int8_t *token_ptr,
+                                        const int8_t *url_ptr);
+#endif
+
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
+/**
+ * Searches the index for the given keywords.
+ *
+ * At each search recursion, the passed `interrupt` function is called with the results from the
+ * current recursion level. The search is interrupted is `true` is returned.
+ *
+ * # Parameters
+ *
+ * - `results`         : (output) search result
+ * - `findex_handle`   : Findex handle on the instance cache
+ * - `keywords`        : serialized list of keywords
+ * - `interrupt`       : user interrupt called at each search iteration
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_search(uint8_t *results_ptr,
+                 int32_t *results_len,
+                 int32_t findex_handle,
                  const uint8_t *keywords_ptr,
-                 uint32_t keywords_len,
-                 uint32_t entry_table_number,
-                 Interrupt interrupt,
-                 Fetch fetch_entry_callback,
-                 Fetch fetch_chain_callback);
+                 int32_t keywords_len,
+                 Interrupt interrupt);
 #endif
 
-#if defined(DEFINE_WASM)
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
- * Index the given values for the given keywords. After upserting, any
- * search for such a keyword will result in finding (at least) the
- * corresponding value.
- *
- * # Serialization
- *
- * The list of values to index for the associated keywords should be serialized
- * as follows:
- *
- * `LEB128(n_values) || serialized_value_1
- *     || LEB128(n_associated_keywords) || serialized_keyword_1 || ...`
- *
- * where values serialized as follows:
- *
- * `LEB128(value_bytes.len() + 1) || base64(prefix || value_bytes)`
- *
- * with `prefix` being `l` for a `Location` and `w` for a `NextKeyword`, and
- * where keywords are serialized as follows:
- *
- * `LEB128(keyword_bytes.len()) || base64(keyword_bytes)`
- *
- * The results are serialized as follows:
- *
- * `LEB128(n_values) || serialized_value_1 || ... || serialized_value_n`
- *
- * and `serialized_value_i` is serialized as follows:
- * `LEB128(keyword_bytes.len()) || keyword_bytes`
+ * Adds the given associations to the index.
  *
  * # Parameters
  *
- * - `upsert_results`  : Returns the list of new keywords added to the index
- * - `key`      : Findex key
- * - `label`           : additional information used to derive Entry Table UIDs
- * TODO (TBZ): explain the serialization in the doc
- * - `additions`       : serialized list of new indexed values
- * - `deletions`       : serialized list of removed indexed values
- * - `entry_table_number` : number of different entry tables
- * - `fetch_entry`     : callback used to fetch the Entry Table
- * - `upsert_entry`    : callback used to upsert lines in the Entry Table
- * - `insert_chain`    : callback used to insert lines in the Chain Table
+ * - `results`         : (output) list of new keywords added to the index
+ * - `findex_handle`   : Findex handle on the instance cache
+ * - `associations`    : map of values to sets of keywords
  *
  * # Safety
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_upsert(int8_t *upsert_results_ptr,
-                 int32_t *upsert_results_len,
-                 const uint8_t *key_ptr,
-                 int32_t key_len,
-                 const uint8_t *label_ptr,
-                 int32_t label_len,
-                 const int8_t *additions_ptr,
-                 int32_t additions_len,
-                 const int8_t *deletions_ptr,
-                 int32_t deletions_len,
-                 uint32_t entry_table_number,
-                 Fetch fetch_entry,
-                 Upsert upsert_entry,
-                 Insert insert_chain);
+int32_t h_add(uint8_t *results_ptr,
+              int32_t *results_len,
+              int32_t findex_handle,
+              const uint8_t *associations_ptr,
+              int32_t associations_len);
 #endif
 
-#if defined(DEFINE_WASM)
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
+/**
+ * Removes the given associations from the index.
+ *
+ * # Parameters
+ *
+ * - `results`         : Returns the list of new keywords added to the index
+ * - `findex_handle`   : Findex handle on the instance cache
+ * - `associations`    : map of values to sets of keywords
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_delete(uint8_t *results_ptr,
+                 int32_t *results_len,
+                 int32_t findex_handle,
+                 const uint8_t *associations_ptr,
+                 int32_t associations_len);
+#endif
+
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
  * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
  * using the given label and the KMAC key derived from the new key. The
@@ -690,138 +777,26 @@ int32_t h_upsert(int8_t *upsert_results_ptr,
  *
  * # Parameters
  *
- * - `old_key`                         : old Findex key
- * - `new_key`                         : new Findex key
- * - `new_label`                       : public information used to derive UIDs
- * - `num_reindexing_before_full_set`  : number of compact operation needed to
- *   compact all the Chain Table
- * - `entry_table_number`               : number of different entry tables
- * - `fetch_entry`                     : callback used to fetch the Entry Table
- * - `fetch_chain`                     : callback used to fetch the Chain Table
- * - `update_lines`                    : callback used to update lines in both
- *   tables
- * - `list_removed_locations`          : callback used to list removed
- *   locations among the ones given
+ * - `findex_handle`           : Findex handle on the instance cache
+ * - `new_key`                 : new Findex key
+ * - `new_label`               : public information used to derive UIDs
+ * - `filter_obsolete_data`    : callback used to filter out obsolete data
+ *   among indexed data
  *
  * # Safety
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_compact(const uint8_t *old_key_ptr,
-                  int32_t old_key_len,
+int32_t h_compact(int32_t findex_handle,
                   const uint8_t *new_key_ptr,
                   int32_t new_key_len,
-                  const uint8_t *old_label_ptr,
-                  int32_t old_label_len,
                   const uint8_t *new_label_ptr,
                   int32_t new_label_len,
                   uint32_t n_compact_to_full,
-                  uint32_t entry_table_number,
-                  Fetch fetch_entry,
-                  Fetch fetch_chain,
-                  Upsert upsert_entry,
-                  Insert insert_chain,
-                  Delete delete_entry,
-                  Delete delete_chain,
-                  DumpTokens dump_tokens_entry,
                   FilterObsoleteData filter_obsolete_data);
 #endif
 
-#if (defined(DEFINE_WASM) && defined(DEFINE_CLOUD))
-/**
- * Recursively searches Findex graphs for values indexed by the given keywords.
- *
- * # Serialization
- *
- * Le output is serialized as follows:
- *
- * `LEB128(n_keywords) || LEB128(keyword_1)
- *     || keyword_1 || LEB128(n_associated_results)
- *     || LEB128(associated_result_1) || associated_result_1
- *     || ...`
- *
- * # Parameters
- *
- * - `search_results`          : (output) search result
- * - `token`                   : FindexREST token
- * - `label`                   : public information used to derive UIDs
- * - `keywords`                : `serde` serialized list of base64 keywords
- * - `base_url`                : FindexREST server URL (with http prefix and
- *   port if required). If null, use the default FindexREST server.
- * - `interrupt`               : user interrupt called at each search iteration
- *
- * # Safety
- *
- * Cannot be safe since using FFI.
- */
-int32_t h_search_cloud(int8_t *search_results_ptr,
-                       int32_t *search_results_len,
-                       const int8_t *token_ptr,
-                       const uint8_t *label_ptr,
-                       int32_t label_len,
-                       const uint8_t *keywords_ptr,
-                       uint32_t keywords_len,
-                       const int8_t *base_url_ptr,
-                       Interrupt interrupt);
-#endif
-
-#if (defined(DEFINE_WASM) && defined(DEFINE_CLOUD))
-/**
- * Index the given values for the given keywords. After upserting, any
- * search for such a keyword will result in finding (at least) the
- * corresponding value.
- *
- * # Serialization
- *
- * The list of values to index for the associated keywords should be serialized
- * as follows:
- *
- * `LEB128(n_values) || serialized_value_1
- *     || LEB128(n_associated_keywords) || serialized_keyword_1 || ...`
- *
- * where values serialized as follows:
- *
- * `LEB128(value_bytes.len() + 1) || base64(prefix || value_bytes)`
- *
- * with `prefix` being `l` for a `Location` and `w` for a `NextKeyword`, and
- * where keywords are serialized as follows:
- *
- * `LEB128(keyword_bytes.len()) || base64(keyword_bytes)`
- *
- * The results are serialized as follows:
- *
- * `LEB128(n_values) || serialized_value_1 || ... || serialized_value_n`
- *
- * and `serialized_value_i` is serialized as follows:
- * `LEB128(keyword_bytes.len()) || keyword_bytes`
- *
- * # Parameters
- *
- * - `upsert_results` : Returns the list of new keywords added to the index
- * - `token`          : FindexREST authorization token
- * - `label`          : additional information used to derive Entry Table UIDs
- * - `additions`      : serialized list of new indexed values
- * - `deletions`      : serialized list of removed indexed values
- * - `base_url`       : FindexREST server URL (with http prefix and port if
- *   required). If null, use the default FindexREST server.
- *
- * # Safety
- *
- * Cannot be safe since using FFI.
- */
-int32_t h_upsert_cloud(int8_t *upsert_results_ptr,
-                       int32_t *upsert_results_len,
-                       const int8_t *token_ptr,
-                       const uint8_t *label_ptr,
-                       int32_t label_len,
-                       const int8_t *additions_ptr,
-                       int32_t additions_len,
-                       const int8_t *deletions_ptr,
-                       int32_t deletions_len,
-                       const int8_t *base_url_ptr);
-#endif
-
-#if (defined(DEFINE_WASM) && defined(DEFINE_CLOUD))
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
  * Generate a new Findex token from the provided index ID and signature seeds,
  * and a randomly generated Findex key inside Rust.
@@ -847,6 +822,21 @@ int32_t h_generate_new_token(uint8_t *token_ptr,
                              int32_t insert_chains_seed_len);
 #endif
 
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
+/**
+ * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
+ * `get_last_error` name The `h_get_error` is available inside the final lib
+ * (but tools like `ffigen` seems to not parse it…) Maybe we can find a
+ * solution by changing the function name inside the clients.
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
+#endif
+
+#if defined(DEFINE_FFI)
 /**
  * Encrypts a string using Format Preserving Encryption (FPE) algorithm with
  * the specified alphabet.
@@ -890,7 +880,9 @@ int32_t h_fpe_encrypt_alphabet(uint8_t *plaintext_ptr,
                                const int8_t *tweak_ptr,
                                int32_t tweak_len,
                                const int8_t *additional_characters_ptr);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Decrypts a string using Format Preserving Encryption (FPE) algorithm with
  * the specified alphabet.
@@ -934,7 +926,9 @@ int32_t h_fpe_decrypt_alphabet(uint8_t *ciphertext_ptr,
                                const int8_t *tweak_ptr,
                                int32_t tweak_len,
                                const int8_t *additional_characters_ptr);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Encrypts the input `f64` using the FPE algorithm with the given key and
  * tweak, and stores the result in the `output` pointer. The length of the key
@@ -952,7 +946,9 @@ int32_t h_fpe_encrypt_float(double *output,
                             int32_t key_len,
                             const int8_t *tweak_ptr,
                             int32_t tweak_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Decrypts the input `f64` using the FPE algorithm with the given key and
  * tweak, and stores the result in the `output` pointer. The length of the key
@@ -970,7 +966,9 @@ int32_t h_fpe_decrypt_float(double *output,
                             int32_t key_len,
                             const int8_t *tweak_ptr,
                             int32_t tweak_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Encrypts an integer using the format-preserving encryption (FPE) algorithm.
  *
@@ -1005,7 +1003,9 @@ int32_t h_fpe_encrypt_integer(uint64_t *output,
                               int32_t key_len,
                               const int8_t *tweak_ptr,
                               int32_t tweak_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Decrypts an integer using the format-preserving encryption (FPE) algorithm.
  *
@@ -1040,7 +1040,9 @@ int32_t h_fpe_decrypt_integer(uint64_t *output,
                               int32_t key_len,
                               const int8_t *tweak_ptr,
                               int32_t tweak_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Encrypts an input big integer using the FPE algorithm and returns the
  * encrypted value as an array of bytes.
@@ -1079,7 +1081,9 @@ int32_t h_fpe_encrypt_big_integer(uint8_t *output_ptr,
                                   int32_t key_len,
                                   const int8_t *tweak_ptr,
                                   int32_t tweak_len);
+#endif
 
+#if defined(DEFINE_FFI)
 /**
  * Decrypts an input big integer using the FPE algorithm and returns the
  * decrypted value as an array of bytes.
@@ -1118,6 +1122,7 @@ int32_t h_fpe_decrypt_big_integer(uint8_t *output_ptr,
                                   int32_t key_len,
                                   const int8_t *tweak_ptr,
                                   int32_t tweak_len);
+#endif
 
 #ifdef __cplusplus
 } // extern "C"

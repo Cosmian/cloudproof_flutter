@@ -76,8 +76,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     try {
       label = Uint8List.fromList(utf8.encode("NewLabel"));
       findexKey = FindexKey(Uint8List(16));
-      await FindexRedisImplementation.init(coverCryptHelper);
-      await FindexRedisImplementation.indexAll(findexKey, label);
+      await FindexRedisImplementation.init(coverCryptHelper, findexKey, label);
+      await FindexRedisImplementation.indexAll();
 
       setState(() => loading = false);
 
@@ -110,11 +110,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _debouncer.run(() async {
       try {
         final stopwatch = Stopwatch()..start();
-        final searchResult = await FindexRedisImplementation.search(
-          findexKey.key,
-          label,
-          {Keyword.fromString(query)},
-        );
+        final searchResult =
+            await FindexRedisImplementation.search({Keyword.fromString(query)});
 
         final newSearchDuration = stopwatch.elapsed;
 

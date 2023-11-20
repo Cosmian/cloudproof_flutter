@@ -44,4 +44,23 @@ class Keywords {
     log("[keywords] serialize: exiting: idx: $idx");
     return idx;
   }
+
+  static Set<Keyword> deserialize(Uint8List bytes) {
+    Set<Keyword> result = {};
+
+    Iterator<int> iterator = bytes.iterator;
+    final length = Leb128.decodeUnsigned(iterator);
+    if (length == 0) {
+      return {};
+    }
+
+    for (int idx = 0; idx < length; idx++) {
+      // Get Keyword
+      final keyword = Keyword.deserialize(iterator);
+
+      result.add(keyword);
+    }
+
+    return result;
+  }
 }

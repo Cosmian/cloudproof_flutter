@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -49,7 +50,7 @@ void main() {
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
 
-      await FindexRedisImplementation.init();
+      await FindexRedisImplementation.init(findexKey, label);
 
       expect(
           await FindexRedisImplementation.count(RedisTable.users), equals(100));
@@ -58,8 +59,7 @@ void main() {
       expect(
           await FindexRedisImplementation.count(RedisTable.chains), equals(0));
 
-      final upsertResults =
-          await FindexRedisImplementation.indexAll(findexKey, label);
+      final upsertResults = await FindexRedisImplementation.indexAll();
       expect(upsertResults.length, 583);
 
       expect(await FindexRedisImplementation.count(RedisTable.entries),
@@ -68,7 +68,7 @@ void main() {
           equals(618));
 
       final searchResults = await FindexRedisImplementation.search(
-          findexKey.key, label, {Keyword.fromString("France")});
+          {Keyword.fromString("France")});
 
       expect(searchResults.length, 1);
 
@@ -83,50 +83,48 @@ void main() {
       expect(usersIds, equals(expectedUsersIdsForFrance));
     }, tags: 'redis');
 
-    // test('exceptions', () async {
-    //   final findexKey = FindexKey.fromJson(jsonDecode(
-    //       await File('test/resources/findex/master_key.json').readAsString()));
+    test('exceptions', () async {
+      final findexKey = FindexKey.fromJson(jsonDecode(
+          await File('test/resources/findex/master_key.json').readAsString()));
+      final label = Uint8List.fromList(utf8.encode("Some Label"));
 
-    //   final label = Uint8List.fromList(utf8.encode("Some Label"));
+      await FindexRedisImplementation.init(findexKey, label);
+      final upsertResults = await FindexRedisImplementation.indexAll();
+      expect(upsertResults.length, 583);
 
-    //   await FindexRedisImplementation.init();
-    //   final upsertResults =
-    //       await FindexRedisImplementation.indexAll(findexKey, label);
-    //   expect(upsertResults.length, 583);
+      await FindexRedisImplementation.setThrowInsideFetch();
+      try {
+        await FindexRedisImplementation.search({Keyword.fromString("France")});
+        sleep(const Duration(milliseconds: 1000));
+      } catch (e, stacktrace) {
+        // When an exception is thrown inside a callback
+        // we should rethrow the exception from our functions
+        // instead of throwing a generic Findex exception.
+        // The message should be the same
+        // The stacktrace should point to the correct line inside the user callback.
+        // This is working saving by the exceptions during the callbacks runs, returning a
+        // specific error code, Findex forwards the specific error code, Flutter catch the
+        // error code at the end of the search/upsert operation and find the saved exception
+        // to rethrow.
+        expect(
+          e.toString(),
+          "Unsupported operation: Redis Should Throw Exception",
+        );
+        expect(stacktrace.toString(),
+            contains("FindexRedisImplementation.fetchEntriesOrChains"));
+        expect(
+          stacktrace.toString(),
+          contains(
+              "test/findex/redis_findex.dart:223:7"), // When moving lines inside the Findex implementation this could fail, put the line of the tag :ExceptionLine
+        );
 
-    //   await FindexRedisImplementation.setThrowInsideFetch();
-    //   try {
-    //     await FindexRedisImplementation.search(
-    //         findexKey.key, label, {Keyword.fromString("France")});
-    //   } catch (e, stacktrace) {
-    //     // When an exception is thrown inside a callback
-    //     // we should rethrow the exception from our functions
-    //     // instead of throwing a generic Findex exception.
-    //     // The message should be the same
-    //     // The stacktrace should point to the correct line inside the user callback.
-    //     // This is working saving by the exceptions during the callbacks runs, returning a
-    //     // specific error code, Findex forwards the specific error code, Flutter catch the
-    //     // error code at the end of the search/upsert operation and find the saved exception
-    //     // to rethrow.
-    //     expect(
-    //       e.toString(),
-    //       "Unsupported operation: Redis Should Throw Exception",
-    //     );
-    //     expect(stacktrace.toString(),
-    //         contains("FindexRedisImplementation.fetchEntriesOrChains"));
-    //     expect(
-    //       stacktrace.toString(),
-    //       contains(
-    //           "test/findex/redis_findex.dart:170:7"), // When moving lines inside the Findex implementation this could fail, put the line of the tag :ExceptionLine
-    //     );
+        return;
+      } finally {
+        await FindexRedisImplementation.resetThrowInsideFetch();
+      }
 
-    //     return;
-    //   } finally {
-    //     await FindexRedisImplementation.resetThrowInsideFetch();
-    //   }
-
-    //   expect(true, false);
-    // }, tags: 'exceptions');
+      expect(true, false);
+    }, tags: 'redis');
 
     test('redis multi entry tables', () async {
       final findexKey = FindexKey.fromJson(jsonDecode(
@@ -134,7 +132,8 @@ void main() {
 
       final label = Uint8List.fromList(utf8.encode("Some Label"));
 
-      await RedisMultiEntryTables.init();
+      final handles = await RedisMultiEntryTables.init(findexKey, label);
+      log("handles: $handles");
 
       expect(await RedisMultiEntryTables.count(RedisTables.users), equals(100));
       expect(
@@ -146,16 +145,16 @@ void main() {
       expect(
           await RedisMultiEntryTables.count(RedisTables.chains_2), equals(0));
 
-      await RedisMultiEntryTables.upsert_1(findexKey, label, {
+      await RedisMultiEntryTables.upsert_1({
         IndexedValue.fromLocation(Location.fromNumber(1)): {
           Keyword.fromString("John"),
         }
-      }, {});
-      await RedisMultiEntryTables.upsert_2(findexKey, label, {
+      }, handles.item1);
+      await RedisMultiEntryTables.upsert_2({
         IndexedValue.fromLocation(Location.fromNumber(2)): {
           Keyword.fromString("John")
         }
-      }, {});
+      }, handles.item2);
 
       expect(
           await RedisMultiEntryTables.count(RedisTables.entries_1), equals(1));
@@ -167,8 +166,9 @@ void main() {
           await RedisMultiEntryTables.count(RedisTables.chains_2), equals(1));
 
       final searchResults = await RedisMultiEntryTables.search(
-          findexKey.key, label, {Keyword.fromString("John")},
-          entryTableNumber: 2);
+          {Keyword.fromString("John")},
+          findexHandle: handles.item3);
+      log("searchResults: $searchResults");
       expect(searchResults.length, 1);
 
       final keyword = searchResults.entries.toList()[0].key;
