@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #define DEFINE_FFI 1
-#define DEFINE_BACKEND_FFI"
+#define DEFINE_BACKEND_FFI
 
 #if defined(DEFINE_BACKEND_REST)
 /**
@@ -43,11 +43,6 @@
  * The recommended threshold according to NIST standards
  */
 #define RECOMMENDED_THRESHOLD 1000000
-
-#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
-typedef int32_t (*Interrupt)(const uint8_t *intermediate_results_ptr,
-                             uint32_t intermediate_results_len);
-#endif
 
 #if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
 /**
@@ -110,6 +105,11 @@ typedef int32_t (*Delete)(const uint8_t *input_ptr, uint32_t input_len);
  * Output: `LEB128(n_uids) || UID_1 || ... || UID_n`
  */
 typedef int32_t (*DumpTokens)(uint8_t *uids_ptr, uint32_t *uids_len);
+#endif
+
+#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
+typedef int32_t (*Interrupt)(const uint8_t *intermediate_results_ptr,
+                             uint32_t intermediate_results_len);
 #endif
 
 #if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
@@ -646,6 +646,38 @@ int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
+ * Creates a new Findex instance using custom FFI backends. Stores this instance in a cache for
+ * later use. Returns the cache handle of the new instance.
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_instantiate_with_ffi_backend(int32_t *findex_handle,
+                                       const uint8_t *key_ptr,
+                                       int32_t key_len,
+                                       const uint8_t *label_ptr,
+                                       int32_t label_len,
+                                       uint32_t entry_table_number,
+                                       Fetch fetch_entry,
+                                       Fetch fetch_chain,
+                                       Upsert upsert_entry,
+                                       Insert insert_chain,
+                                       Delete delete_entry,
+                                       Delete delete_chain,
+                                       DumpTokens dump_tokens);
+#endif
+
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
+int32_t h_instantiate_with_rest_backend(int32_t *findex_handle,
+                                        const uint8_t *label_ptr,
+                                        int32_t label_len,
+                                        const int8_t *token_ptr,
+                                        const int8_t *base_url_ptr);
+#endif
+
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
+/**
  * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
  * `get_last_error` name The `h_get_error` is available inside the final lib
  * (but tools like `ffigen` seems to not parse it…) Maybe we can find a
@@ -653,7 +685,7 @@ int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
  *
  * # Safety
  *
- * It's unsafe.
+ * Cannot be safe since using FFI.
  */
 int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
 #endif
@@ -673,14 +705,10 @@ int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
  *
  * # Parameters
  *
- * - `search_results`          : (output) search result
- * - `key`                     : Findex key
- * - `label`                   : public information used to derive UIDs
- * - `keywords`                : serialized list of keywords
- * - `entry_table_number`      : number of different entry tables
- * - `interrupt`               : user interrupt called at each search iteration
- * - `fetch_entry_callback`    : callback used to fetch the Entry Table
- * - `fetch_chain_callback`    : callback used to fetch the Chain Table
+ * - `search_results`  : (output) search result
+ * - `findex_handle`   : Findex handle on the instance cache
+ * - `keywords`        : serialized list of keywords
+ * - `interrupt`       : user interrupt called at each search iteration
  *
  * # Safety
  *
@@ -688,28 +716,20 @@ int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
  */
 int32_t h_search(uint8_t *search_results_ptr,
                  int32_t *search_results_len,
-                 const uint8_t *key_ptr,
-                 uint32_t key_len,
-                 const uint8_t *label_ptr,
-                 uint32_t label_len,
+                 int32_t findex_handle,
                  const uint8_t *keywords_ptr,
-                 uint32_t keywords_len,
-                 uint32_t entry_table_number,
-                 Interrupt interrupt,
-                 Fetch fetch_entry_callback,
-                 Fetch fetch_chain_callback);
+                 int32_t keywords_len,
+                 Interrupt interrupt);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
- * Index the given values for the given keywords. After upserting, any
- * search for such a keyword will result in finding (at least) the
- * corresponding value.
+ * Index the given values for the given keywords. Any subsequent search for such a keyword will
+ * result in finding (at least) the values added that way.
  *
  * # Serialization
  *
- * The list of values to index for the associated keywords should be serialized
- * as follows:
+ * The list of values to index for the associated keywords should be serialized as follows:
  *
  * `LEB128(n_values) || serialized_value_1
  *     || LEB128(n_associated_keywords) || serialized_keyword_1 || ...`
@@ -733,136 +753,28 @@ int32_t h_search(uint8_t *search_results_ptr,
  * # Parameters
  *
  * - `upsert_results`  : Returns the list of new keywords added to the index
- * - `key`      : Findex key
- * - `label`           : additional information used to derive Entry Table UIDs
- * TODO (TBZ): explain the serialization in the doc
+ * - `findex_handle`   : Findex handle on the instance cache
  * - `additions`       : serialized list of new indexed values
- * - `deletions`       : serialized list of removed indexed values
- * - `entry_table_number` : number of different entry tables
- * - `fetch_entry`     : callback used to fetch the Entry Table
- * - `upsert_entry`    : callback used to upsert lines in the Entry Table
- * - `insert_chain`    : callback used to insert lines in the Chain Table
  *
  * # Safety
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_upsert(int8_t *upsert_results_ptr,
-                 int32_t *upsert_results_len,
-                 const uint8_t *key_ptr,
-                 int32_t key_len,
-                 const uint8_t *label_ptr,
-                 int32_t label_len,
-                 const int8_t *additions_ptr,
-                 int32_t additions_len,
-                 const int8_t *deletions_ptr,
-                 int32_t deletions_len,
-                 uint32_t entry_table_number,
-                 Fetch fetch_entry,
-                 Upsert upsert_entry,
-                 Insert insert_chain);
+int32_t h_add(uint8_t *results_ptr,
+              int32_t *results_len,
+              int32_t findex_handle,
+              const uint8_t *additions_ptr,
+              int32_t additions_len);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
- * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
- * using the given label and the KMAC key derived from the new key. The
- * values are decrypted using the DEM key derived from the key and
- * re-encrypted using the DEM key derived from the new key.
- *
- * Randomly selects index entries and recompact their associated chains. Chains
- * indexing no existing location are removed. Others are recomputed from a new
- * keying material. This removes unneeded paddings. New UIDs are derived for
- * the chain and values are re-encrypted using a DEM key derived from the new
- * keying material.
- *
- * # Parameters
- *
- * - `old_key`                         : old Findex key
- * - `new_key`                         : new Findex key
- * - `new_label`                       : public information used to derive UIDs
- * - `num_reindexing_before_full_set`  : number of compact operation needed to
- *   compact all the Chain Table
- * - `entry_table_number`               : number of different entry tables
- * - `fetch_entry`                     : callback used to fetch the Entry Table
- * - `fetch_chain`                     : callback used to fetch the Chain Table
- * - `update_lines`                    : callback used to update lines in both
- *   tables
- * - `list_removed_locations`          : callback used to list removed
- *   locations among the ones given
- *
- * # Safety
- *
- * Cannot be safe since using FFI.
- */
-int32_t h_compact(const uint8_t *old_key_ptr,
-                  int32_t old_key_len,
-                  const uint8_t *new_key_ptr,
-                  int32_t new_key_len,
-                  const uint8_t *old_label_ptr,
-                  int32_t old_label_len,
-                  const uint8_t *new_label_ptr,
-                  int32_t new_label_len,
-                  uint32_t n_compact_to_full,
-                  uint32_t entry_table_number,
-                  Fetch fetch_entry,
-                  Fetch fetch_chain,
-                  Upsert upsert_entry,
-                  Insert insert_chain,
-                  Delete delete_entry,
-                  Delete delete_chain,
-                  DumpTokens dump_tokens_entry,
-                  FilterObsoleteData filter_obsolete_data);
-#endif
-
-#if (((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI)) && defined(DEFINE_CLOUD))
-/**
- * Recursively searches Findex graphs for values indexed by the given keywords.
+ * Remove the given values for the given keywords from the index. Any subsequent search for such a
+ * keyword will result in finding (at least) *none* of the values removed that way.
  *
  * # Serialization
  *
- * Le output is serialized as follows:
- *
- * `LEB128(n_keywords) || LEB128(keyword_1)
- *     || keyword_1 || LEB128(n_associated_results)
- *     || LEB128(associated_result_1) || associated_result_1
- *     || ...`
- *
- * # Parameters
- *
- * - `search_results`          : (output) search result
- * - `token`                   : FindexREST token
- * - `label`                   : public information used to derive UIDs
- * - `keywords`                : `serde` serialized list of base64 keywords
- * - `base_url`                : FindexREST server URL (with http prefix and
- *   port if required). If null, use the default FindexREST server.
- * - `interrupt`               : user interrupt called at each search iteration
- *
- * # Safety
- *
- * Cannot be safe since using FFI.
- */
-int32_t h_search_cloud(int8_t *search_results_ptr,
-                       int32_t *search_results_len,
-                       const int8_t *token_ptr,
-                       const uint8_t *label_ptr,
-                       int32_t label_len,
-                       const uint8_t *keywords_ptr,
-                       uint32_t keywords_len,
-                       const int8_t *base_url_ptr,
-                       Interrupt interrupt);
-#endif
-
-#if (((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI)) && defined(DEFINE_CLOUD))
-/**
- * Index the given values for the given keywords. After upserting, any
- * search for such a keyword will result in finding (at least) the
- * corresponding value.
- *
- * # Serialization
- *
- * The list of values to index for the associated keywords should be serialized
- * as follows:
+ * The list of values to index for the associated keywords should be serialized as follows:
  *
  * `LEB128(n_values) || serialized_value_1
  *     || LEB128(n_associated_keywords) || serialized_keyword_1 || ...`
@@ -885,31 +797,56 @@ int32_t h_search_cloud(int8_t *search_results_ptr,
  *
  * # Parameters
  *
- * - `upsert_results` : Returns the list of new keywords added to the index
- * - `token`          : FindexREST authorization token
- * - `label`          : additional information used to derive Entry Table UIDs
- * - `additions`      : serialized list of new indexed values
- * - `deletions`      : serialized list of removed indexed values
- * - `base_url`       : FindexREST server URL (with http prefix and port if
- *   required). If null, use the default FindexREST server.
+ * - `upsert_results`  : Returns the list of new keywords added to the index
+ * - `findex_handle`   : Findex handle on the instance cache
+ * - `deletions`       : serialized list of removed indexed values
  *
  * # Safety
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_upsert_cloud(int8_t *upsert_results_ptr,
-                       int32_t *upsert_results_len,
-                       const int8_t *token_ptr,
-                       const uint8_t *label_ptr,
-                       int32_t label_len,
-                       const int8_t *additions_ptr,
-                       int32_t additions_len,
-                       const int8_t *deletions_ptr,
-                       int32_t deletions_len,
-                       const int8_t *base_url_ptr);
+int32_t h_delete(uint8_t *results_ptr,
+                 int32_t *results_len,
+                 int32_t findex_handle,
+                 const uint8_t *deletions_ptr,
+                 int32_t deletions_len);
 #endif
 
-#if (((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI)) && defined(DEFINE_CLOUD))
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
+/**
+ * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
+ * using the given label and the KMAC key derived from the new key. The
+ * values are decrypted using the DEM key derived from the key and
+ * re-encrypted using the DEM key derived from the new key.
+ *
+ * Randomly selects index entries and recompact their associated chains. Chains
+ * indexing no existing location are removed. Others are recomputed from a new
+ * keying material. This removes unneeded paddings. New UIDs are derived for
+ * the chain and values are re-encrypted using a DEM key derived from the new
+ * keying material.
+ *
+ * # Parameters
+ *
+ * - `findex_handle`           : Findex handle on the instance cache
+ * - `new_key`                 : new Findex key
+ * - `new_label`               : public information used to derive UIDs
+ * - `filter_obsolete_data`    : callback used to filter out obsolete data
+ *   among indexed data
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_compact(int32_t findex_handle,
+                  const uint8_t *new_key_ptr,
+                  int32_t new_key_len,
+                  const uint8_t *new_label_ptr,
+                  int32_t new_label_len,
+                  uint32_t n_compact_to_full,
+                  FilterObsoleteData filter_obsolete_data);
+#endif
+
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
  * Generate a new Findex token from the provided index ID and signature seeds,
  * and a randomly generated Findex key inside Rust.

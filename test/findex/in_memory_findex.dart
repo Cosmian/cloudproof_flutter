@@ -45,9 +45,40 @@ class FindexInMemory {
   static Map<Uint8List, Uint8List>? entryTable;
   static Map<Uint8List, Uint8List>? chainTable;
 
-  static void init() {
+  static void init(FindexKey findexKey, Uint8List label) {
     entryTable = {};
     chainTable = {};
+    Findex.instantiateFindex(
+        findexKey,
+        label,
+        Pointer.fromFunction(
+          fetchEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          fetchChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          upsertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          deleteEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          deleteChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          dumpTokensCallback,
+          errorCodeInCaseOfCallbackException,
+        ));
   }
 
   static Future<Set<Keyword>> indexAll(
@@ -57,7 +88,7 @@ class FindexInMemory {
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 
-    return upsert(findexKey, label, indexedValuesAndKeywords);
+    return upsert(indexedValuesAndKeywords);
   }
 
   static List<UidAndValue> fetchEntries(Uids uids) {
@@ -119,48 +150,15 @@ class FindexInMemory {
   // --------------------------------------------------
 
   static Future<Map<Keyword, Set<Location>>> search(
-    Uint8List keyK,
-    Uint8List label,
-    Set<Keyword> words,
+    Set<Keyword> keywords,
   ) async {
-    return await Findex.search(
-      keyK,
-      label,
-      words,
-      Pointer.fromFunction(
-        fetchEntriesCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        fetchChainsCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-    );
+    return await Findex.search(keywords);
   }
 
   static Future<Set<Keyword>> upsert(
-    FindexKey findexKey,
-    Uint8List label,
     Map<IndexedValue, Set<Keyword>> additions,
   ) async {
-    return Findex.upsert(
-      findexKey,
-      label,
-      additions,
-      {},
-      Pointer.fromFunction(
-        fetchEntriesCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        upsertEntriesCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        insertChainsCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-    );
+    return Findex.add(additions);
   }
 
   static int fetchEntriesCallback(
@@ -221,5 +219,26 @@ class FindexInMemory {
       chainsListPointer,
       chainsListLength,
     );
+  }
+
+  static int deleteEntriesCallback(
+    Pointer<Uint8> chainsListPointer,
+    int chainsListLength,
+  ) {
+    throw FindexException("not implemented");
+  }
+
+  static int deleteChainsCallback(
+    Pointer<Uint8> chainsListPointer,
+    int chainsListLength,
+  ) {
+    throw FindexException("not implemented");
+  }
+
+  static int dumpTokensCallback(
+    Pointer<Uint8> outputTokensPointer,
+    Pointer<Uint32> outputTokensLength,
+  ) {
+    throw FindexException("not implemented");
   }
 }

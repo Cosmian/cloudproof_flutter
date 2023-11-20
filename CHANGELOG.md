@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
+- Add Findex v6 support
 - Add findex in memory test
 
 ### Testing

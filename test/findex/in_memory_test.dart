@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -41,7 +42,7 @@ const expectedUsersIdsForFrance = [
 ];
 
 Future<void> testFunction(FindexKey key, Uint8List label) async {
-  FindexInMemory.init();
+  FindexInMemory.init(key, label);
 
   expect(FindexInMemory.entryTable?.length, equals(0));
   expect(FindexInMemory.chainTable?.length, equals(0));
@@ -53,34 +54,27 @@ Future<void> testFunction(FindexKey key, Uint8List label) async {
   additions[IndexedValue.fromLocation(Location.fromNumber(0))] = {
     Keyword.fromString("Felix")
   };
-  final secondInsertion = await FindexInMemory.upsert(
-    key,
-    label,
-    additions,
-  );
+  final secondInsertion = await FindexInMemory.upsert(additions);
   expect(secondInsertion.length, 0);
 
-  final upsertResultsFromSameBatch = await FindexInMemory.indexAll(key, label);
-  expect(upsertResultsFromSameBatch.length, 0);
+  expect(FindexInMemory.entryTable?.length, equals(583 + 1));
+  expect(FindexInMemory.chainTable?.length, equals(618 + 1));
 
-  // expect(FindexInMemory.entryTable?.length, equals(583 + 1));
-  // expect(FindexInMemory.chainTable?.length, equals(618 + 1));
+  log("\n\n\n Search \n\n\n");
+  final searchResults =
+      await FindexInMemory.search({Keyword.fromString("France")});
 
-  // log("\n\n\n Search \n\n\n");
-  // final searchResults = await FindexInMemory.search(
-  //     key.k, label, {Keyword.fromString("France")});
+  expect(searchResults.length, 1);
 
-  // expect(searchResults.length, 1);
+  final keyword = searchResults.entries.toList()[0].key;
+  final indexedValues = searchResults.entries.toList()[0].value;
+  final usersIds = indexedValues.map((location) {
+    return location.number;
+  }).toList();
+  usersIds.sort();
 
-  // final keyword = searchResults.entries.toList()[0].key;
-  // final indexedValues = searchResults.entries.toList()[0].value;
-  // final usersIds = indexedValues.map((location) {
-  //   return location.number;
-  // }).toList();
-  // usersIds.sort();
-
-  // expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
-  // expect(usersIds, equals(expectedUsersIdsForFrance));
+  expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
+  expect(usersIds, equals(expectedUsersIdsForFrance));
 }
 
 void main() {
