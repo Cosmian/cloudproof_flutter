@@ -163,10 +163,10 @@ jobs:
           if-no-files-found: error
 
   cloudproof_flutter_with_services:
-    needs: build
+    if: startsWith(github.ref, 'refs/tags/') != true
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_flutter.yml@develop
     with:
-      branch: ${{ github.ref_name }}
+      branch: ${{ github.head_ref }}
       target: x86_64-unknown-linux-gnu
       extension: so
       copy_fresh_build: false
