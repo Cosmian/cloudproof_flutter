@@ -124,7 +124,7 @@ void main() {
       }
 
       expect(true, false);
-    }, tags: 'exceptions');
+    }, tags: 'redis');
 
     test('redis multi entry tables', () async {
       final findexKey = FindexKey.fromJson(jsonDecode(

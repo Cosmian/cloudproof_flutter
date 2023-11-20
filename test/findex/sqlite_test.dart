@@ -147,7 +147,7 @@ void main() {
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchEntries = false;
       }
-    }, tags: 'exceptions');
+    }, tags: 'sqlite');
 
     test('search/upsert', () async {
       const dbPath = "./build/sqlite.db";
