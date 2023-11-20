@@ -214,6 +214,7 @@ jobs:
 
   release:
     needs:
+      - cloudproof_flutter_with_services
       - cloudproof_java
       - cloudproof_js
       - cloudproof_python
