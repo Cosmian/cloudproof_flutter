@@ -162,6 +162,15 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  cloudproof_flutter_with_services:
+    if: startsWith(github.ref, 'refs/tags/') != true
+    uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_flutter.yml@develop
+    with:
+      branch: ${{ github.head_ref }}
+      target: x86_64-unknown-linux-gnu
+      extension: so
+      copy_fresh_build: false
+
   cloudproof_java:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_java_in_docker.yml@develop
@@ -171,7 +180,7 @@ jobs:
       extension: so
       destination: linux-x86-64
       os: ubuntu-20.04
-      kms-version: feat-edit_policy
+      kms-version: 4.9.1
       findex-cloud-version: 0.1.0
       copy_fresh_build: false
       copy_regression_files: |
@@ -184,7 +193,7 @@ jobs:
     with:
       branch: develop
       target: wasm32-unknown-unknown
-      kms-version: feat-edit_policy
+      kms-version: 4.9.1
       findex-cloud-version: 0.1.0
       copy_fresh_build: false
       copy_regression_files: |
@@ -197,7 +206,7 @@ jobs:
     with:
       branch: develop
       target: x86_64-unknown-linux-gnu
-      kms-version: feat-edit_policy
+      kms-version: 4.9.1
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json tests/data/cover_crypt/non_regression/java_non_regression_vector.json
@@ -205,6 +214,7 @@ jobs:
 
   release:
     needs:
+      - cloudproof_flutter_with_services
       - cloudproof_java
       - cloudproof_js
       - cloudproof_python

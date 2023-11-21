@@ -37,8 +37,8 @@ class User {
     return Location.fromNumber(id);
   }
 
-  List<Keyword> get indexedWords {
-    return [
+  Set<Keyword> get indexedWords {
+    return {
       Keyword.fromString(firstName),
       Keyword.fromString(lastName),
       Keyword.fromString(phone),
@@ -47,7 +47,7 @@ class User {
       Keyword.fromString(region),
       Keyword.fromString(employeeNumber),
       Keyword.fromString(security)
-    ];
+    };
   }
 }
 

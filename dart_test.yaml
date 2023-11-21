@@ -7,5 +7,11 @@
 timeout: 10m
 
 tags:
+  in_memory:
+    allow_test_randomization: true
+  sqlite:
+    allow_test_randomization: true
   redis:
+    allow_test_randomization: false
+  exceptions:
     allow_test_randomization: false

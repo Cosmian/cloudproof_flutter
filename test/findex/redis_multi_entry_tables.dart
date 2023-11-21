@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:redis/redis.dart';
+import 'package:tuple/tuple.dart';
 
 import 'user.dart';
 
@@ -23,7 +26,7 @@ class RedisMultiEntryTables {
     await File(RedisMultiEntryTables.throwInsideFetchFilepath).delete();
   }
 
-  static Future<void> init() async {
+  static Future<Tuple3> init(FindexKey findexKey, Uint8List label) async {
     final db = await RedisMultiEntryTables.db;
 
     for (final userKey in await RedisMultiEntryTables.keys(RedisTables.users)) {
@@ -58,6 +61,106 @@ class RedisMultiEntryTables {
           Uint8List.fromList([0, 0, 0, user['id']]),
           Uint8List.fromList(utf8.encode(jsonEncode(user))));
     }
+    return RedisMultiEntryTables.instantiateFindex(findexKey, label);
+  }
+
+  static Tuple3 instantiateFindex(FindexKey findexKey, Uint8List label) {
+    int findexHandle1 = Findex.instantiateFindex(
+        findexKey,
+        label,
+        Pointer.fromFunction(
+          fetchEntriesCallbackDb1,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          fetchChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          upsertEntriesCallbackDb1,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertChainsCallbackDb1,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          deleteEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          deleteChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          dumpTokensCallback,
+          errorCodeInCaseOfCallbackException,
+        ));
+
+    int findexHandle2 = Findex.instantiateFindex(
+        findexKey,
+        label,
+        Pointer.fromFunction(
+          fetchEntriesCallbackDb2,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          fetchChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          upsertEntriesCallbackDb2,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertChainsCallbackDb2,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          deleteEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          deleteChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          dumpTokensCallback,
+          errorCodeInCaseOfCallbackException,
+        ));
+    int findexHandle3 = Findex.instantiateFindex(
+        findexKey,
+        label,
+        Pointer.fromFunction(
+          fetchEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          fetchChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          upsertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          deleteEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          deleteChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          dumpTokensCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        entryTableNumber: 2);
+    return Tuple3(findexHandle1, findexHandle2, findexHandle3);
   }
 
   static Future<Command> get db async {
@@ -111,12 +214,15 @@ class RedisMultiEntryTables {
   }
 
   static Future<List<UidAndValue>> mset(
-      Command db, RedisTables table, List<UpsertData> entries) async {
-    await execute(db, [
-      "MSET",
-      ...entries.expand((entry) =>
-          [RedisBulk(key(table, entry.uid)), RedisBulk(entry.newValue)])
-    ]);
+      Command db, RedisTables table, UpsertData entries) async {
+    log("mset: map length: ${entries.map.length}");
+    for (final entry in entries.map.entries) {
+      set(db, table, entry.key, entry.value.item2);
+      log("entry.key: ${entry.key}");
+      log("entry.value.item1: ${entry.value.item1}");
+      log("entry.value.item2: ${entry.value.item2}");
+    }
+    log("mset: exiting after execute");
     return [];
   }
 
@@ -180,10 +286,18 @@ class RedisMultiEntryTables {
   }
 
   static Future<List<UidAndValue>> fetchEntries(Uids uids) async {
+    log("multi redis: fetchEntries");
     final list1 = await fetchEntriesOrChains(RedisTables.entries_1, uids);
     final list2 = await fetchEntriesOrChains(RedisTables.entries_2, uids);
 
+    log("multi redis: fetchEntries: list1: $list1");
+    for (final entry in list1) {
+      log("multi redis: fetchEntries: list1: $entry");
+    }
+    log("multi redis: fetchEntries: list2: $list2");
     list1.addAll(list2);
+    log("multi redis: fetchEntries: final list: $list1");
+
     return list1;
   }
 
@@ -211,13 +325,11 @@ class RedisMultiEntryTables {
     return await fetchEntriesOrChains(RedisTables.chains_2, uids);
   }
 
-  static Future<List<UidAndValue>> upsertEntries_1(
-      List<UpsertData> entries) async {
+  static Future<List<UidAndValue>> upsertEntries_1(UpsertData entries) async {
     return await mset(await db, RedisTables.entries_1, entries);
   }
 
-  static Future<List<UidAndValue>> upsertEntries_2(
-      List<UpsertData> entries) async {
+  static Future<List<UidAndValue>> upsertEntries_2(UpsertData entries) async {
     return await mset(await db, RedisTables.entries_2, entries);
   }
 
@@ -233,74 +345,20 @@ class RedisMultiEntryTables {
   // Copy-paste code :AutoGeneratedImplementation
   // --------------------------------------------------
 
-  static Future<Map<Keyword, List<Location>>> search(
-      Uint8List keyK, Uint8List label, List<Keyword> words,
-      {int entryTableNumber = 1}) async {
-    return await Findex.search(
-        keyK,
-        label,
-        words,
-        Pointer.fromFunction(
-          fetchEntriesCallback,
-          errorCodeInCaseOfCallbackException,
-        ),
-        Pointer.fromFunction(
-          fetchChainsCallback,
-          errorCodeInCaseOfCallbackException,
-        ),
-        entryTableNumber: entryTableNumber);
+  static Future<Map<Keyword, Set<Location>>> search(Set<Keyword> keywords,
+      {int findexHandle = -1}) async {
+    return await Findex.search(keywords, findexHandle: findexHandle);
   }
 
   static Future<Set<Keyword>> upsert_1(
-    FindexMasterKey masterKey,
-    Uint8List label,
-    Map<IndexedValue, List<Keyword>> additions,
-    Map<IndexedValue, List<Keyword>> deletions,
-  ) async {
-    return Findex.upsert(
-      masterKey,
-      label,
-      additions,
-      deletions,
-      Pointer.fromFunction(
-        fetchEntriesCallbackDb1,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        upsertEntriesCallbackDb1,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        upsertChainsCallbackDb1,
-        errorCodeInCaseOfCallbackException,
-      ),
-    );
+      Map<IndexedValue, Set<Keyword>> additions, int handle) async {
+    log("upsert_1: handle: $handle");
+    return Findex.add(additions, findexHandle: handle);
   }
 
   static Future<Set<Keyword>> upsert_2(
-    FindexMasterKey masterKey,
-    Uint8List label,
-    Map<IndexedValue, List<Keyword>> additions,
-    Map<IndexedValue, List<Keyword>> deletions,
-  ) async {
-    return Findex.upsert(
-      masterKey,
-      label,
-      additions,
-      deletions,
-      Pointer.fromFunction(
-        fetchEntriesCallbackDb2,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        upsertEntriesCallbackDb2,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        upsertChainsCallbackDb2,
-        errorCodeInCaseOfCallbackException,
-      ),
-    );
+      Map<IndexedValue, Set<Keyword>> additions, int handle) async {
+    return Findex.add(additions, findexHandle: handle);
   }
 
   static int fetchEntriesCallback(
@@ -366,34 +424,42 @@ class RedisMultiEntryTables {
   static int upsertEntriesCallbackDb1(
     Pointer<Uint8> outputRejectedEntriesListPointer,
     Pointer<Uint32> outputRejectedEntriesListLength,
-    Pointer<Uint8> entriesListPointer,
-    int entriesListLength,
+    Pointer<Uint8> oldValuesPointer,
+    int oldValuesLength,
+    Pointer<Uint8> newValuesPointer,
+    int newValuesLength,
   ) {
     return Findex.wrapAsyncUpsertEntriesCallback(
       RedisMultiEntryTables.upsertEntries_1,
       outputRejectedEntriesListPointer,
       outputRejectedEntriesListLength,
-      entriesListPointer,
-      entriesListLength,
+      oldValuesPointer,
+      oldValuesLength,
+      newValuesPointer,
+      newValuesLength,
     );
   }
 
   static int upsertEntriesCallbackDb2(
     Pointer<Uint8> outputRejectedEntriesListPointer,
     Pointer<Uint32> outputRejectedEntriesListLength,
-    Pointer<Uint8> entriesListPointer,
-    int entriesListLength,
+    Pointer<Uint8> oldValuesPointer,
+    int oldValuesLength,
+    Pointer<Uint8> newValuesPointer,
+    int newValuesLength,
   ) {
     return Findex.wrapAsyncUpsertEntriesCallback(
       RedisMultiEntryTables.upsertEntries_2,
       outputRejectedEntriesListPointer,
       outputRejectedEntriesListLength,
-      entriesListPointer,
-      entriesListLength,
+      oldValuesPointer,
+      oldValuesLength,
+      newValuesPointer,
+      newValuesLength,
     );
   }
 
-  static int upsertChainsCallbackDb1(
+  static int insertChainsCallbackDb1(
     Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
@@ -404,7 +470,7 @@ class RedisMultiEntryTables {
     );
   }
 
-  static int upsertChainsCallbackDb2(
+  static int insertChainsCallbackDb2(
     Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
@@ -413,6 +479,45 @@ class RedisMultiEntryTables {
       chainsListPointer,
       chainsListLength,
     );
+  }
+
+  static int upsertEntriesCallback(
+    Pointer<Uint8> outputRejectedEntriesListPointer,
+    Pointer<Uint32> outputRejectedEntriesListLength,
+    Pointer<Uint8> oldValuesPointer,
+    int oldValuesLength,
+    Pointer<Uint8> newValuesPointer,
+    int newValuesLength,
+  ) {
+    throw FindexException("not implemented");
+  }
+
+  static int insertChainsCallback(
+    Pointer<Uint8> chainsListPointer,
+    int chainsListLength,
+  ) {
+    throw FindexException("not implemented");
+  }
+
+  static int deleteEntriesCallback(
+    Pointer<Uint8> chainsListPointer,
+    int chainsListLength,
+  ) {
+    throw FindexException("not implemented");
+  }
+
+  static int deleteChainsCallback(
+    Pointer<Uint8> chainsListPointer,
+    int chainsListLength,
+  ) {
+    throw FindexException("not implemented");
+  }
+
+  static int dumpTokensCallback(
+    Pointer<Uint8> outputTokensPointer,
+    Pointer<Uint32> outputTokensLength,
+  ) {
+    throw FindexException("not implemented");
   }
 }
 
