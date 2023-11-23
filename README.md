@@ -2,7 +2,7 @@
 
 ![workflow](https://github.com/Cosmian/cloudproof_flutter/actions/workflows/ci.yml/badge.svg?branch=main)
 
-The Cloudproof Flutter library provides a Flutter-friendly API to the [Cosmian Cloudproof Encryption product](https://docs.cosmian.com/cloudproof_encryption/use_cases_benefits/).
+The Cloudproof Flutter library provides a Flutter-friendly API to the [Cosmian Cloudproof Encryption product](https://docs.cosmian.com/).
 
 In summary, Cloudproof Encryption product secures data repositories in the cloud with attributes-based access control encryption and encrypted search.
 
@@ -35,7 +35,7 @@ In summary, Cloudproof Encryption product secures data repositories in the cloud
 
 ## Licensing
 
-The library is available under a dual licensing scheme Affero GPL/v3 and commercial. See [LICENSE.md](LICENSE.md) for details.
+The library is available under a dual licensing scheme Affero GPL/v3 and commercial. See [LICENSE.md](LICENSE) for details.
 
 ## Cryptographic primitives
 
@@ -337,7 +337,7 @@ git checkout 3.3.4
 
 When using local encryption and decryption with [CoverCrypt](https://github.com/Cosmian/cover_crypt) native libraries are required.
 
-Check the main pages of the respective projects to build the native libraries appropriate for your systems. The [test directory](./src/test/resources/linux-x86-64/) provides pre-built libraries for Linux GLIBC 2.17. These libraries should run fine on a system with a more recent GLIBC version.
+Check the main pages of the respective projects to build the native libraries appropriate for your systems. The [resources directory](./resources/) provides pre-built libraries for Linux GLIBC 2.17. These libraries should run fine on a system with a more recent GLIBC version.
 
 This table shows the minimum versions correspondences between the various components
 
