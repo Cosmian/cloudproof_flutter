@@ -115,7 +115,7 @@ void main() {
         expect(
           stacktrace.toString(),
           contains(
-              "test/findex/redis_findex.dart:223:7"), // When moving lines inside the Findex implementation this could fail, put the line of the tag :ExceptionLine
+              "test/findex/redis_findex.dart:226:7"), // When moving lines inside the Findex implementation this could fail, put the line of the tag :ExceptionLine
         );
 
         return;

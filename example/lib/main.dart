@@ -20,11 +20,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Cloudproof Flutter Demo',
+      title: 'Cloudproof Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Cloudproof Flutter Demo'),
+      home: const MyHomePage(title: 'Cloudproof Demo'),
     );
   }
 }

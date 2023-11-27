@@ -125,6 +125,9 @@ class FindexRedisImplementation {
 
   static Future<List<dynamic>> mgetWithoutPrefix(
       Command db, List<Uint8List> keysWithPrefix) async {
+    if (keysWithPrefix.isEmpty) {
+      return [];
+    }
     return await execute(
         db, ["MGET", ...keysWithPrefix.map((key) => RedisBulk(key))]);
   }

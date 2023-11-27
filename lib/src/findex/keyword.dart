@@ -23,8 +23,7 @@ class Keyword {
 
     final length = Leb128.decodeUnsigned(iterator);
     if (length == 0) {
-      // return [];
-      throw Exception("Unable to deserialize Keyword");
+      Keyword(Uint8List.fromList([]));
     }
 
     final keyword = SerDe.copyFromIterator(iterator, length);
