@@ -270,6 +270,10 @@ class Findex {
     // FFI INPUT parameters
     //
 
+    if (keywords.isEmpty) {
+      return {};
+    }
+
     final keywordsBytes = Uint8List(Keywords.boundSerializedSize(keywords));
     final keywordsSerializedSize = Keywords.serialize(keywordsBytes, keywords);
     log("search: serialization keywords OK: $keywordsSerializedSize");

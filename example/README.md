@@ -1,4 +1,4 @@
-# Cloudproof Flutter Demo
+# Cloudproof Demo
 
 ## Installation
 
