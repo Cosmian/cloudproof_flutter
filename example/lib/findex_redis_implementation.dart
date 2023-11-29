@@ -61,6 +61,10 @@ class FindexRedisImplementation {
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
+          insertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
           insertChainsCallback,
           errorCodeInCaseOfCallbackException,
         ),
@@ -240,6 +244,10 @@ class FindexRedisImplementation {
     return await mset(await db, RedisTable.entries, entries);
   }
 
+  static Future<void> insertEntries(List<UidAndValue> entries) async {
+    await msetInsertEntries(await db, RedisTable.entries, entries);
+  }
+
   static Future<void> insertChains(List<UidAndValue> chains) async {
     await msetInsertChains(await db, RedisTable.chains, chains);
   }
@@ -306,6 +314,17 @@ class FindexRedisImplementation {
       oldValuesLength,
       newValuesPointer,
       newValuesLength,
+    );
+  }
+
+  static int insertEntriesCallback(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapAsyncInsertEntriesCallback(
+      FindexRedisImplementation.insertEntries,
+      entriesListPointer,
+      entriesListLength,
     );
   }
 

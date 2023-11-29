@@ -81,6 +81,10 @@ class RedisMultiEntryTables {
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
+          insertEntriesCallbackDb1,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
           insertChainsCallbackDb1,
           errorCodeInCaseOfCallbackException,
         ),
@@ -113,6 +117,10 @@ class RedisMultiEntryTables {
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
+          insertEntriesCallbackDb2,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
           insertChainsCallbackDb2,
           errorCodeInCaseOfCallbackException,
         ),
@@ -141,6 +149,10 @@ class RedisMultiEntryTables {
         ),
         Pointer.fromFunction(
           upsertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertEntriesCallback,
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
@@ -459,6 +471,28 @@ class RedisMultiEntryTables {
     );
   }
 
+  static int insertEntriesCallbackDb1(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapAsyncInsertEntriesCallback(
+      RedisMultiEntryTables.upsertEntries_1,
+      entriesListPointer,
+      entriesListLength,
+    );
+  }
+
+  static int insertEntriesCallbackDb2(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapAsyncInsertEntriesCallback(
+      RedisMultiEntryTables.upsertEntries_2,
+      entriesListPointer,
+      entriesListLength,
+    );
+  }
+
   static int insertChainsCallbackDb1(
     Pointer<Uint8> chainsListPointer,
     int chainsListLength,
@@ -488,6 +522,13 @@ class RedisMultiEntryTables {
     int oldValuesLength,
     Pointer<Uint8> newValuesPointer,
     int newValuesLength,
+  ) {
+    throw FindexException("not implemented");
+  }
+
+  static int insertEntriesCallback(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
   ) {
     throw FindexException("not implemented");
   }
