@@ -75,6 +75,7 @@ class Findex {
       Fetch fetchEntries,
       Fetch fetchChains,
       Upsert upsertEntries,
+      Insert insertEntries,
       Insert insertChains,
       Delete deleteEntries,
       Delete deleteChains,
@@ -106,6 +107,7 @@ class Findex {
           fetchEntries,
           fetchChains,
           upsertEntries,
+          insertEntries,
           insertChains,
           deleteEntries,
           deleteChains,
@@ -546,6 +548,59 @@ class Findex {
     }
   }
 
+  static int wrapAsyncInsertEntriesCallback(
+    Future<void> Function(List<UidAndValue>) callback,
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    final donePointer = calloc<Bool>(1);
+    final exceptionIndicatorPointer = calloc<Bool>(1);
+    donePointer.value = false;
+    exceptionIndicatorPointer.value = false;
+
+    try {
+      Isolate.spawn(
+        (message) async {
+          try {
+            // Cast to list
+            final inputArray = Pointer<Uint8>.fromAddress(message.item1)
+                .asTypedList(entriesListLength);
+
+            final uidsAndValues = UidAndValue.deserialize(inputArray);
+
+            await callback(uidsAndValues);
+          } catch (e, stacktrace) {
+            Pointer<Bool>.fromAddress(message.item3).value = true;
+            log("[wrapAsyncInsertEntriesCallback] exception caught: $e $stacktrace");
+            rethrow;
+          } finally {
+            Pointer<Bool>.fromAddress(message.item2).value = true;
+          }
+        },
+        Tuple3(entriesListPointer.address, donePointer.address,
+            exceptionIndicatorPointer.address),
+        onError: Findex.isolateErrorPort().sendPort,
+      );
+
+      while (!donePointer.value) {
+        sleep(const Duration(milliseconds: 10));
+      }
+
+      if (exceptionIndicatorPointer.value) {
+        throw Exception(
+            "Exception indicator raised: exception during insert callback");
+      }
+
+      return 0;
+    } catch (e, stacktrace) {
+      log("Exception during insertEntriesCallback $e $stacktrace");
+      rethrow;
+    } finally {
+      calloc.free(donePointer);
+      calloc.free(exceptionIndicatorPointer);
+    }
+  }
+
   static int wrapAsyncInsertChainsCallback(
     Future<void> Function(List<UidAndValue>) callback,
     Pointer<Uint8> chainsListPointer,
@@ -652,6 +707,24 @@ class Findex {
     } catch (e, stacktrace) {
       Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
       log("Exception during upsertEntriesCallback $e $stacktrace");
+      rethrow;
+    }
+  }
+
+  static int wrapSyncInsertEntriesCallback(
+    void Function(List<UidAndValue>) callback,
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    try {
+      final uidsAndValues = UidAndValue.deserialize(
+          entriesListPointer.cast<Uint8>().asTypedList(entriesListLength));
+
+      callback(uidsAndValues);
+      return 0;
+    } catch (e, stacktrace) {
+      Findex.exceptions.add(ExceptionThrown(DateTime.now(), e, stacktrace));
+      log("Exception during insertEntriesCallback $e $stacktrace");
       rethrow;
     }
   }

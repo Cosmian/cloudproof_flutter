@@ -64,6 +64,10 @@ class FindexInMemory {
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
+          insertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
           insertChainsCallback,
           errorCodeInCaseOfCallbackException,
         ),
@@ -137,6 +141,14 @@ class FindexInMemory {
     return rejected;
   }
 
+  static void insertEntries(List<UidAndValue> entries) {
+    for (UidAndValue entry in entries) {
+      if (entryTable != null) {
+        entryTable?[entry.uid] = entry.value;
+      }
+    }
+  }
+
   static void insertChains(List<UidAndValue> chains) {
     for (UidAndValue chain in chains) {
       if (chainTable != null) {
@@ -207,6 +219,17 @@ class FindexInMemory {
       oldValuesLength,
       newValuesPointer,
       newValuesLength,
+    );
+  }
+
+  static int insertEntriesCallback(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapSyncInsertEntriesCallback(
+      FindexInMemory.insertEntries,
+      entriesListPointer,
+      entriesListLength,
     );
   }
 

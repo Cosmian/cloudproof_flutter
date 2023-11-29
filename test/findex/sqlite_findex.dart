@@ -131,6 +131,10 @@ class SqliteFindex {
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
+          insertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
           insertChainsCallback,
           errorCodeInCaseOfCallbackException,
         ),
@@ -318,6 +322,17 @@ class SqliteFindex {
     return rejectedEntries;
   }
 
+  static void insertEntries(List<UidAndValue> entries) {
+    final stmt = db.prepare(
+        'INSERT OR REPLACE INTO entry_table (uid, value) VALUES (?, ?)');
+    for (final entry in entries) {
+      stmt.execute([
+        entry.uid,
+        entry.value,
+      ]);
+    }
+  }
+
   static void insertChains(List<UidAndValue> chains) {
     final stmt = db.prepare(
         'INSERT OR REPLACE INTO chain_table (uid, value) VALUES (?, ?)');
@@ -390,6 +405,17 @@ class SqliteFindex {
       oldValuesLength,
       newValuesPointer,
       newValuesLength,
+    );
+  }
+
+  static int insertEntriesCallback(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapSyncInsertEntriesCallback(
+      SqliteFindex.insertEntries,
+      entriesListPointer,
+      entriesListLength,
     );
   }
 
