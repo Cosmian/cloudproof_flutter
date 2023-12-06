@@ -26,7 +26,7 @@ class RedisMultiEntryTables {
     await File(RedisMultiEntryTables.throwInsideFetchFilepath).delete();
   }
 
-  static Future<Tuple3> init(FindexKey findexKey, Uint8List label) async {
+  static Future<Tuple3> init(FindexKey findexKey, String label) async {
     final db = await RedisMultiEntryTables.db;
 
     for (final userKey in await RedisMultiEntryTables.keys(RedisTables.users)) {
@@ -64,7 +64,7 @@ class RedisMultiEntryTables {
     return RedisMultiEntryTables.instantiateFindex(findexKey, label);
   }
 
-  static Tuple3 instantiateFindex(FindexKey findexKey, Uint8List label) {
+  static Tuple3 instantiateFindex(FindexKey findexKey, String label) {
     int findexHandle1 = Findex.instantiateFindex(
         findexKey,
         label,
@@ -345,11 +345,19 @@ class RedisMultiEntryTables {
     return await mset(await db, RedisTables.entries_2, entries);
   }
 
-  static Future<void> upsertChains_1(List<UidAndValue> chains) async {
+  static Future<void> insertEntries_1(List<UidAndValue> entries) async {
+    await mset2(await db, RedisTables.entries_1, entries);
+  }
+
+  static Future<void> insertEntries_2(List<UidAndValue> entries) async {
+    await mset2(await db, RedisTables.entries_2, entries);
+  }
+
+  static Future<void> insertChains_1(List<UidAndValue> chains) async {
     await mset2(await db, RedisTables.chains_1, chains);
   }
 
-  static Future<void> upsertChains_2(List<UidAndValue> chains) async {
+  static Future<void> insertChains_2(List<UidAndValue> chains) async {
     await mset2(await db, RedisTables.chains_2, chains);
   }
 
@@ -476,7 +484,7 @@ class RedisMultiEntryTables {
     int entriesListLength,
   ) {
     return Findex.wrapAsyncInsertEntriesCallback(
-      RedisMultiEntryTables.upsertEntries_1,
+      RedisMultiEntryTables.insertEntries_1,
       entriesListPointer,
       entriesListLength,
     );
@@ -487,7 +495,7 @@ class RedisMultiEntryTables {
     int entriesListLength,
   ) {
     return Findex.wrapAsyncInsertEntriesCallback(
-      RedisMultiEntryTables.upsertEntries_2,
+      RedisMultiEntryTables.insertEntries_2,
       entriesListPointer,
       entriesListLength,
     );
@@ -498,7 +506,7 @@ class RedisMultiEntryTables {
     int chainsListLength,
   ) {
     return Findex.wrapAsyncInsertChainsCallback(
-      RedisMultiEntryTables.upsertChains_1,
+      RedisMultiEntryTables.insertChains_1,
       chainsListPointer,
       chainsListLength,
     );
@@ -509,7 +517,7 @@ class RedisMultiEntryTables {
     int chainsListLength,
   ) {
     return Findex.wrapAsyncInsertChainsCallback(
-      RedisMultiEntryTables.upsertChains_2,
+      RedisMultiEntryTables.insertChains_2,
       chainsListPointer,
       chainsListLength,
     );

@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -107,14 +106,14 @@ class SqliteFindex {
   static int findexHandle = 0;
 
   static Tuple2<Database, int> init(
-      String filepath, FindexKey findexKey, Uint8List label) {
+      String filepath, FindexKey findexKey, String label) {
     final newDb = sqlite3.open(filepath);
     singletonDb = newDb;
     findexHandle = instantiateFindex(findexKey, label);
     return Tuple2(newDb, findexHandle);
   }
 
-  static int instantiateFindex(FindexKey findexKey, Uint8List label) {
+  static int instantiateFindex(FindexKey findexKey, String label) {
     findexHandle = Findex.instantiateFindex(
         findexKey,
         label,
@@ -454,9 +453,8 @@ class SqliteFindex {
   static Future<void> verify(String dbPath) async {
     final findexKey = FindexKey.fromJson(jsonDecode(
         await File('test/resources/findex/master_key.json').readAsString()));
-    final label = Uint8List.fromList(utf8.encode("Some Label"));
 
-    init(dbPath, findexKey, label);
+    init(dbPath, findexKey, "Some Label");
 
     expect(SqliteFindex.count('entry_table'), greaterThan(0));
     expect(SqliteFindex.count('chain_table'), greaterThan(0));

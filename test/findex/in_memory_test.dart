@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,13 +40,13 @@ const expectedUsersIdsForFrance = [
   96
 ];
 
-Future<void> testFunction(FindexKey key, Uint8List label) async {
+Future<void> testFunction(FindexKey key, String label) async {
   FindexInMemory.init(key, label);
 
   expect(FindexInMemory.entryTable?.length, equals(0));
   expect(FindexInMemory.chainTable?.length, equals(0));
 
-  final upsertResults = await FindexInMemory.indexAll(key, label);
+  final upsertResults = await FindexInMemory.indexAll(key);
   expect(upsertResults.length, 583);
 
   Map<IndexedValue, Set<Keyword>> additions = {};
@@ -82,9 +81,8 @@ void main() {
     test('in_memory', () async {
       final findexKey = FindexKey.fromJson(jsonDecode(
           await File('test/resources/findex/master_key.json').readAsString()));
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
 
-      await testFunction(findexKey, label);
+      await testFunction(findexKey, "Some Label");
     }, tags: 'in_memory');
   });
 }

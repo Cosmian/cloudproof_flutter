@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,9 +47,7 @@ void main() {
       final findexKey = FindexKey.fromJson(jsonDecode(
           await File('test/resources/findex/master_key.json').readAsString()));
 
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      await FindexRedisImplementation.init(findexKey, label);
+      await FindexRedisImplementation.init(findexKey, "Some Label");
 
       expect(
           await FindexRedisImplementation.count(RedisTable.users), equals(100));
@@ -86,9 +83,8 @@ void main() {
     test('exceptions', () async {
       final findexKey = FindexKey.fromJson(jsonDecode(
           await File('test/resources/findex/master_key.json').readAsString()));
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
 
-      await FindexRedisImplementation.init(findexKey, label);
+      await FindexRedisImplementation.init(findexKey, "Some Label");
       final upsertResults = await FindexRedisImplementation.indexAll();
       expect(upsertResults.length, 583);
 
@@ -115,7 +111,7 @@ void main() {
         expect(
           stacktrace.toString(),
           contains(
-              "test/findex/redis_findex.dart:226:7"), // When moving lines inside the Findex implementation this could fail, put the line of the tag :ExceptionLine
+              "test/findex/redis_findex.dart:243:7"), // When moving lines inside the Findex implementation this could fail, put the line of the tag :ExceptionLine
         );
 
         return;
@@ -130,9 +126,7 @@ void main() {
       final findexKey = FindexKey.fromJson(jsonDecode(
           await File('test/resources/findex/master_key.json').readAsString()));
 
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      final handles = await RedisMultiEntryTables.init(findexKey, label);
+      final handles = await RedisMultiEntryTables.init(findexKey, "Some Label");
       log("handles: $handles");
 
       expect(await RedisMultiEntryTables.count(RedisTables.users), equals(100));

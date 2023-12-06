@@ -71,7 +71,7 @@ class Findex {
   //
   static int instantiateFindex(
       FindexKey findexKey,
-      Uint8List label,
+      String label,
       Fetch fetchEntries,
       Fetch fetchChains,
       Upsert upsertEntries,
@@ -89,7 +89,7 @@ class Findex {
         findexKey.key.allocateInt8Pointer().cast<Uint8>();
 
     // Label
-    final labelPointer = label.allocateUint8Pointer();
+    final labelPointer = label.toNativeUtf8().cast<Int8>();
 
     //
     // FII OUTPUT
@@ -97,12 +97,11 @@ class Findex {
     final findexHandlePointer = calloc<Int32>(1);
 
     try {
-      final errorCode = library.h_instantiate_with_ffi_backend(
+      final errorCode = library.h_instantiate_with_custom_interface(
           findexHandlePointer,
           findexKeyPointer,
           findexKey.key.length,
-          labelPointer.cast<Uint8>(),
-          label.length,
+          labelPointer,
           entryTableNumber,
           fetchEntries,
           fetchChains,
@@ -120,22 +119,21 @@ class Findex {
     } finally {
       calloc.free(findexHandlePointer);
       calloc.free(findexKeyPointer);
-      calloc.free(labelPointer);
     }
   }
 
-  static Future<Set<Keyword>> add(Map<IndexedValue, Set<Keyword>> additions,
+  static Future<Set<Keyword>> add(Map<IndexedValue, Set<Keyword>> associations,
       {int outputSizeInBytes = 0, int findexHandle = -1}) async {
     //
     // FFI INPUT parameters
     //
 
     // Serialize data to index
-    log("add: additions len: ${additions.length}");
+    log("add: additions len: ${associations.length}");
     final additionsBytes =
-        Uint8List(IndexedValueToKeywordsMap.boundSerializedSize(additions));
+        Uint8List(IndexedValueToKeywordsMap.boundSerializedSize(associations));
     final additionsSerializedSize =
-        IndexedValueToKeywordsMap.serialize(additionsBytes, additions);
+        IndexedValueToKeywordsMap.serialize(additionsBytes, associations);
     final additionsPointer = additionsBytes.allocateUint8Pointer();
     log("add: serialization additions OK: $additionsSerializedSize");
 
@@ -170,7 +168,7 @@ class Findex {
           outputLengthPointer.value > 0) {
         log("retrying: outputSizeInBytes == 0, outputLengthPointer.value: ${outputLengthPointer.value}");
 
-        return add(additions,
+        return add(associations,
             outputSizeInBytes: outputLengthPointer.value, findexHandle: handle);
       }
       log("add: exiting");

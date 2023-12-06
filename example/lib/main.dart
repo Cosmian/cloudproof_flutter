@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'cover_crypt_helper.dart';
-import 'findex_redis_implementation.dart';
+import 'redis_findex.dart';
 
 void main() {
   runApp(const MyApp());
@@ -74,9 +74,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   void indexDataForDemo() async {
     try {
-      label = Uint8List.fromList(utf8.encode("NewLabel"));
       findexKey = FindexKey(Uint8List(16));
-      await FindexRedisImplementation.init(coverCryptHelper, findexKey, label);
+      await FindexRedisImplementation.init(
+          coverCryptHelper, findexKey, "NewLabel");
       await FindexRedisImplementation.indexAll();
 
       setState(() => loading = false);
