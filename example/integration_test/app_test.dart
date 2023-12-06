@@ -30,8 +30,7 @@ void main() {
       expect(result.plaintext, equals(plaintext));
 
       final findexKey = FindexKey(base64Decode("6hb1TznoNQFvCWisGWajkA=="));
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-      await testFunction(findexKey, label);
+      await testFunction(findexKey, "Some Label");
 
       print("findex and cover_crypt OK");
     });
