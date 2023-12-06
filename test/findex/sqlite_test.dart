@@ -5,10 +5,9 @@ import 'dart:io';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as path;
 
 import 'sqlite_findex.dart';
-
-import 'package:path/path.dart' as path;
 
 const expectedUsersIdsForFrance = [
   4,

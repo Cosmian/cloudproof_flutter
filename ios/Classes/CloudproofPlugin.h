@@ -123,126 +123,156 @@ typedef int32_t (*FilterObsoleteData)(uint8_t *output_locations_ptr,
 #endif
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif // __cplusplus
 
 #if defined(DEFINE_FFI)
-  int32_t h_aes256gcm_encrypt(uint8_t *output_ptr,
-                              int32_t *output_len,
-                              const int8_t *plaintext_ptr,
-                              int32_t plaintext_len,
-                              const int8_t *key_ptr,
-                              int32_t key_len,
-                              const int8_t *nonce_ptr,
-                              int32_t nonce_len,
-                              const int8_t *authenticated_data_ptr,
-                              int32_t authenticated_data_len);
+int32_t h_aes256gcm_encrypt(uint8_t *output_ptr,
+                            int32_t *output_len,
+                            const int8_t *plaintext_ptr,
+                            int32_t plaintext_len,
+                            const int8_t *key_ptr,
+                            int32_t key_len,
+                            const int8_t *nonce_ptr,
+                            int32_t nonce_len,
+                            const int8_t *authenticated_data_ptr,
+                            int32_t authenticated_data_len);
 #endif
 
 #if defined(DEFINE_FFI)
-  int32_t h_aes256gcm_decrypt(uint8_t *output_ptr,
-                              int32_t *output_len,
-                              const int8_t *ciphertext_ptr,
-                              int32_t ciphertext_len,
-                              const int8_t *key_ptr,
-                              int32_t key_len,
-                              const int8_t *nonce_ptr,
-                              int32_t nonce_len,
-                              const int8_t *authenticated_data_ptr,
-                              int32_t authenticated_data_len);
+int32_t h_aes256gcm_decrypt(uint8_t *output_ptr,
+                            int32_t *output_len,
+                            const int8_t *ciphertext_ptr,
+                            int32_t ciphertext_len,
+                            const int8_t *key_ptr,
+                            int32_t key_len,
+                            const int8_t *nonce_ptr,
+                            int32_t nonce_len,
+                            const int8_t *authenticated_data_ptr,
+                            int32_t authenticated_data_len);
 #endif
 
-  /**
-   * Externally sets the last error recorded on the Rust side.
-   *
-   * # Safety
-   *
-   * The pointer must point to a null-terminated string.
-   *
-   * This function is meant to be called from the Foreign Function
-   * Interface.
-   *
-   * # Parameters
-   *
-   * - `error_message_ptr`   : pointer to the error message to set
-   */
-  int32_t h_set_error(const int8_t *error_message_ptr);
+/**
+ * Externally sets the last error recorded on the Rust side.
+ *
+ * # Safety
+ *
+ * The pointer must point to a null-terminated string.
+ *
+ * This function is meant to be called from the Foreign Function
+ * Interface.
+ *
+ * # Parameters
+ *
+ * - `error_message_ptr`   : pointer to the error message to set
+ */
+int32_t h_set_error(const int8_t *error_message_ptr);
 
-  /**
-   * Externally gets the most recent error recorded on the Rust side, clearing
-   * it in the process.
-   *
-   * # Safety
-   *
-   * The pointer `error_ptr` should point to a buffer which has been allocated
-   * `error_len` bytes. If the allocated size is smaller than `error_len`, a
-   * call to this function may result in a buffer overflow.
-   *
-   * # Parameters
-   *
-   * - `error_ptr`: pointer to the buffer to which to write the error
-   * - `error_len`: size of the allocated memory
-   */
-  int32_t h_get_error(int8_t *error_ptr, int32_t *error_len);
-
-#if defined(DEFINE_FFI)
-  /**
-   * # Safety
-   */
-  int32_t h_policy(int8_t *policy_ptr, int32_t *policy_len);
-#endif
+/**
+ * Externally gets the most recent error recorded on the Rust side, clearing
+ * it in the process.
+ *
+ * # Safety
+ *
+ * The pointer `error_ptr` should point to a buffer which has been allocated
+ * `error_len` bytes. If the allocated size is smaller than `error_len`, a
+ * call to this function may result in a buffer overflow.
+ *
+ * # Parameters
+ *
+ * - `error_ptr`: pointer to the buffer to which to write the error
+ * - `error_len`: size of the allocated memory
+ */
+int32_t h_get_error(int8_t *error_ptr, int32_t *error_len);
 
 #if defined(DEFINE_FFI)
-  /**
-   * # Safety
-   */
-  int32_t h_add_policy_axis(int8_t *updated_policy_ptr,
-                            int32_t *updated_policy_len,
-                            const int8_t *current_policy_ptr,
-                            int32_t current_policy_len,
-                            const int8_t *axis_ptr);
+/**
+ * # Safety
+ */
+int32_t h_policy(int8_t *policy_ptr, int32_t *policy_len);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * # Safety
-   */
-  int32_t h_remove_policy_axis(int8_t *updated_policy_ptr,
+/**
+ * # Safety
+ */
+int32_t h_add_policy_axis(int8_t *updated_policy_ptr,
+                          int32_t *updated_policy_len,
+                          const int8_t *current_policy_ptr,
+                          int32_t current_policy_len,
+                          const int8_t *axis_ptr);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * # Safety
+ */
+int32_t h_remove_policy_axis(int8_t *updated_policy_ptr,
+                             int32_t *updated_policy_len,
+                             const int8_t *current_policy_ptr,
+                             int32_t current_policy_len,
+                             const int8_t *axis_name_ptr);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * # Safety
+ */
+int32_t h_add_policy_attribute(int8_t *updated_policy_ptr,
                                int32_t *updated_policy_len,
                                const int8_t *current_policy_ptr,
                                int32_t current_policy_len,
-                               const int8_t *axis_name_ptr);
+                               const int8_t *attribute,
+                               bool is_hybridized);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * # Safety
-   */
-  int32_t h_add_policy_attribute(int8_t *updated_policy_ptr,
-                                 int32_t *updated_policy_len,
-                                 const int8_t *current_policy_ptr,
-                                 int32_t current_policy_len,
-                                 const int8_t *attribute,
-                                 bool is_hybridized);
+/**
+ * # Safety
+ */
+int32_t h_remove_policy_attribute(int8_t *updated_policy_ptr,
+                                  int32_t *updated_policy_len,
+                                  const int8_t *current_policy_ptr,
+                                  int32_t current_policy_len,
+                                  const int8_t *attribute);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * # Safety
-   */
-  int32_t h_remove_policy_attribute(int8_t *updated_policy_ptr,
-                                    int32_t *updated_policy_len,
-                                    const int8_t *current_policy_ptr,
-                                    int32_t current_policy_len,
-                                    const int8_t *attribute);
+/**
+ * # Safety
+ */
+int32_t h_disable_policy_attribute(int8_t *updated_policy_ptr,
+                                   int32_t *updated_policy_len,
+                                   const int8_t *current_policy_ptr,
+                                   int32_t current_policy_len,
+                                   const int8_t *attribute);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * # Safety
-   */
-  int32_t h_disable_policy_attribute(int8_t *updated_policy_ptr,
+int32_t h_rename_policy_attribute(int8_t *updated_policy_ptr,
+                                  int32_t *updated_policy_len,
+                                  const int8_t *current_policy_ptr,
+                                  int32_t current_policy_len,
+                                  const int8_t *attribute,
+                                  const int8_t *new_attribute_name_ptr);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * # Safety
+ */
+int32_t h_rotate_attribute(int8_t *updated_policy_ptr,
+                           int32_t *updated_policy_len,
+                           const int8_t *current_policy_ptr,
+                           int32_t current_policy_len,
+                           const int8_t *attribute);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * # Safety
+ */
+int32_t h_clear_old_attribute_values(int8_t *updated_policy_ptr,
                                      int32_t *updated_policy_len,
                                      const int8_t *current_policy_ptr,
                                      int32_t current_policy_len,
@@ -250,726 +280,752 @@ extern "C"
 #endif
 
 #if defined(DEFINE_FFI)
-  int32_t h_rename_policy_attribute(int8_t *updated_policy_ptr,
-                                    int32_t *updated_policy_len,
-                                    const int8_t *current_policy_ptr,
-                                    int32_t current_policy_len,
-                                    const int8_t *attribute,
-                                    const int8_t *new_attribute_name_ptr);
+/**
+ * # Safety
+ */
+int32_t h_validate_boolean_expression(const int8_t *boolean_expression_ptr);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * # Safety
-   */
-  int32_t h_rotate_attribute(int8_t *updated_policy_ptr,
-                             int32_t *updated_policy_len,
-                             const int8_t *current_policy_ptr,
-                             int32_t current_policy_len,
-                             const int8_t *attribute);
+/**
+ * # Safety
+ */
+int32_t h_validate_attribute(const int8_t *attribute_ptr);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * # Safety
-   */
-  int32_t h_clear_old_attribute_values(int8_t *updated_policy_ptr,
-                                       int32_t *updated_policy_len,
-                                       const int8_t *current_policy_ptr,
-                                       int32_t current_policy_len,
-                                       const int8_t *attribute);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * # Safety
-   */
-  int32_t h_validate_boolean_expression(const int8_t *boolean_expression_ptr);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * # Safety
-   */
-  int32_t h_validate_attribute(const int8_t *attribute_ptr);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * Generates the master authority keys for supplied Policy.
-   *
-   *  - `msk_ptr`    : Output buffer containing the master secret key
-   *  - `msk_len`    : Size of the master secret key output buffer
-   *  - `mpk_ptr`    : Output buffer containing the master public key
-   *  - `mpk_len`    : Size of the master public key output buffer
-   *  - `policy_ptr` : Policy to use to generate the keys
-   *  - `policy_len` : Size of the `Policy` to use to generate the keys
-   *
-   * # Safety
-   */
-  int32_t h_generate_master_keys(int8_t *msk_ptr,
-                                 int32_t *msk_len,
-                                 int8_t *mpk_ptr,
-                                 int32_t *mpk_len,
-                                 const int8_t *policy_ptr,
-                                 int32_t policy_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * Generates a user secret key for the given access policy
-   *
-   * - `usk_ptr`             : Output buffer containing user secret key
-   * - `usk_len`             : Size of the output buffer
-   * - `msk_ptr`             : Master secret key (required for this generation)
-   * - `msk_len`             : Master secret key length
-   * - `user_policy_ptr`     : null terminated access policy string
-   * - `policy_ptr`          : bytes of the policy used to generate the keys
-   * - `policy_len`          : length of the policy (in bytes)
-   * # Safety
-   */
-  int32_t h_generate_user_secret_key(int8_t *usk_ptr,
-                                     int32_t *usk_len,
-                                     const int8_t *msk_ptr,
-                                     int32_t msk_len,
-                                     const int8_t *user_policy_ptr,
-                                     const int8_t *policy_ptr,
-                                     int32_t policy_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * Updates the master keys according to the given policy.
-   *
-   * Cf (`CoverCrypt::update_master_keys`)[`CoverCrypt::update_master_keys`].
-   *
-   * - `updated_msk_ptr` : Output buffer containing the updated master secret key
-   * - `updated_msk_len` : Size of the updated master secret key output buffer
-   * - `updated_mpk_ptr` : Output buffer containing the updated master public key
-   * - `updated_mpk_len` : Size of the updated master public key output buffer
-   * - `current_msk_ptr` : current master secret key
-   * - `current_msk_len` : current master secret key length
-   * - `current_mpk_ptr` : current master public key
-   * - `current_mpk_len` : current master public key length
-   * - `policy_ptr`      : Policy to use to update the master keys (JSON)
-   * # Safety
-   */
-  int32_t h_update_master_keys(int8_t *updated_msk_ptr,
-                               int32_t *updated_msk_len,
-                               int8_t *updated_mpk_ptr,
-                               int32_t *updated_mpk_len,
-                               const int8_t *current_msk_ptr,
-                               int32_t current_msk_len,
-                               const int8_t *current_mpk_ptr,
-                               int32_t current_mpk_len,
+/**
+ * Generates the master authority keys for supplied Policy.
+ *
+ *  - `msk_ptr`    : Output buffer containing the master secret key
+ *  - `msk_len`    : Size of the master secret key output buffer
+ *  - `mpk_ptr`    : Output buffer containing the master public key
+ *  - `mpk_len`    : Size of the master public key output buffer
+ *  - `policy_ptr` : Policy to use to generate the keys
+ *  - `policy_len` : Size of the `Policy` to use to generate the keys
+ *
+ * # Safety
+ */
+int32_t h_generate_master_keys(int8_t *msk_ptr,
+                               int32_t *msk_len,
+                               int8_t *mpk_ptr,
+                               int32_t *mpk_len,
                                const int8_t *policy_ptr,
                                int32_t policy_len);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Refreshes the user secret key according to the given master key and access
-   * policy.
-   *
-   * Cf [`CoverCrypt::refresh_user_secret_key()`](CoverCrypt::refresh_user_secret_key).
-   *
-   * - `updated_usk_ptr`                 : Output buffer containing the updated
-   *   user secret key
-   * - `updated_usk_len`                 : Size of the updated user secret key
-   *   output buffer
-   * - `msk_ptr`                         : master secret key
-   * - `msk_len`                         : master secret key length
-   * - `current_usk_ptr`                 : current user secret key
-   * - `current_usk_len`                 : current user secret key length
-   * - `access_policy_ptr`               : Access policy of the user secret key
-   *   (JSON)
-   * - `policy_ptr`                      : Policy to use to update the master
-   *   keys (JSON)
-   * - `preserve_old_partitions_access`  : set to 1 to preserve the user access
-   *   to the rotated partitions
-   * # Safety
-   */
-  int32_t h_refresh_user_secret_key(int8_t *updated_usk_ptr,
-                                    int32_t *updated_usk_len,
-                                    const int8_t *msk_ptr,
-                                    int32_t msk_len,
-                                    const int8_t *current_usk_ptr,
-                                    int32_t current_usk_len,
-                                    const int8_t *user_policy_ptr,
-                                    const int8_t *policy_ptr,
-                                    int32_t policy_len,
-                                    int32_t preserve_old_partitions_access);
+/**
+ * Generates a user secret key for the given access policy
+ *
+ * - `usk_ptr`             : Output buffer containing user secret key
+ * - `usk_len`             : Size of the output buffer
+ * - `msk_ptr`             : Master secret key (required for this generation)
+ * - `msk_len`             : Master secret key length
+ * - `user_policy_ptr`     : null terminated access policy string
+ * - `policy_ptr`          : bytes of the policy used to generate the keys
+ * - `policy_len`          : length of the policy (in bytes)
+ * # Safety
+ */
+int32_t h_generate_user_secret_key(int8_t *usk_ptr,
+                                   int32_t *usk_len,
+                                   const int8_t *msk_ptr,
+                                   int32_t msk_len,
+                                   const int8_t *user_policy_ptr,
+                                   const int8_t *policy_ptr,
+                                   int32_t policy_len);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Creates a cache containing the Public Key and Policy. This cache can be
-   * reused when encrypting messages which avoids passing these objects to Rust
-   * in each call.
-   *
-   * WARNING: [`h_destroy_encrypt_cache()`](h_destroy_encryption_cache)
-   * should be called to reclaim the cache memory.
-   *
-   * # Safety
-   */
-  int32_t h_create_encryption_cache(int32_t *cache_handle,
-                                    const int8_t *policy_ptr,
-                                    int32_t policy_len,
-                                    const int8_t *mpk_ptr,
-                                    int32_t mpk_len);
+/**
+ * Updates the master keys according to the given policy.
+ *
+ * Cf (`CoverCrypt::update_master_keys`)[`CoverCrypt::update_master_keys`].
+ *
+ * - `updated_msk_ptr` : Output buffer containing the updated master secret key
+ * - `updated_msk_len` : Size of the updated master secret key output buffer
+ * - `updated_mpk_ptr` : Output buffer containing the updated master public key
+ * - `updated_mpk_len` : Size of the updated master public key output buffer
+ * - `current_msk_ptr` : current master secret key
+ * - `current_msk_len` : current master secret key length
+ * - `current_mpk_ptr` : current master public key
+ * - `current_mpk_len` : current master public key length
+ * - `policy_ptr`      : Policy to use to update the master keys (JSON)
+ * # Safety
+ */
+int32_t h_update_master_keys(int8_t *updated_msk_ptr,
+                             int32_t *updated_msk_len,
+                             int8_t *updated_mpk_ptr,
+                             int32_t *updated_mpk_len,
+                             const int8_t *current_msk_ptr,
+                             int32_t current_msk_len,
+                             const int8_t *current_mpk_ptr,
+                             int32_t current_mpk_len,
+                             const int8_t *policy_ptr,
+                             int32_t policy_len);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Reclaims the memory of the cache.
-   *
-   * Cf [`h_create_encrypt_cache()`](h_create_encryption_cache).
-   *
-   * # Safety
-   */
-  int32_t h_destroy_encryption_cache(int32_t cache_handle);
+/**
+ * Refreshes the user secret key according to the given master key and access
+ * policy.
+ *
+ * Cf [`CoverCrypt::refresh_user_secret_key()`](CoverCrypt::refresh_user_secret_key).
+ *
+ * - `updated_usk_ptr`                 : Output buffer containing the updated
+ *   user secret key
+ * - `updated_usk_len`                 : Size of the updated user secret key
+ *   output buffer
+ * - `msk_ptr`                         : master secret key
+ * - `msk_len`                         : master secret key length
+ * - `current_usk_ptr`                 : current user secret key
+ * - `current_usk_len`                 : current user secret key length
+ * - `access_policy_ptr`               : Access policy of the user secret key
+ *   (JSON)
+ * - `policy_ptr`                      : Policy to use to update the master
+ *   keys (JSON)
+ * - `preserve_old_partitions_access`  : set to 1 to preserve the user access
+ *   to the rotated partitions
+ * # Safety
+ */
+int32_t h_refresh_user_secret_key(int8_t *updated_usk_ptr,
+                                  int32_t *updated_usk_len,
+                                  const int8_t *msk_ptr,
+                                  int32_t msk_len,
+                                  const int8_t *current_usk_ptr,
+                                  int32_t current_usk_len,
+                                  const int8_t *user_policy_ptr,
+                                  const int8_t *policy_ptr,
+                                  int32_t policy_len,
+                                  int32_t preserve_old_partitions_access);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Encrypts a header using an encryption cache.
-   *
-   * # Safety
-   */
-  int32_t h_encrypt_header_using_cache(int8_t *symmetric_key_ptr,
-                                       int32_t *symmetric_key_len,
-                                       int8_t *header_bytes_ptr,
-                                       int32_t *header_bytes_len,
-                                       int32_t cache_handle,
-                                       const int8_t *encryption_policy_ptr,
-                                       const int8_t *header_metadata_ptr,
-                                       int32_t header_metadata_len,
+/**
+ * Creates a cache containing the Public Key and Policy. This cache can be
+ * reused when encrypting messages which avoids passing these objects to Rust
+ * in each call.
+ *
+ * WARNING: [`h_destroy_encrypt_cache()`](h_destroy_encryption_cache)
+ * should be called to reclaim the cache memory.
+ *
+ * # Safety
+ */
+int32_t h_create_encryption_cache(int32_t *cache_handle,
+                                  const int8_t *policy_ptr,
+                                  int32_t policy_len,
+                                  const int8_t *mpk_ptr,
+                                  int32_t mpk_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Reclaims the memory of the cache.
+ *
+ * Cf [`h_create_encrypt_cache()`](h_create_encryption_cache).
+ *
+ * # Safety
+ */
+int32_t h_destroy_encryption_cache(int32_t cache_handle);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Encrypts a header using an encryption cache.
+ *
+ * # Safety
+ */
+int32_t h_encrypt_header_using_cache(int8_t *symmetric_key_ptr,
+                                     int32_t *symmetric_key_len,
+                                     int8_t *header_bytes_ptr,
+                                     int32_t *header_bytes_len,
+                                     int32_t cache_handle,
+                                     const int8_t *encryption_policy_ptr,
+                                     const int8_t *header_metadata_ptr,
+                                     int32_t header_metadata_len,
+                                     const int8_t *authentication_data_ptr,
+                                     int32_t authentication_data_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Encrypts a header without using an encryption cache.
+ * It is slower but does not require destroying any cache when done.
+ *
+ * The symmetric key and header bytes are returned in the first OUT parameters
+ * # Safety
+ */
+int32_t h_encrypt_header(int8_t *symmetric_key_ptr,
+                         int32_t *symmetric_key_len,
+                         int8_t *header_bytes_ptr,
+                         int32_t *header_bytes_len,
+                         const int8_t *policy_ptr,
+                         int32_t policy_len,
+                         const int8_t *mpk_ptr,
+                         int32_t mpk_len,
+                         const int8_t *encryption_policy_ptr,
+                         const int8_t *header_metadata_ptr,
+                         int32_t header_metadata_len,
+                         const int8_t *authentication_data_ptr,
+                         int32_t authentication_data_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Creates a cache containing the user secret key. This cache can be reused
+ * when decrypting messages which avoids passing this key to Rust in each call.
+ *
+ * Cf [`h_decrypt_header_using_cache()`](h_decrypt_header_using_cache).
+ *
+ * WARNING: [`h_destroy_decryption_cache()`](h_destroy_decryption_cache)
+ * should be called to reclaim the cache memory.
+ *
+ * # Safety
+ */
+int32_t h_create_decryption_cache(int32_t *cache_handle, const int8_t *usk_ptr, int32_t usk_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Reclaims decryption cache memory.
+ *
+ * # Safety
+ */
+int32_t h_destroy_decryption_cache(int32_t cache_handle);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Decrypts an encrypted header using a cache. Returns the symmetric key and
+ * header metadata if any.
+ *
+ * No header metadata is returned if `header_metadata_ptr` is `NULL`.
+ *
+ * # Safety
+ */
+int32_t h_decrypt_header_using_cache(int8_t *symmetric_key_ptr,
+                                     int32_t *symmetric_key_len,
+                                     int8_t *header_metadata_ptr,
+                                     int32_t *header_metadata_len,
+                                     const int8_t *encrypted_header_ptr,
+                                     int32_t encrypted_header_len,
+                                     const int8_t *authentication_data_ptr,
+                                     int32_t authentication_data_len,
+                                     int32_t cache_handle);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Decrypts an encrypted header, returning the symmetric key and header
+ * metadata if any.
+ *
+ * No header metadata is returned if `header_metadata_ptr` is `NULL`.
+ *
+ * # Safety
+ */
+int32_t h_decrypt_header(int8_t *symmetric_key_ptr,
+                         int32_t *symmetric_key_len,
+                         int8_t *header_metadata_ptr,
+                         int32_t *header_metadata_len,
+                         const int8_t *encrypted_header_ptr,
+                         int32_t encrypted_header_len,
+                         const int8_t *authentication_data_ptr,
+                         int32_t authentication_data_len,
+                         const int8_t *usk_ptr,
+                         int32_t usk_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ *
+ * # Safety
+ */
+int32_t h_symmetric_encryption_overhead(void);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ *
+ * # Safety
+ */
+int32_t h_dem_encrypt(int8_t *ciphertext_ptr,
+                      int32_t *ciphertext_len,
+                      const int8_t *symmetric_key_ptr,
+                      int32_t symmetric_key_len,
+                      const int8_t *authentication_data_ptr,
+                      int32_t authentication_data_len,
+                      const int8_t *plaintext_ptr,
+                      int32_t plaintext_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ *
+ * # Safety
+ */
+int32_t h_dem_decrypt(int8_t *plaintext_ptr,
+                      int32_t *plaintext_len,
+                      const int8_t *symmetric_key_ptr,
+                      int32_t symmetric_key_len,
+                      const int8_t *authentication_data_ptr,
+                      int32_t authentication_data_len,
+                      const int8_t *ciphertext_ptr,
+                      int32_t ciphertext_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Hybrid encrypt some content
+ *
+ * # Safety
+ */
+int32_t h_hybrid_encrypt(int8_t *ciphertext_ptr,
+                         int32_t *ciphertext_len,
+                         const int8_t *policy_ptr,
+                         int32_t policy_len,
+                         const int8_t *mpk_ptr,
+                         int32_t mpk_len,
+                         const int8_t *encryption_policy_ptr,
+                         const int8_t *plaintext_ptr,
+                         int32_t plaintext_len,
+                         const int8_t *header_metadata_ptr,
+                         int32_t header_metadata_len,
+                         const int8_t *authentication_data_ptr,
+                         int32_t authentication_data_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Hybrid decrypt some content.
+ *
+ * No header metadata is returned if `header_metadata_ptr` is `NULL`.
+ *
+ * # Safety
+ */
+int32_t h_hybrid_decrypt(int8_t *plaintext_ptr,
+                         int32_t *plaintext_len,
+                         int8_t *header_metadata_ptr,
+                         int32_t *header_metadata_len,
+                         const int8_t *ciphertext_ptr,
+                         int32_t ciphertext_len,
+                         const int8_t *authentication_data_ptr,
+                         int32_t authentication_data_len,
+                         const int8_t *usk_ptr,
+                         int32_t usk_len);
+#endif
+
+#if defined(DEFINE_FFI)
+int32_t h_ecies_x25519_generate_key_pair(uint8_t *public_key_ptr,
+                                         int32_t *public_key_len,
+                                         uint8_t *private_key_ptr,
+                                         int32_t *private_key_len);
+#endif
+
+#if defined(DEFINE_FFI)
+int32_t h_ecies_salsa_seal_box_encrypt(uint8_t *output_ptr,
+                                       int32_t *output_len,
+                                       const int8_t *plaintext_ptr,
+                                       int32_t plaintext_len,
+                                       const int8_t *public_key_ptr,
+                                       int32_t public_key_len,
                                        const int8_t *authentication_data_ptr,
                                        int32_t authentication_data_len);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Encrypts a header without using an encryption cache.
-   * It is slower but does not require destroying any cache when done.
-   *
-   * The symmetric key and header bytes are returned in the first OUT parameters
-   * # Safety
-   */
-  int32_t h_encrypt_header(int8_t *symmetric_key_ptr,
-                           int32_t *symmetric_key_len,
-                           int8_t *header_bytes_ptr,
-                           int32_t *header_bytes_len,
-                           const int8_t *policy_ptr,
-                           int32_t policy_len,
-                           const int8_t *mpk_ptr,
-                           int32_t mpk_len,
-                           const int8_t *encryption_policy_ptr,
-                           const int8_t *header_metadata_ptr,
-                           int32_t header_metadata_len,
-                           const int8_t *authentication_data_ptr,
-                           int32_t authentication_data_len);
+uint32_t h_ecies_salsa_seal_box_get_encryption_overhead(void);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Creates a cache containing the user secret key. This cache can be reused
-   * when decrypting messages which avoids passing this key to Rust in each call.
-   *
-   * Cf [`h_decrypt_header_using_cache()`](h_decrypt_header_using_cache).
-   *
-   * WARNING: [`h_destroy_decryption_cache()`](h_destroy_decryption_cache)
-   * should be called to reclaim the cache memory.
-   *
-   * # Safety
-   */
-  int32_t h_create_decryption_cache(int32_t *cache_handle, const int8_t *usk_ptr, int32_t usk_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * Reclaims decryption cache memory.
-   *
-   * # Safety
-   */
-  int32_t h_destroy_decryption_cache(int32_t cache_handle);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * Decrypts an encrypted header using a cache. Returns the symmetric key and
-   * header metadata if any.
-   *
-   * No header metadata is returned if `header_metadata_ptr` is `NULL`.
-   *
-   * # Safety
-   */
-  int32_t h_decrypt_header_using_cache(int8_t *symmetric_key_ptr,
-                                       int32_t *symmetric_key_len,
-                                       int8_t *header_metadata_ptr,
-                                       int32_t *header_metadata_len,
-                                       const int8_t *encrypted_header_ptr,
-                                       int32_t encrypted_header_len,
+int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
+                                       int32_t *output_len,
+                                       const int8_t *ciphertext_ptr,
+                                       int32_t ciphertext_len,
+                                       const int8_t *private_key_ptr,
+                                       int32_t private_key_len,
                                        const int8_t *authentication_data_ptr,
-                                       int32_t authentication_data_len,
-                                       int32_t cache_handle);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * Decrypts an encrypted header, returning the symmetric key and header
-   * metadata if any.
-   *
-   * No header metadata is returned if `header_metadata_ptr` is `NULL`.
-   *
-   * # Safety
-   */
-  int32_t h_decrypt_header(int8_t *symmetric_key_ptr,
-                           int32_t *symmetric_key_len,
-                           int8_t *header_metadata_ptr,
-                           int32_t *header_metadata_len,
-                           const int8_t *encrypted_header_ptr,
-                           int32_t encrypted_header_len,
-                           const int8_t *authentication_data_ptr,
-                           int32_t authentication_data_len,
-                           const int8_t *usk_ptr,
-                           int32_t usk_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   *
-   * # Safety
-   */
-  int32_t h_symmetric_encryption_overhead(void);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   *
-   * # Safety
-   */
-  int32_t h_dem_encrypt(int8_t *ciphertext_ptr,
-                        int32_t *ciphertext_len,
-                        const int8_t *symmetric_key_ptr,
-                        int32_t symmetric_key_len,
-                        const int8_t *authentication_data_ptr,
-                        int32_t authentication_data_len,
-                        const int8_t *plaintext_ptr,
-                        int32_t plaintext_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   *
-   * # Safety
-   */
-  int32_t h_dem_decrypt(int8_t *plaintext_ptr,
-                        int32_t *plaintext_len,
-                        const int8_t *symmetric_key_ptr,
-                        int32_t symmetric_key_len,
-                        const int8_t *authentication_data_ptr,
-                        int32_t authentication_data_len,
-                        const int8_t *ciphertext_ptr,
-                        int32_t ciphertext_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * Hybrid encrypt some content
-   *
-   * # Safety
-   */
-  int32_t h_hybrid_encrypt(int8_t *ciphertext_ptr,
-                           int32_t *ciphertext_len,
-                           const int8_t *policy_ptr,
-                           int32_t policy_len,
-                           const int8_t *mpk_ptr,
-                           int32_t mpk_len,
-                           const int8_t *encryption_policy_ptr,
-                           const int8_t *plaintext_ptr,
-                           int32_t plaintext_len,
-                           const int8_t *header_metadata_ptr,
-                           int32_t header_metadata_len,
-                           const int8_t *authentication_data_ptr,
-                           int32_t authentication_data_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * Hybrid decrypt some content.
-   *
-   * No header metadata is returned if `header_metadata_ptr` is `NULL`.
-   *
-   * # Safety
-   */
-  int32_t h_hybrid_decrypt(int8_t *plaintext_ptr,
-                           int32_t *plaintext_len,
-                           int8_t *header_metadata_ptr,
-                           int32_t *header_metadata_len,
-                           const int8_t *ciphertext_ptr,
-                           int32_t ciphertext_len,
-                           const int8_t *authentication_data_ptr,
-                           int32_t authentication_data_len,
-                           const int8_t *usk_ptr,
-                           int32_t usk_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  int32_t h_ecies_x25519_generate_key_pair(uint8_t *public_key_ptr,
-                                           int32_t *public_key_len,
-                                           uint8_t *private_key_ptr,
-                                           int32_t *private_key_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  int32_t h_ecies_salsa_seal_box_encrypt(uint8_t *output_ptr,
-                                         int32_t *output_len,
-                                         const int8_t *plaintext_ptr,
-                                         int32_t plaintext_len,
-                                         const int8_t *public_key_ptr,
-                                         int32_t public_key_len,
-                                         const int8_t *authentication_data_ptr,
-                                         int32_t authentication_data_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  uint32_t h_ecies_salsa_seal_box_get_encryption_overhead(void);
-#endif
-
-#if defined(DEFINE_FFI)
-  int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
-                                         int32_t *output_len,
-                                         const int8_t *ciphertext_ptr,
-                                         int32_t ciphertext_len,
-                                         const int8_t *private_key_ptr,
-                                         int32_t private_key_len,
-                                         const int8_t *authentication_data_ptr,
-                                         int32_t authentication_data_len);
+                                       int32_t authentication_data_len);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
-  /**
-   * Creates a new Findex instance using a custom FFI backend.
-   *
-   * The new instance is stored in a cache and the handle returned.
-   *
-   * # Safety
-   *
-   * Cannot be safe since using FFI.
-   */
-  int32_t h_instantiate_with_custom_interface(int32_t *findex_handle,
-                                              const uint8_t *key_ptr,
-                                              int32_t key_len,
-                                              const int8_t *label_ptr,
-                                              uint32_t entry_table_number,
-                                              Fetch fetch_entry,
-                                              Fetch fetch_chain,
-                                              Upsert upsert_entry,
-                                              Insert insert_entry,
-                                              Insert insert_chain,
-                                              Delete delete_entry,
-                                              Delete delete_chain,
-                                              DumpTokens dump_tokens);
-#endif
-
-#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
-  /**
-   * Instantiate a Findex using a REST backend.
-   *
-   * # Parameters
-   *
-   * - `label`   : label used by Findex
-   * - `token`   : token containing authentication keys
-   * - `url`     : REST server URL
-   *
-   * # Safety
-   *
-   * Cannot be safe since using FFI.
-   */
-  int32_t h_instantiate_with_rest_interface(int32_t *findex_handle,
+/**
+ * Creates a new Findex instance using a custom FFI backend.
+ *
+ * The new instance is stored in a cache and the handle returned.
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_instantiate_with_custom_interface(int32_t *findex_handle,
+                                            const uint8_t *key_ptr,
+                                            int32_t key_len,
                                             const int8_t *label_ptr,
-                                            const int8_t *token_ptr,
-                                            const int8_t *entry_url_ptr,
-                                            const int8_t *chain_url_ptr);
+                                            uint32_t entry_table_number,
+                                            Fetch fetch_entry,
+                                            Fetch fetch_chain,
+                                            Upsert upsert_entry,
+                                            Insert insert_entry,
+                                            Insert insert_chain,
+                                            Delete delete_entry,
+                                            Delete delete_chain,
+                                            DumpTokens dump_tokens);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
-  /**
-   * Instantiate a Findex using a Redis backend.
-   *
-   * # Parameters
-   *
-   * - `key`                     : Findex key
-   * - `label`                   : label used by Findex
-   * - `entry_table_redis_url`   : Redis entry table URL
-   * - `chain_table_redis_url`   : Redis chain table URL
-   *
-   * # Safety
-   *
-   * Cannot be safe since using FFI.
-   */
-  int32_t h_instantiate_with_redis_interface(int32_t *findex_handle,
-                                             const uint8_t *key_ptr,
-                                             int32_t key_len,
-                                             const int8_t *label_ptr,
-                                             const int8_t *entry_table_redis_url_ptr,
-                                             const int8_t *chain_table_redis_url_ptr);
+/**
+ * Instantiate a Findex using a REST backend.
+ *
+ * # Parameters
+ *
+ * - `label`   : label used by Findex
+ * - `token`   : token containing authentication keys
+ * - `url`     : REST server URL
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_instantiate_with_rest_interface(int32_t *findex_handle,
+                                          const int8_t *label_ptr,
+                                          const int8_t *token_ptr,
+                                          const int8_t *entry_url_ptr,
+                                          const int8_t *chain_url_ptr);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
-  /**
-   * Searches the index for the given keywords.
-   *
-   * At each search recursion, the passed `interrupt` function is called with the
-   * results from the current recursion level. The search is interrupted is
-   * `true` is returned.
-   *
-   * # Parameters
-   *
-   * - `results`         : (output) search result
-   * - `findex_handle`   : Findex handle on the instance cache
-   * - `keywords`        : serialized list of keywords
-   * - `interrupt`       : user interrupt called at each search iteration
-   *
-   * # Safety
-   *
-   * Cannot be safe since using FFI.
-   */
-  int32_t h_search(uint8_t *results_ptr,
-                   int32_t *results_len,
-                   int32_t findex_handle,
-                   const uint8_t *keywords_ptr,
-                   int32_t keywords_len,
-                   Interrupt interrupt);
+/**
+ * Instantiate a Findex using a Redis backend.
+ *
+ * # Parameters
+ *
+ * - `key`                     : Findex key
+ * - `label`                   : label used by Findex
+ * - `entry_table_redis_url`   : Redis entry table URL
+ * - `chain_table_redis_url`   : Redis chain table URL
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_instantiate_with_redis_interface(int32_t *findex_handle,
+                                           const uint8_t *key_ptr,
+                                           int32_t key_len,
+                                           const int8_t *label_ptr,
+                                           const int8_t *entry_table_redis_url_ptr,
+                                           const int8_t *chain_table_redis_url_ptr);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
-  /**
-   * Adds the given associations to the index.
-   *
-   * # Parameters
-   *
-   * - `results`         : (output) list of new keywords added to the index
-   * - `findex_handle`   : Findex handle on the instance cache
-   * - `associations`    : map of values to sets of keywords
-   *
-   * # Safety
-   *
-   * Cannot be safe since using FFI.
-   */
-  int32_t h_add(uint8_t *results_ptr,
-                int32_t *results_len,
-                int32_t findex_handle,
-                const uint8_t *associations_ptr,
-                int32_t associations_len);
+/**
+ * Searches the index for the given keywords.
+ *
+ * At each search recursion, the passed `interrupt` function is called with the
+ * results from the current recursion level. The search is interrupted is
+ * `true` is returned.
+ *
+ * # Parameters
+ *
+ * - `results`         : (output) search result
+ * - `findex_handle`   : Findex handle on the instance cache
+ * - `keywords`        : serialized list of keywords
+ * - `interrupt`       : user interrupt called at each search iteration
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_search(uint8_t *results_ptr,
+                 int32_t *results_len,
+                 int32_t findex_handle,
+                 const uint8_t *keywords_ptr,
+                 int32_t keywords_len,
+                 Interrupt interrupt);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
-  /**
-   * Removes the given associations from the index.
-   *
-   * # Parameters
-   *
-   * - `results`         : Returns the list of new keywords added to the index
-   * - `findex_handle`   : Findex handle on the instance cache
-   * - `associations`    : map of values to sets of keywords
-   *
-   * # Safety
-   *
-   * Cannot be safe since using FFI.
-   */
-  int32_t h_delete(uint8_t *results_ptr,
-                   int32_t *results_len,
-                   int32_t findex_handle,
-                   const uint8_t *associations_ptr,
-                   int32_t associations_len);
+/**
+ * Adds the given associations to the index.
+ *
+ * # Parameters
+ *
+ * - `results`         : (output) list of new keywords added to the index
+ * - `findex_handle`   : Findex handle on the instance cache
+ * - `associations`    : map of values to sets of keywords
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_add(uint8_t *results_ptr,
+              int32_t *results_len,
+              int32_t findex_handle,
+              const uint8_t *associations_ptr,
+              int32_t associations_len);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
-  /**
-   * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
-   * using the given label and the KMAC key derived from the new key. The
-   * values are decrypted using the DEM key derived from the key and
-   * re-encrypted using the DEM key derived from the new key.
-   *
-   * Randomly selects index entries and recompact their associated chains. Chains
-   * indexing no existing location are removed. Others are recomputed from a new
-   * keying material. This removes unneeded paddings. New UIDs are derived for
-   * the chain and values are re-encrypted using a DEM key derived from the new
-   * keying material.
-   *
-   * # Parameters
-   *
-   * - `findex_handle`           : Findex handle on the instance cache
-   * - `new_key`                 : new Findex key
-   * - `new_label`               : public information used to derive UIDs
-   * - `compacting_rate`         : see below
-   * - `filter_obsolete_data`    : callback used to filter out obsolete data
-   *   among indexed data
-   *
-   * `compacting_rate`: if you compact the
-   * indexes every night this is the number of days to wait before
-   * being sure that a big portion of the indexes were checked
-   * (see the coupon problem to understand why it's not 100% sure)
-   * # Safety
-   *
-   * Cannot be safe since using FFI.
-   */
-  int32_t h_compact(int32_t findex_handle,
-                    const uint8_t *new_key_ptr,
-                    int32_t new_key_len,
-                    const int8_t *new_label_ptr,
-                    double compacting_rate,
-                    FilterObsoleteData filter_obsolete_data);
+/**
+ * Removes the given associations from the index.
+ *
+ * # Parameters
+ *
+ * - `results`         : Returns the list of new keywords added to the index
+ * - `findex_handle`   : Findex handle on the instance cache
+ * - `associations`    : map of values to sets of keywords
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_delete(uint8_t *results_ptr,
+                 int32_t *results_len,
+                 int32_t findex_handle,
+                 const uint8_t *associations_ptr,
+                 int32_t associations_len);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
-  /**
-   * Generate a new Findex token from the provided index ID and signature seeds,
-   * and a randomly generated Findex key inside Rust.
-   *
-   * The token is output inside `token_ptr`, `token_len` is updated to match the
-   * token length (this length should always be the same, right now, the length
-   * is always below 200 bytes)
-   *
-   * # Safety
-   *
-   * Cannot be safe since using FFI.
-   */
-  int32_t h_generate_new_token(uint8_t *token_ptr,
-                               int32_t *token_len,
-                               const int8_t *index_id_ptr,
-                               const uint8_t *fetch_entries_seed_ptr,
-                               int32_t fetch_entries_seed_len,
-                               const uint8_t *fetch_chains_seed_ptr,
-                               int32_t fetch_chains_seed_len,
-                               const uint8_t *upsert_entries_seed_ptr,
-                               int32_t upsert_entries_seed_len,
-                               const uint8_t *insert_chains_seed_ptr,
-                               int32_t insert_chains_seed_len);
+/**
+ * Replaces all the Index Entry Table UIDs and values. New UIDs are derived
+ * using the given label and the KMAC key derived from the new key. The
+ * values are decrypted using the DEM key derived from the key and
+ * re-encrypted using the DEM key derived from the new key.
+ *
+ * Randomly selects index entries and recompact their associated chains. Chains
+ * indexing no existing location are removed. Others are recomputed from a new
+ * keying material. This removes unneeded paddings. New UIDs are derived for
+ * the chain and values are re-encrypted using a DEM key derived from the new
+ * keying material.
+ *
+ * # Parameters
+ *
+ * - `findex_handle`           : Findex handle on the instance cache
+ * - `new_key`                 : new Findex key
+ * - `new_label`               : public information used to derive UIDs
+ * - `compacting_rate`         : see below
+ * - `filter_obsolete_data`    : callback used to filter out obsolete data
+ *   among indexed data
+ *
+ * `compacting_rate`: if you compact the
+ * indexes every night this is the number of days to wait before
+ * being sure that a big portion of the indexes were checked
+ * (see the coupon problem to understand why it's not 100% sure)
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_compact(int32_t findex_handle,
+                  const uint8_t *new_key_ptr,
+                  int32_t new_key_len,
+                  const int8_t *new_label_ptr,
+                  double compacting_rate,
+                  FilterObsoleteData filter_obsolete_data);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
-  /**
-   * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
-   * `get_last_error` name The `h_get_error` is available inside the final lib
-   * (but tools like `ffigen` seems to not parse it…) Maybe we can find a
-   * solution by changing the function name inside the clients.
-   *
-   * # Safety
-   *
-   * Cannot be safe since using FFI.
-   */
-  int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
+/**
+ * Generate a new Findex token from the provided index ID and signature seeds,
+ * and a randomly generated Findex key inside Rust.
+ *
+ * The token is output inside `token_ptr`, `token_len` is updated to match the
+ * token length (this length should always be the same, right now, the length
+ * is always below 200 bytes)
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_generate_new_token(uint8_t *token_ptr,
+                             int32_t *token_len,
+                             const int8_t *index_id_ptr,
+                             const uint8_t *fetch_entries_seed_ptr,
+                             int32_t fetch_entries_seed_len,
+                             const uint8_t *fetch_chains_seed_ptr,
+                             int32_t fetch_chains_seed_len,
+                             const uint8_t *upsert_entries_seed_ptr,
+                             int32_t upsert_entries_seed_len,
+                             const uint8_t *insert_chains_seed_ptr,
+                             int32_t insert_chains_seed_len);
+#endif
+
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
+/**
+ * Re-export the `cosmian_ffi` `h_get_error` function to clients with the old
+ * `get_last_error` name The `h_get_error` is available inside the final lib
+ * (but tools like `ffigen` seems to not parse it…) Maybe we can find a
+ * solution by changing the function name inside the clients.
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t get_last_error(int8_t *error_ptr, int32_t *error_len);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Encrypts a string using Format Preserving Encryption (FPE) algorithm with
-   * the specified alphabet.
-   *
-   * # Safety
-   *
-   * This function is marked as `unsafe` due to the usage of raw pointers, which
-   * need to be properly allocated and dereferenced by the caller.
-   *
-   * # Arguments
-   *
-   * * `plaintext_ptr` - a pointer to the buffer where the encrypted string will
-   *   be written.
-   * * `plaintext_len` - a pointer to the variable that stores the maximum size
-   *   of the `plaintext_ptr` buffer. After the function call, the variable will
-   *   be updated with the actual size of the encrypted string.
-   * * `alphabet_id_ptr` - a pointer to a C string that represents the ID of the
-   *   alphabet used for encryption.
-   * * `input_ptr` - a pointer to a C string that represents the plaintext to be
-   *   encrypted.
-   * * `key_ptr` - a pointer to a C string that represents the key used for
-   *   encryption.
-   * * `key_len` - the length of the `key_ptr` string.
-   * * `tweak_ptr` - a pointer to a C string that represents the tweak used for
-   *   encryption.
-   * * `tweak_len` - the length of the `tweak_ptr` string.
-   * * `additional_characters_ptr` - a pointer to a C string that represents
-   *   additional characters to be used in the alphabet.
-   *
-   * # Returns
-   *
-   * An integer that indicates whether the encryption was successful. A value of
-   * `0` means success, while a non-zero value represents an error code.
-   */
-  int32_t h_fpe_encrypt_alphabet(uint8_t *plaintext_ptr,
-                                 int32_t *plaintext_len,
-                                 const int8_t *alphabet_id_ptr,
-                                 const int8_t *input_ptr,
-                                 const int8_t *key_ptr,
-                                 int32_t key_len,
-                                 const int8_t *tweak_ptr,
-                                 int32_t tweak_len,
-                                 const int8_t *additional_characters_ptr);
+/**
+ * Encrypts a string using Format Preserving Encryption (FPE) algorithm with
+ * the specified alphabet.
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` due to the usage of raw pointers, which
+ * need to be properly allocated and dereferenced by the caller.
+ *
+ * # Arguments
+ *
+ * * `plaintext_ptr` - a pointer to the buffer where the encrypted string will
+ *   be written.
+ * * `plaintext_len` - a pointer to the variable that stores the maximum size
+ *   of the `plaintext_ptr` buffer. After the function call, the variable will
+ *   be updated with the actual size of the encrypted string.
+ * * `alphabet_id_ptr` - a pointer to a C string that represents the ID of the
+ *   alphabet used for encryption.
+ * * `input_ptr` - a pointer to a C string that represents the plaintext to be
+ *   encrypted.
+ * * `key_ptr` - a pointer to a C string that represents the key used for
+ *   encryption.
+ * * `key_len` - the length of the `key_ptr` string.
+ * * `tweak_ptr` - a pointer to a C string that represents the tweak used for
+ *   encryption.
+ * * `tweak_len` - the length of the `tweak_ptr` string.
+ * * `additional_characters_ptr` - a pointer to a C string that represents
+ *   additional characters to be used in the alphabet.
+ *
+ * # Returns
+ *
+ * An integer that indicates whether the encryption was successful. A value of
+ * `0` means success, while a non-zero value represents an error code.
+ */
+int32_t h_fpe_encrypt_alphabet(uint8_t *plaintext_ptr,
+                               int32_t *plaintext_len,
+                               const int8_t *alphabet_id_ptr,
+                               const int8_t *input_ptr,
+                               const int8_t *key_ptr,
+                               int32_t key_len,
+                               const int8_t *tweak_ptr,
+                               int32_t tweak_len,
+                               const int8_t *additional_characters_ptr);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Decrypts a string using Format Preserving Encryption (FPE) algorithm with
-   * the specified alphabet.
-   *
-   * # Safety
-   *
-   * This function is marked as `unsafe` due to the usage of raw pointers, which
-   * need to be properly allocated and dereferenced by the caller.
-   *
-   * # Arguments
-   *
-   * * `ciphertext_ptr` - a pointer to the buffer where the encrypted string will
-   *   be written.
-   * * `ciphertext_len` - a pointer to the variable that stores the maximum size
-   *   of the `ciphertext_ptr` buffer. After the function call, the variable will
-   *   be updated with the actual size of the encrypted string.
-   * * `alphabet_id_ptr` - a pointer to a C string that represents the ID of the
-   *   alphabet used for encryption.
-   * * `input_ptr` - a pointer to a C string that represents the plaintext to be
-   *   encrypted.
-   * * `key_ptr` - a pointer to a C string that represents the key used for
-   *   encryption.
-   * * `key_len` - the length of the `key_ptr` string.
-   * * `tweak_ptr` - a pointer to a C string that represents the tweak used for
-   *   encryption.
-   * * `tweak_len` - the length of the `tweak_ptr` string.
-   * * `additional_characters_ptr` - a pointer to a C string that represents
-   *   additional characters to be used in the alphabet.
-   *
-   * # Returns
-   *
-   * An integer that indicates whether the encryption was successful. A value of
-   * `0` means success, while a non-zero value represents an error code.
-   */
-  int32_t h_fpe_decrypt_alphabet(uint8_t *ciphertext_ptr,
-                                 int32_t *ciphertext_len,
-                                 const int8_t *alphabet_id_ptr,
-                                 const int8_t *input_ptr,
-                                 const int8_t *key_ptr,
-                                 int32_t key_len,
-                                 const int8_t *tweak_ptr,
-                                 int32_t tweak_len,
-                                 const int8_t *additional_characters_ptr);
+/**
+ * Decrypts a string using Format Preserving Encryption (FPE) algorithm with
+ * the specified alphabet.
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` due to the usage of raw pointers, which
+ * need to be properly allocated and dereferenced by the caller.
+ *
+ * # Arguments
+ *
+ * * `ciphertext_ptr` - a pointer to the buffer where the encrypted string will
+ *   be written.
+ * * `ciphertext_len` - a pointer to the variable that stores the maximum size
+ *   of the `ciphertext_ptr` buffer. After the function call, the variable will
+ *   be updated with the actual size of the encrypted string.
+ * * `alphabet_id_ptr` - a pointer to a C string that represents the ID of the
+ *   alphabet used for encryption.
+ * * `input_ptr` - a pointer to a C string that represents the plaintext to be
+ *   encrypted.
+ * * `key_ptr` - a pointer to a C string that represents the key used for
+ *   encryption.
+ * * `key_len` - the length of the `key_ptr` string.
+ * * `tweak_ptr` - a pointer to a C string that represents the tweak used for
+ *   encryption.
+ * * `tweak_len` - the length of the `tweak_ptr` string.
+ * * `additional_characters_ptr` - a pointer to a C string that represents
+ *   additional characters to be used in the alphabet.
+ *
+ * # Returns
+ *
+ * An integer that indicates whether the encryption was successful. A value of
+ * `0` means success, while a non-zero value represents an error code.
+ */
+int32_t h_fpe_decrypt_alphabet(uint8_t *ciphertext_ptr,
+                               int32_t *ciphertext_len,
+                               const int8_t *alphabet_id_ptr,
+                               const int8_t *input_ptr,
+                               const int8_t *key_ptr,
+                               int32_t key_len,
+                               const int8_t *tweak_ptr,
+                               int32_t tweak_len,
+                               const int8_t *additional_characters_ptr);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Encrypts the input `f64` using the FPE algorithm with the given key and
-   * tweak, and stores the result in the `output` pointer. The length of the key
-   * and tweak must be specified in `key_len` and `tweak_len` respectively. The
-   * function returns an `i32` indicating success (0) or failure (-1).
-   *
-   * # Safety
-   *
-   * This function is marked as `unsafe` because it accepts pointers to raw
-   * memory.
-   */
-  int32_t h_fpe_encrypt_float(double *output,
-                              double input,
+/**
+ * Encrypts the input `f64` using the FPE algorithm with the given key and
+ * tweak, and stores the result in the `output` pointer. The length of the key
+ * and tweak must be specified in `key_len` and `tweak_len` respectively. The
+ * function returns an `i32` indicating success (0) or failure (-1).
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` because it accepts pointers to raw
+ * memory.
+ */
+int32_t h_fpe_encrypt_float(double *output,
+                            double input,
+                            const int8_t *key_ptr,
+                            int32_t key_len,
+                            const int8_t *tweak_ptr,
+                            int32_t tweak_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Decrypts the input `f64` using the FPE algorithm with the given key and
+ * tweak, and stores the result in the `output` pointer. The length of the key
+ * and tweak must be specified in `key_len` and `tweak_len` respectively. The
+ * function returns an `i32` indicating success (0) or failure (-1).
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` because it accepts pointers to raw
+ * memory.
+ */
+int32_t h_fpe_decrypt_float(double *output,
+                            double input,
+                            const int8_t *key_ptr,
+                            int32_t key_len,
+                            const int8_t *tweak_ptr,
+                            int32_t tweak_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Encrypts an integer using the format-preserving encryption (FPE) algorithm.
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` because it takes raw pointers as input,
+ * which must be valid and dereferenceable for the function to work correctly.
+ *
+ * # Arguments
+ *
+ * * `output`: A mutable pointer to the location where the encrypted output
+ *   value will be stored.
+ * * `input`: The integer value to be encrypted.
+ * * `radix`: The radix of the numeric system being used.
+ * * `digits`: The number of digits in the numeric system being used.
+ * * `key_ptr`: A pointer to the key to be used for encryption.
+ * * `key_len`: The length of the key in bytes.
+ * * `tweak_ptr`: A pointer to the tweak value to be used for encryption.
+ * * `tweak_len`: The length of the tweak in bytes.
+ *
+ * # Returns
+ *
+ * An integer value indicating whether the encryption was successful or not. A
+ * return value of 0 indicates success, while any other value indicates an
+ * error.
+ */
+int32_t h_fpe_encrypt_integer(uint64_t *output,
+                              uint64_t input,
+                              uint32_t radix,
+                              uint32_t digits,
                               const int8_t *key_ptr,
                               int32_t key_len,
                               const int8_t *tweak_ptr,
@@ -977,19 +1033,36 @@ extern "C"
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Decrypts the input `f64` using the FPE algorithm with the given key and
-   * tweak, and stores the result in the `output` pointer. The length of the key
-   * and tweak must be specified in `key_len` and `tweak_len` respectively. The
-   * function returns an `i32` indicating success (0) or failure (-1).
-   *
-   * # Safety
-   *
-   * This function is marked as `unsafe` because it accepts pointers to raw
-   * memory.
-   */
-  int32_t h_fpe_decrypt_float(double *output,
-                              double input,
+/**
+ * Decrypts an integer using the format-preserving encryption (FPE) algorithm.
+ *
+ * # Safety
+ *
+ * This function is marked as `unsafe` because it takes raw pointers as input,
+ * which must be valid and dereferenceable for the function to work correctly.
+ *
+ * # Arguments
+ *
+ * * `output`: A mutable pointer to the location where the encrypted output
+ *   value will be stored.
+ * * `input`: The integer value to be encrypted.
+ * * `radix`: The radix of the numeric system being used.
+ * * `digits`: The number of digits in the numeric system being used.
+ * * `key_ptr`: A pointer to the key to be used for encryption.
+ * * `key_len`: The length of the key in bytes.
+ * * `tweak_ptr`: A pointer to the tweak value to be used for encryption.
+ * * `tweak_len`: The length of the tweak in bytes.
+ *
+ * # Returns
+ *
+ * An integer value indicating whether the encryption was successful or not. A
+ * return value of 0 indicates success, while any other value indicates an
+ * error.
+ */
+int32_t h_fpe_decrypt_integer(uint64_t *output,
+                              uint64_t input,
+                              uint32_t radix,
+                              uint32_t digits,
                               const int8_t *key_ptr,
                               int32_t key_len,
                               const int8_t *tweak_ptr,
@@ -997,159 +1070,85 @@ extern "C"
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Encrypts an integer using the format-preserving encryption (FPE) algorithm.
-   *
-   * # Safety
-   *
-   * This function is marked as `unsafe` because it takes raw pointers as input,
-   * which must be valid and dereferenceable for the function to work correctly.
-   *
-   * # Arguments
-   *
-   * * `output`: A mutable pointer to the location where the encrypted output
-   *   value will be stored.
-   * * `input`: The integer value to be encrypted.
-   * * `radix`: The radix of the numeric system being used.
-   * * `digits`: The number of digits in the numeric system being used.
-   * * `key_ptr`: A pointer to the key to be used for encryption.
-   * * `key_len`: The length of the key in bytes.
-   * * `tweak_ptr`: A pointer to the tweak value to be used for encryption.
-   * * `tweak_len`: The length of the tweak in bytes.
-   *
-   * # Returns
-   *
-   * An integer value indicating whether the encryption was successful or not. A
-   * return value of 0 indicates success, while any other value indicates an
-   * error.
-   */
-  int32_t h_fpe_encrypt_integer(uint64_t *output,
-                                uint64_t input,
-                                uint32_t radix,
-                                uint32_t digits,
-                                const int8_t *key_ptr,
-                                int32_t key_len,
-                                const int8_t *tweak_ptr,
-                                int32_t tweak_len);
+/**
+ * Encrypts an input big integer using the FPE algorithm and returns the
+ * encrypted value as an array of bytes.
+ *
+ * # Arguments
+ *
+ * * `output_ptr` - a pointer to the output buffer where the encrypted bytes
+ *   will be written
+ * * `output_len` - a pointer to an integer that will be updated with the
+ *   length of the encrypted bytes
+ * * `input_ptr` - a pointer to the input buffer that contains the big integer
+ *   to be encrypted
+ * * `radix` - the radix of the input big integer
+ * * `digits` - the number of digits in the input big integer
+ * * `key_ptr` - a pointer to the key buffer that will be used for encryption
+ * * `key_len` - the length of the key buffer
+ * * `tweak_ptr` - a pointer to the tweak buffer that will be used for
+ *   encryption
+ * * `tweak_len` - the length of the tweak buffer
+ *
+ * # Safety
+ *
+ * This function is marked unsafe because it operates on raw pointers and
+ * performs unsafe memory operations.
+ *
+ * # Returns
+ *
+ * Returns 0 on success, -1 on error.
+ */
+int32_t h_fpe_encrypt_big_integer(uint8_t *output_ptr,
+                                  int32_t *output_len,
+                                  const int8_t *input_ptr,
+                                  uint32_t radix,
+                                  uint32_t digits,
+                                  const int8_t *key_ptr,
+                                  int32_t key_len,
+                                  const int8_t *tweak_ptr,
+                                  int32_t tweak_len);
 #endif
 
 #if defined(DEFINE_FFI)
-  /**
-   * Decrypts an integer using the format-preserving encryption (FPE) algorithm.
-   *
-   * # Safety
-   *
-   * This function is marked as `unsafe` because it takes raw pointers as input,
-   * which must be valid and dereferenceable for the function to work correctly.
-   *
-   * # Arguments
-   *
-   * * `output`: A mutable pointer to the location where the encrypted output
-   *   value will be stored.
-   * * `input`: The integer value to be encrypted.
-   * * `radix`: The radix of the numeric system being used.
-   * * `digits`: The number of digits in the numeric system being used.
-   * * `key_ptr`: A pointer to the key to be used for encryption.
-   * * `key_len`: The length of the key in bytes.
-   * * `tweak_ptr`: A pointer to the tweak value to be used for encryption.
-   * * `tweak_len`: The length of the tweak in bytes.
-   *
-   * # Returns
-   *
-   * An integer value indicating whether the encryption was successful or not. A
-   * return value of 0 indicates success, while any other value indicates an
-   * error.
-   */
-  int32_t h_fpe_decrypt_integer(uint64_t *output,
-                                uint64_t input,
-                                uint32_t radix,
-                                uint32_t digits,
-                                const int8_t *key_ptr,
-                                int32_t key_len,
-                                const int8_t *tweak_ptr,
-                                int32_t tweak_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * Encrypts an input big integer using the FPE algorithm and returns the
-   * encrypted value as an array of bytes.
-   *
-   * # Arguments
-   *
-   * * `output_ptr` - a pointer to the output buffer where the encrypted bytes
-   *   will be written
-   * * `output_len` - a pointer to an integer that will be updated with the
-   *   length of the encrypted bytes
-   * * `input_ptr` - a pointer to the input buffer that contains the big integer
-   *   to be encrypted
-   * * `radix` - the radix of the input big integer
-   * * `digits` - the number of digits in the input big integer
-   * * `key_ptr` - a pointer to the key buffer that will be used for encryption
-   * * `key_len` - the length of the key buffer
-   * * `tweak_ptr` - a pointer to the tweak buffer that will be used for
-   *   encryption
-   * * `tweak_len` - the length of the tweak buffer
-   *
-   * # Safety
-   *
-   * This function is marked unsafe because it operates on raw pointers and
-   * performs unsafe memory operations.
-   *
-   * # Returns
-   *
-   * Returns 0 on success, -1 on error.
-   */
-  int32_t h_fpe_encrypt_big_integer(uint8_t *output_ptr,
-                                    int32_t *output_len,
-                                    const int8_t *input_ptr,
-                                    uint32_t radix,
-                                    uint32_t digits,
-                                    const int8_t *key_ptr,
-                                    int32_t key_len,
-                                    const int8_t *tweak_ptr,
-                                    int32_t tweak_len);
-#endif
-
-#if defined(DEFINE_FFI)
-  /**
-   * Decrypts an input big integer using the FPE algorithm and returns the
-   * decrypted value as an array of bytes.
-   *
-   * # Arguments
-   *
-   * * `output_ptr` - a pointer to the output buffer where the decrypted bytes
-   *   will be written
-   * * `output_len` - a pointer to an integer that will be updated with the
-   *   length of the decrypted bytes
-   * * `input_ptr` - a pointer to the input buffer that contains the big integer
-   *   to be decrypted
-   * * `radix` - the radix of the input big integer
-   * * `digits` - the number of digits in the input big integer
-   * * `key_ptr` - a pointer to the key buffer that will be used for decryption
-   * * `key_len` - the length of the key buffer
-   * * `tweak_ptr` - a pointer to the tweak buffer that will be used for
-   *   decryption
-   * * `tweak_len` - the length of the tweak buffer
-   *
-   * # Safety
-   *
-   * This function is marked unsafe because it operates on raw pointers and
-   * performs unsafe memory operations.
-   *
-   * # Returns
-   *
-   * Returns 0 on success, -1 on error.
-   */
-  int32_t h_fpe_decrypt_big_integer(uint8_t *output_ptr,
-                                    int32_t *output_len,
-                                    const int8_t *input_ptr,
-                                    uint32_t radix,
-                                    uint32_t digits,
-                                    const int8_t *key_ptr,
-                                    int32_t key_len,
-                                    const int8_t *tweak_ptr,
-                                    int32_t tweak_len);
+/**
+ * Decrypts an input big integer using the FPE algorithm and returns the
+ * decrypted value as an array of bytes.
+ *
+ * # Arguments
+ *
+ * * `output_ptr` - a pointer to the output buffer where the decrypted bytes
+ *   will be written
+ * * `output_len` - a pointer to an integer that will be updated with the
+ *   length of the decrypted bytes
+ * * `input_ptr` - a pointer to the input buffer that contains the big integer
+ *   to be decrypted
+ * * `radix` - the radix of the input big integer
+ * * `digits` - the number of digits in the input big integer
+ * * `key_ptr` - a pointer to the key buffer that will be used for decryption
+ * * `key_len` - the length of the key buffer
+ * * `tweak_ptr` - a pointer to the tweak buffer that will be used for
+ *   decryption
+ * * `tweak_len` - the length of the tweak buffer
+ *
+ * # Safety
+ *
+ * This function is marked unsafe because it operates on raw pointers and
+ * performs unsafe memory operations.
+ *
+ * # Returns
+ *
+ * Returns 0 on success, -1 on error.
+ */
+int32_t h_fpe_decrypt_big_integer(uint8_t *output_ptr,
+                                  int32_t *output_len,
+                                  const int8_t *input_ptr,
+                                  uint32_t radix,
+                                  uint32_t digits,
+                                  const int8_t *key_ptr,
+                                  int32_t key_len,
+                                  const int8_t *tweak_ptr,
+                                  int32_t tweak_len);
 #endif
 
 #ifdef __cplusplus

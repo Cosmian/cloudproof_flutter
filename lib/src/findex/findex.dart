@@ -70,7 +70,7 @@ class Findex {
   // FFI functions
   //
   static int instantiateFindex(
-      FindexKey findexKey,
+      FindexKey key,
       String label,
       Fetch fetchEntries,
       Fetch fetchChains,
@@ -86,7 +86,7 @@ class Findex {
     //
     // Master key
     final Pointer<Uint8> findexKeyPointer =
-        findexKey.key.allocateInt8Pointer().cast<Uint8>();
+        key.key.allocateInt8Pointer().cast<Uint8>();
 
     // Label
     final labelPointer = label.toNativeUtf8().cast<Int8>();
@@ -100,7 +100,7 @@ class Findex {
       final errorCode = library.h_instantiate_with_custom_interface(
           findexHandlePointer,
           findexKeyPointer,
-          findexKey.key.length,
+          key.key.length,
           labelPointer,
           entryTableNumber,
           fetchEntries,
@@ -129,15 +129,15 @@ class Findex {
     //
 
     // Serialize data to index
-    log("add: additions len: ${associations.length}");
-    final additionsBytes =
+    log("add: associations len: ${associations.length}");
+    final associationsBytes =
         Uint8List(IndexedValueToKeywordsMap.boundSerializedSize(associations));
-    final additionsSerializedSize =
-        IndexedValueToKeywordsMap.serialize(additionsBytes, associations);
-    final additionsPointer = additionsBytes.allocateUint8Pointer();
-    log("add: serialization additions OK: $additionsSerializedSize");
+    final associationsSerializedSize =
+        IndexedValueToKeywordsMap.serialize(associationsBytes, associations);
+    final associationsPointer = associationsBytes.allocateUint8Pointer();
+    log("add: serialization associations OK: $associationsSerializedSize");
 
-    log("add: additions len: ${additionsBytes.length}");
+    log("add: associations len: ${associationsBytes.length}");
 
     //
     // FFI OUTPUT parameters
@@ -155,8 +155,8 @@ class Findex {
         output,
         outputLengthPointer,
         handle,
-        additionsPointer,
-        additionsSerializedSize,
+        associationsPointer,
+        associationsSerializedSize,
       );
       final end = DateTime.now();
 
@@ -182,26 +182,28 @@ class Findex {
     } finally {
       calloc.free(output);
       calloc.free(outputLengthPointer);
-      malloc.free(additionsPointer);
+      malloc.free(associationsPointer);
     }
   }
 
-  static Future<Set<Keyword>> delete(Map<IndexedValue, Set<Keyword>> deletions,
-      {int outputSizeInBytes = 0, int findexHandle = -1}) async {
+  static Future<Set<Keyword>> delete(
+      Map<IndexedValue, Set<Keyword>> associations,
+      {int outputSizeInBytes = 0,
+      int findexHandle = -1}) async {
     //
     // FFI INPUT parameters
     //
 
     // Serialize data to index
-    log("delete: deletions len: ${deletions.length}");
-    final deletionsBytes =
-        Uint8List(IndexedValueToKeywordsMap.boundSerializedSize(deletions));
-    final deletionsSerializedSize =
-        IndexedValueToKeywordsMap.serialize(deletionsBytes, deletions);
-    final deletionsPointer = deletionsBytes.allocateUint8Pointer();
-    log("delete: serialization deletions OK: $deletionsSerializedSize");
+    log("delete: associations len: ${associations.length}");
+    final associationsBytes =
+        Uint8List(IndexedValueToKeywordsMap.boundSerializedSize(associations));
+    final associationsSerializedSize =
+        IndexedValueToKeywordsMap.serialize(associationsBytes, associations);
+    final associationsPointer = associationsBytes.allocateUint8Pointer();
+    log("delete: serialization associations OK: $associationsSerializedSize");
 
-    log("delete: deletions len: ${deletionsBytes.length}");
+    log("delete: associations len: ${associationsBytes.length}");
 
     //
     // FFI OUTPUT parameters
@@ -217,8 +219,8 @@ class Findex {
         output,
         outputLengthPointer,
         findexHandle == -1 ? _handle! : findexHandle,
-        deletionsPointer,
-        deletionsSerializedSize,
+        associationsPointer,
+        associationsSerializedSize,
       );
       final end = DateTime.now();
 
@@ -230,7 +232,7 @@ class Findex {
           outputLengthPointer.value > 0) {
         log("retrying: outputSizeInBytes == 0, outputLengthPointer.value: ${outputLengthPointer.value}");
 
-        return add(deletions, outputSizeInBytes: outputLengthPointer.value);
+        return add(associations, outputSizeInBytes: outputLengthPointer.value);
       }
       log("delete: exiting");
       if (outputSizeInBytes != 0 && errorCode == 0) {
@@ -243,7 +245,7 @@ class Findex {
     } finally {
       calloc.free(output);
       calloc.free(outputLengthPointer);
-      malloc.free(deletionsPointer);
+      malloc.free(associationsPointer);
     }
   }
 
