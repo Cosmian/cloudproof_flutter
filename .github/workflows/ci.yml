@@ -180,7 +180,7 @@ jobs:
       extension: so
       destination: linux-x86-64
       os: ubuntu-20.04
-      kms-version: 4.9.1
+      kms-version: 4.10.0
       findex-cloud-version: 0.3.1
       copy_fresh_build: false
       copy_regression_files: |
@@ -193,7 +193,7 @@ jobs:
     with:
       branch: develop
       target: wasm32-unknown-unknown
-      kms-version: 4.9.1
+      kms-version: 4.10.0
       findex-cloud-version: 0.3.1
       copy_fresh_build: false
       copy_regression_files: |
@@ -206,7 +206,7 @@ jobs:
     with:
       branch: develop
       target: x86_64-unknown-linux-gnu
-      kms-version: 4.9.1
+      kms-version: 4.10.0
       findex-cloud-version: 0.3.1
       copy_fresh_build: false
       copy_regression_files: |
