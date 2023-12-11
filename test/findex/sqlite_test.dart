@@ -2,7 +2,6 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,21 +47,16 @@ void main() {
     test('errors', () async {
       const dbPath = "./build/sqlite2.db";
       await initDb(dbPath);
-      SqliteFindex.init(dbPath);
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
+      SqliteFindex.init(dbPath, key, "Some Label");
 
-      final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-      await SqliteFindex.indexAll(masterKey, label);
+      final upsertResults = await SqliteFindex.indexAll();
+      expect(upsertResults.length, 583);
 
       try {
         SqliteFindex.throwInsideFetchEntries = true;
 
-        await SqliteFindex.search(
-          masterKey.k,
-          label,
-          [Keyword.fromString("France")],
-        );
+        await SqliteFindex.search({Keyword.fromString("France")});
 
         throw Exception("search should throw");
       } catch (e, stacktrace) {
@@ -83,43 +77,23 @@ void main() {
         expect(
           stacktrace.toString(),
           contains(
-              "test/findex/sqlite_findex.dart:273:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
+              "test/findex/sqlite_findex.dart:232:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
       }
 
       try {
-        await SqliteFindex.search(
-          masterKey.k.sublist(0, 4),
-          label,
-          [Keyword.fromString("France")],
-        );
-
-        throw Exception("search should throw");
-      } catch (e) {
-        expect(
-          e.toString(),
-          "error deserializing master secret key: wrong size when parsing bytes: 4 given should be 16",
-        );
-      }
-
-      try {
         SqliteFindex.returnOnlyUidInsideFetchChains = true;
 
-        await SqliteFindex.search(
-          masterKey.k,
-          label,
-          [Keyword.fromString("France")],
-        );
+        await SqliteFindex.search({Keyword.fromString("France")});
 
         throw Exception("search should throw");
       } catch (e) {
         expect(
-          e.toString(),
-          startsWith(
-              "fail to decrypt one of the `value` returned by the fetch chains callback (uid was"),
-        );
+            e.toString(),
+            startsWith(
+                "findex `search` error: database interface error: serialization: serialization error: crypto error: incorrect length for encrypted value: 32 bytes give, 114 bytes expected"));
       } finally {
         SqliteFindex.returnOnlyUidInsideFetchChains = false;
       }
@@ -127,11 +101,7 @@ void main() {
       try {
         SqliteFindex.returnOnlyValueInsideFetchChains = true;
 
-        await SqliteFindex.search(
-          masterKey.k,
-          label,
-          [Keyword.fromString("France")],
-        );
+        await SqliteFindex.search({Keyword.fromString("France")});
 
         throw Exception("search should throw");
       } catch (e) {
@@ -146,19 +116,14 @@ void main() {
       try {
         SqliteFindex.returnOnlyUidInsideFetchEntries = true;
 
-        await SqliteFindex.search(
-          masterKey.k,
-          label,
-          [Keyword.fromString("France")],
-        );
+        await SqliteFindex.search({Keyword.fromString("France")});
 
         throw Exception("search should throw");
       } catch (e) {
         expect(
-          e.toString(),
-          startsWith(
-              "fail to decrypt one of the `value` returned by the fetch entries callback (uid was"),
-        );
+            e.toString(),
+            startsWith(
+                "findex `search` error: database interface error: serialization: serialization error: crypto error: incorrect length for encrypted value: 32 bytes give, 108 bytes expected"));
       } finally {
         SqliteFindex.returnOnlyUidInsideFetchEntries = false;
       }
@@ -166,11 +131,7 @@ void main() {
       try {
         SqliteFindex.returnOnlyValueInsideFetchEntries = true;
 
-        await SqliteFindex.search(
-          masterKey.k,
-          label,
-          [Keyword.fromString("France")],
-        );
+        await SqliteFindex.search({Keyword.fromString("France")});
 
         throw Exception("search should throw");
       } catch (e) {
@@ -181,185 +142,28 @@ void main() {
       } finally {
         SqliteFindex.returnOnlyValueInsideFetchEntries = false;
       }
-    });
-
-    Future<void> insertNewIndexes(
-        String dbPath,
-        FindexMasterKey masterKey,
-        Uint8List label,
-        Map<IndexedValue, List<Keyword>> indexedValuesAndKeywords,
-        {int expectedNumberOfIndexes = 1}) async {
-      await initDb(dbPath);
-      SqliteFindex.init(dbPath);
-
-      expect(SqliteFindex.count('entry_table'), equals(0));
-      expect(SqliteFindex.count('chain_table'), equals(0));
-
-      await SqliteFindex.upsert(masterKey, label, indexedValuesAndKeywords, {});
-
-      expect(
-          SqliteFindex.count('entry_table'), equals(expectedNumberOfIndexes));
-      expect(
-          SqliteFindex.count('chain_table'), equals(expectedNumberOfIndexes));
-    }
-
-    void checkResults(
-        Map<Keyword, List<Location>> searchResults, List<int> expectedIds,
-        {String word = "John"}) {
-      expect(searchResults.length, 1);
-
-      final keyword = searchResults.entries.first.key;
-      final indexedValues = searchResults.entries.first.value;
-      final usersIds =
-          indexedValues.map((location) => location.number).toList();
-      usersIds.sort();
-      expect(Keyword.fromString(word).toBase64(), keyword.toBase64());
-      expect(usersIds, equals(expectedIds));
-    }
-
-    test('multi entry tables', () async {
-      final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      const db1Path = "./build/sqlite_multi_entry_tables_1.db";
-      const db2Path = "./build/sqlite_multi_entry_tables_2.db";
-      const db3Path = "./build/sqlite_multi_entry_tables_3.db";
-
-      await insertNewIndexes(db1Path, masterKey, label, {
-        IndexedValue.fromLocation(Location.fromNumber(1)): [
-          Keyword.fromString("John")
-        ]
-      });
-      await insertNewIndexes(db2Path, masterKey, label, {
-        IndexedValue.fromLocation(Location.fromNumber(2)): [
-          Keyword.fromString("John")
-        ]
-      });
-      await insertNewIndexes(db3Path, masterKey, label, {
-        IndexedValue.fromLocation(Location.fromNumber(3)): [
-          Keyword.fromString("John")
-        ]
-      });
-
-      SqliteFindexMultiEntryTables.init([db1Path, db2Path, db3Path]);
-
-      // Bad entry table number (should be 3)
-      try {
-        await SqliteFindexMultiEntryTables.search(
-            masterKey.k, label, [Keyword.fromString("John")],
-            entryTableNumber: 2);
-      } catch (e) {
-        expect(
-          e.toString(),
-          "callback 'fetch entries' returned an error code: 1",
-        );
-      }
-
-      // Searching words without the correct entry tables number. The `fetchEntries` callback fails in the rust part but the callback returns the correct amount of memory and then the rust part retries with this amount (and finally succeed). This behavior is analogous with the java behavior.
-      var searchResults = await SqliteFindexMultiEntryTables.search(
-          masterKey.k, label, [Keyword.fromString("John")],
-          entryTableNumber: 1);
-      checkResults(searchResults, [1, 2, 3]);
-
-      // Same research but with the correct number of entry tables
-      searchResults = await SqliteFindexMultiEntryTables.search(
-          masterKey.k, label, [Keyword.fromString("John")],
-          entryTableNumber: 3);
-      checkResults(searchResults, [1, 2, 3]);
-    });
-
-    test('multi entry tables asymmetric tables', () async {
-      final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      const db1Path = "./build/sqlite_multi_entry_tables_1.db";
-      const db2Path = "./build/sqlite_multi_entry_tables_2.db";
-
-      await insertNewIndexes(
-          db1Path,
-          masterKey,
-          label,
-          {
-            IndexedValue.fromLocation(Location.fromNumber(1)): [
-              Keyword.fromString("John")
-            ],
-            IndexedValue.fromLocation(Location.fromNumber(2)): [
-              Keyword.fromString("Marie")
-            ]
-          },
-          expectedNumberOfIndexes: 2);
-
-      await insertNewIndexes(
-        db2Path,
-        masterKey,
-        label,
-        {
-          IndexedValue.fromLocation(Location.fromNumber(1)): [
-            Keyword.fromString("John")
-          ],
-          IndexedValue.fromLocation(Location.fromNumber(1)): [
-            Keyword.fromString("Marie")
-          ]
-        },
-      );
-
-      SqliteFindexMultiEntryTables.init([db1Path, db2Path]);
-
-      // Search tests
-      var searchResults = await SqliteFindexMultiEntryTables.search(
-          masterKey.k, label, [Keyword.fromString("John")],
-          entryTableNumber: 2);
-      checkResults(searchResults, [1]);
-
-      searchResults = await SqliteFindexMultiEntryTables.search(
-          masterKey.k, label, [Keyword.fromString("Marie")],
-          entryTableNumber: 2);
-      checkResults(searchResults, [1, 2], word: "Marie");
-
-      searchResults = await SqliteFindexMultiEntryTables.search(masterKey.k,
-          label, [Keyword.fromString("Marie"), Keyword.fromString("John")],
-          entryTableNumber: 2);
-      expect(searchResults.length, 2);
-
-      for (var entry in searchResults.entries) {
-        if (entry.key.toBase64() == Keyword.fromString("John").toBase64()) {
-          final usersIds =
-              entry.value.map((location) => location.number).toList();
-          usersIds.sort();
-          expect(usersIds, equals([1]));
-        } else if (entry.key.toBase64() ==
-            Keyword.fromString("Marie").toBase64()) {
-          final usersIds =
-              entry.value.map((location) => location.number).toList();
-          usersIds.sort();
-          expect(usersIds, equals([1, 2]));
-        }
-      }
-    });
+    }, tags: 'sqlite');
 
     test('search/upsert', () async {
       const dbPath = "./build/sqlite.db";
 
       await initDb(dbPath);
 
-      final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
+      SqliteFindex.init(dbPath, key, "Some Label");
 
-      SqliteFindex.init(dbPath);
       expect(SqliteFindex.count('entry_table'), equals(0));
       expect(SqliteFindex.count('chain_table'), equals(0));
 
-      await SqliteFindex.indexAll(masterKey, label);
+      final upsertResults = await SqliteFindex.indexAll();
+      expect(upsertResults.length, 583);
 
       expect(SqliteFindex.count('entry_table'), equals(583));
       expect(SqliteFindex.count('chain_table'), equals(618));
 
-      final searchResults = await SqliteFindex.search(
-          masterKey.k, label, [Keyword.fromString("France")]);
+      final searchResults =
+          await SqliteFindex.search({Keyword.fromString("France")});
 
       expect(searchResults.length, 1);
 
@@ -372,7 +176,7 @@ void main() {
 
       expect(Keyword.fromString("France").toBase64(), keyword.toBase64());
       expect(usersIds, equals(expectedUsersIdsForFrance));
-    });
+    }, tags: 'sqlite');
 
     test('nonRegressionTest', () async {
       final dir = Directory('test/resources/findex/non_regression/');
@@ -390,6 +194,6 @@ void main() {
         }
         print("... OK: Findex non regression test file: $newPath");
       }
-    });
+    }, tags: 'sqlite');
   });
 }

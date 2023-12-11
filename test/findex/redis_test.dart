@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,12 +44,9 @@ const expectedUsersIdsForFrance = [
 void main() {
   group('Findex Redis', () {
     test('search/upsert', () async {
-      final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      await FindexRedisImplementation.init();
+      await FindexRedisImplementation.init(key, "Some Label");
 
       expect(
           await FindexRedisImplementation.count(RedisTable.users), equals(100));
@@ -58,7 +55,8 @@ void main() {
       expect(
           await FindexRedisImplementation.count(RedisTable.chains), equals(0));
 
-      await FindexRedisImplementation.indexAll(masterKey, label);
+      final upsertResults = await FindexRedisImplementation.indexAll();
+      expect(upsertResults.length, 583);
 
       expect(await FindexRedisImplementation.count(RedisTable.entries),
           equals(583));
@@ -66,7 +64,7 @@ void main() {
           equals(618));
 
       final searchResults = await FindexRedisImplementation.search(
-          masterKey.k, label, [Keyword.fromString("France")]);
+          {Keyword.fromString("France")});
 
       expect(searchResults.length, 1);
 
@@ -82,18 +80,16 @@ void main() {
     }, tags: 'redis');
 
     test('exceptions', () async {
-      final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      await FindexRedisImplementation.init();
-      await FindexRedisImplementation.indexAll(masterKey, label);
+      await FindexRedisImplementation.init(key, "Some Label");
+      final upsertResults = await FindexRedisImplementation.indexAll();
+      expect(upsertResults.length, 583);
 
       await FindexRedisImplementation.setThrowInsideFetch();
       try {
-        await FindexRedisImplementation.search(
-            masterKey.k, label, [Keyword.fromString("France")]);
+        await FindexRedisImplementation.search({Keyword.fromString("France")});
+        sleep(const Duration(milliseconds: 1000));
       } catch (e, stacktrace) {
         // When an exception is thrown inside a callback
         // we should rethrow the exception from our functions
@@ -113,7 +109,7 @@ void main() {
         expect(
           stacktrace.toString(),
           contains(
-              "test/findex/redis_findex.dart:170:7"), // When moving lines inside the Findex implementation this could fail, put the line of the tag :ExceptionLine
+              "test/findex/redis_findex.dart:243:7"), // When moving lines inside the Findex implementation this could fail, put the line of the tag :ExceptionLine
         );
 
         return;
@@ -125,12 +121,10 @@ void main() {
     }, tags: 'redis');
 
     test('redis multi entry tables', () async {
-      final masterKey = FindexMasterKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      await RedisMultiEntryTables.init();
+      final handles = await RedisMultiEntryTables.init(key, "Some Label");
+      log("handles: $handles");
 
       expect(await RedisMultiEntryTables.count(RedisTables.users), equals(100));
       expect(
@@ -142,16 +136,16 @@ void main() {
       expect(
           await RedisMultiEntryTables.count(RedisTables.chains_2), equals(0));
 
-      await RedisMultiEntryTables.upsert_1(masterKey, label, {
-        IndexedValue.fromLocation(Location.fromNumber(1)): [
+      await RedisMultiEntryTables.upsert_1({
+        IndexedValue.fromLocation(Location.fromNumber(1)): {
           Keyword.fromString("John"),
-        ]
-      }, {});
-      await RedisMultiEntryTables.upsert_2(masterKey, label, {
-        IndexedValue.fromLocation(Location.fromNumber(2)): [
+        }
+      }, handles.item1);
+      await RedisMultiEntryTables.upsert_2({
+        IndexedValue.fromLocation(Location.fromNumber(2)): {
           Keyword.fromString("John")
-        ]
-      }, {});
+        }
+      }, handles.item2);
 
       expect(
           await RedisMultiEntryTables.count(RedisTables.entries_1), equals(1));
@@ -163,8 +157,9 @@ void main() {
           await RedisMultiEntryTables.count(RedisTables.chains_2), equals(1));
 
       final searchResults = await RedisMultiEntryTables.search(
-          masterKey.k, label, [Keyword.fromString("John")],
-          entryTableNumber: 2);
+          {Keyword.fromString("John")},
+          findexHandle: handles.item3);
+      log("searchResults: $searchResults");
       expect(searchResults.length, 1);
 
       final keyword = searchResults.entries.toList()[0].key;

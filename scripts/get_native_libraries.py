@@ -13,7 +13,7 @@ def files_to_be_copied():
     """
     jni_libs = 'android/src/main/jniLibs'
     return {
-        'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/cloudproof.h': 'resources/cloudproof.h',
+        'tmp/x86_64-unknown-linux-gnu/cloudproof.h': 'resources/cloudproof.h',
         'tmp/x86_64-apple-darwin/x86_64-apple-darwin/release/libcloudproof.dylib': 'resources/libcloudproof.dylib',
         'tmp/x86_64-unknown-linux-gnu/x86_64-unknown-linux-gnu/release/libcloudproof.so': 'resources/libcloudproof.so',
         'tmp/x86_64-pc-windows-gnu/x86_64-pc-windows-gnu/release/cloudproof.dll': 'resources/cloudproof.dll',
@@ -35,10 +35,12 @@ def write_ios_cloudproof_plugin_header():
 @interface CloudproofPlugin : NSObject<FlutterPlugin>
 @end
 """
-    with open('ios/Classes/CloudproofPlugin.h', 'w') as cloudproof_plugin_header_file:
+    with open(
+        'ios/Classes/CloudproofPlugin.h', 'w', encoding='utf-8'
+    ) as cloudproof_plugin_header_file:
         cloudproof_plugin_header_file.write(cloudproof_plugin_header)
-        with open('resources/cloudproof.h', 'r') as f:
-            file_content = f.read()  # Read whole file in file_content
+        with open('resources/cloudproof.h', 'r', encoding='utf-8') as cloudproof_header:
+            file_content = cloudproof_header.read()  # Read whole file in file_content
             cloudproof_plugin_header_file.write(file_content)
             cloudproof_plugin_header_file.write('\n')
 
@@ -94,6 +96,7 @@ def download_native_libraries(version: str) -> bool:
 
 
 if __name__ == '__main__':
-    ret = download_native_libraries('v2.0.1')
-    if ret is False and os.getenv('GITHUB_ACTIONS'):
-        download_native_libraries('last_build/release/v2.0.1')
+    RET = download_native_libraries('v2.4.0')
+    if RET is False and os.getenv('GITHUB_ACTIONS'):
+        download_native_libraries('last_build/fix/rename_findex_traits')
+    write_ios_cloudproof_plugin_header()

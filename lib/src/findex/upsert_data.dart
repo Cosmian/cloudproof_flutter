@@ -1,68 +1,65 @@
 import 'dart:developer';
 import 'dart:typed_data';
 
-import '../utils/leb128.dart';
-import '../utils/ser_de.dart';
-import 'findex.dart';
+import 'package:cloudproof/cloudproof.dart';
+import 'package:tuple/tuple.dart';
 
-class UpsertData {
-  Uint8List uid;
-  Uint8List oldValue;
-  Uint8List newValue;
-
-  UpsertData(this.uid, this.oldValue, this.newValue);
-
-  static List<UpsertData> deserialize(Uint8List bytes) {
-    List<UpsertData> values = [];
-
-    // Get number of elements in input
-    Iterator<int> iterator = bytes.iterator;
-    final numItems = Leb128.decodeUnsigned(iterator);
-    log("upsertData: deserialize: contains $numItems items");
-    if (numItems == 0) {
-      return values;
-    }
-
-    for (int idx = 0; idx < numItems; idx++) {
-      log("upsertData: deserialize: round $idx");
-      // Get fixed-size UID
-      final key = SerDe.copyFromIterator(iterator, uidLength);
-
-      // Get old value
-      final oldValue =
-          SerDe.copyFromIterator(iterator, Leb128.decodeUnsigned(iterator));
-
-      var length = Leb128.decodeUnsigned(iterator);
-      if (length == 0) {
-        throw Exception("Expecting `new value` after a `old value`");
-      }
-
-      // Get old value
-      final newValue = SerDe.copyFromIterator(iterator, length);
-
-      values.add(UpsertData(key, oldValue, newValue));
-    }
-
-    return values;
+/// Naive [List] equality implementation.
+bool listEquals<E>(List<E> list1, List<E> list2) {
+  if (identical(list1, list2)) {
+    return true;
   }
 
-  static void serialize(Uint8List output, List<UpsertData> values) {
-    log("upsertData: serialize: values.entries: $values \net output: $output");
-    //TODO: check output size
+  if (list1.length != list2.length) {
+    return false;
+  }
 
-    final numItems = Leb128.encodeUnsigned(values.length);
-    output.setAll(0, numItems);
-    log("upsertData: serialize: output: $output");
-
-    var idx = numItems.length;
-    for (var entry in values) {
-      idx = SerDe.write(output, idx, entry.uid);
-      idx = SerDe.writeVector(output, idx, entry.oldValue);
-      idx = SerDe.writeVector(output, idx, entry.newValue);
+  for (var i = 0; i < list1.length; i += 1) {
+    if (list1[i] != list2[i]) {
+      return false;
     }
+  }
 
-    // output.setAll(0, [0]);
-    // output = Uint8List.sublistView(output, 1);
-    log("upsertData: serialize: output: $output");
+  return true;
+}
+
+class UpsertData {
+  Map<Uint8List, Tuple2<Uint8List, Uint8List>> map;
+
+  UpsertData(this.map);
+
+  static UpsertData deserialize(
+      Uint8List oldValuesBytes, Uint8List newValuesBytes) {
+    log("[upsert_data] deserialize: entering");
+    UpsertData map = UpsertData({});
+
+    log("[upsert_data] deserialize: oldValuesBytes: $oldValuesBytes");
+    final oldValues = UidAndValue.deserialize(oldValuesBytes);
+    log("[upsert_data] deserialize: newValuesBytes: $newValuesBytes");
+    final newValues = UidAndValue.deserialize(newValuesBytes);
+
+    log("[upsert_data] deserialize: oldValues and newValues deserialized");
+
+    for (UidAndValue newValue in newValues) {
+      log("[upsert_data] deserialize: newValue.uid ${newValue.uid}");
+      bool optionalValueFound = false;
+      for (UidAndValue oldValue in oldValues) {
+        log("[upsert_data] newValue.uid: ${newValue.uid}");
+        log("[upsert_data] oldValue.uid: ${oldValue.uid}");
+        if (listEquals(newValue.uid, oldValue.uid) &&
+            oldValue.value.isNotEmpty) {
+          log("[upsert_data] MATCH uid: ${newValue.uid}");
+          map.map[newValue.uid] = Tuple2(oldValue.value, newValue.value);
+          optionalValueFound = true;
+          break;
+        }
+      }
+      if (!optionalValueFound) {
+        map.map[newValue.uid] = Tuple2(Uint8List(0), newValue.value);
+      }
+    }
+    log("[upsert_data] deserialize: exiting: ${map.map.length}");
+
+    return map;
   }
 }

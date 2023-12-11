@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:redis/redis.dart';
+import 'package:tuple/tuple.dart';
 
 import 'user.dart';
 
@@ -24,7 +26,7 @@ class FindexRedisImplementation {
     await File(FindexRedisImplementation.throwInsideFetchFilepath).delete();
   }
 
-  static Future<void> init() async {
+  static Future<void> init(Uint8List key, String label) async {
     final db = await FindexRedisImplementation.db;
 
     for (final userKey
@@ -52,6 +54,41 @@ class FindexRedisImplementation {
           Uint8List.fromList([0, 0, 0, user['id']]),
           Uint8List.fromList(utf8.encode(jsonEncode(user))));
     }
+    Findex.instantiateFindex(
+        key,
+        label,
+        Pointer.fromFunction(
+          fetchEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          fetchChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          upsertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          deleteEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          deleteChainsCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          dumpTokensCallback,
+          errorCodeInCaseOfCallbackException,
+        ));
   }
 
   static Future<Command> get db async {
@@ -92,6 +129,9 @@ class FindexRedisImplementation {
 
   static Future<List<dynamic>> mgetWithoutPrefix(
       Command db, List<Uint8List> keysWithPrefix) async {
+    if (keysWithPrefix.isEmpty) {
+      return [];
+    }
     return await execute(
         db, ["MGET", ...keysWithPrefix.map((key) => RedisBulk(key))]);
   }
@@ -106,17 +146,35 @@ class FindexRedisImplementation {
   }
 
   static Future<List<UidAndValue>> mset(
-      Command db, RedisTable table, List<UpsertData> entries) async {
+      Command db, RedisTable table, UpsertData entries) async {
+    if (entries.map.isEmpty) {
+      return [];
+    }
+    log("mset: map length: ${entries.map.length}");
+    final msetList = [];
+    for (final entry in entries.map.entries) {
+      final element = Tuple2(entry.key, entry.value.item2);
+      msetList.add(element);
+      log("entry.key: ${entry.key}");
+      log("entry.value.item1: ${entry.value.item1}");
+      log("entry.value.item2: ${entry.value.item2}");
+    }
+    log("mset: exiting after execute");
     await execute(db, [
       "MSET",
-      ...entries.expand((entry) =>
-          [RedisBulk(key(table, entry.uid)), RedisBulk(entry.newValue)])
+      ...msetList.expand((entry) =>
+          [RedisBulk(key(table, entry.item1)), RedisBulk(entry.item2)])
     ]);
+
     return [];
   }
 
-  static Future<void> mset2(
+  static Future<void> msetInsertEntries(
       Command db, RedisTable table, List<UidAndValue> entries) async {
+    log("insert: mset2: nb of entries: ${entries.length}");
+    if (entries.isEmpty) {
+      return;
+    }
     await execute(db, [
       "MSET",
       ...entries.expand(
@@ -124,8 +182,20 @@ class FindexRedisImplementation {
     ]);
   }
 
-  static Future<void> indexAll(
-      FindexMasterKey masterKey, Uint8List label) async {
+  static Future<void> msetInsertChains(
+      Command db, RedisTable table, List<UidAndValue> chains) async {
+    log("insert: mset2: nb of entries: ${chains.length}");
+    if (chains.isEmpty) {
+      return;
+    }
+    await execute(db, [
+      "MSET",
+      ...chains.expand(
+          (entry) => [RedisBulk(key(table, entry.uid)), RedisBulk(entry.value)])
+    ]);
+  }
+
+  static Future<Set<Keyword>> indexAll() async {
     final users = await allUsers();
 
     final additions = {
@@ -133,7 +203,7 @@ class FindexRedisImplementation {
         IndexedValue.fromLocation(user.location): user.indexedWords,
     };
 
-    await upsert(masterKey, label, additions, {});
+    return add(additions);
   }
 
   static Future<List<Uint8List>> keys(RedisTable table) async {
@@ -164,12 +234,14 @@ class FindexRedisImplementation {
       RedisTable table, Uids uids) async {
     List<UidAndValue> results = [];
 
+    if (uids.uids.isEmpty) {
+      return [];
+    }
     final db = await FindexRedisImplementation.db;
-
     if (await FindexRedisImplementation.shouldThrowInsideFetch()) {
+      log("Redis Should Throw Exception");
       throw UnsupportedError("Redis Should Throw Exception"); // :ExceptionLine
     }
-
     final values = await mget(db, table, uids.uids);
 
     for (final entry in uids.uids.asMap().entries) {
@@ -194,68 +266,41 @@ class FindexRedisImplementation {
     return await fetchEntriesOrChains(RedisTable.chains, uids);
   }
 
-  static Future<List<UidAndValue>> upsertEntries(
-      List<UpsertData> entries) async {
-    //TODO: implement findex multithreaded support if required
+  static Future<List<UidAndValue>> upsertEntries(UpsertData entries) async {
+    log("redis: upserting entries");
     return await mset(await db, RedisTable.entries, entries);
   }
 
-  static Future<void> upsertChains(List<UidAndValue> chains) async {
-    await mset2(await db, RedisTable.chains, chains);
+  static Future<void> insertEntries(List<UidAndValue> entries) async {
+    await msetInsertEntries(await db, RedisTable.entries, entries);
+  }
+
+  static Future<void> insertChains(List<UidAndValue> chains) async {
+    await msetInsertChains(await db, RedisTable.chains, chains);
   }
 
   // --------------------------------------------------
   // Copy-paste code :AutoGeneratedImplementation
   // --------------------------------------------------
 
-  static Future<Map<Keyword, List<Location>>> search(
-      Uint8List keyK, Uint8List label, List<Keyword> words,
-      {int entryTableNumber = 1}) async {
-    return await Findex.search(
-        keyK,
-        label,
-        words,
-        Pointer.fromFunction(
-          fetchEntriesCallback,
-          errorCodeInCaseOfCallbackException,
-        ),
-        Pointer.fromFunction(
-          fetchChainsCallback,
-          errorCodeInCaseOfCallbackException,
-        ),
-        entryTableNumber: entryTableNumber);
+  static Future<Map<Keyword, Set<Location>>> search(
+    Set<Keyword> keywords,
+  ) async {
+    return await Findex.search(keywords);
   }
 
-  static Future<void> upsert(
-    FindexMasterKey masterKey,
-    Uint8List label,
-    Map<IndexedValue, List<Keyword>> additions,
-    Map<IndexedValue, List<Keyword>> deletions,
+  static Future<Set<Keyword>> add(
+    Map<IndexedValue, Set<Keyword>> additions,
   ) async {
-    await Findex.upsert(
-      masterKey,
-      label,
-      additions,
-      deletions,
-      Pointer.fromFunction(
-        fetchEntriesCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        upsertEntriesCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-      Pointer.fromFunction(
-        upsertChainsCallback,
-        errorCodeInCaseOfCallbackException,
-      ),
-    );
+    final results = Findex.add(additions);
+    log("[redis]: add: exceptions: ${Findex.exceptions.length}");
+    return results;
   }
 
   static int fetchEntriesCallback(
-    Pointer<UnsignedChar> outputEntryTableLinesPointer,
-    Pointer<UnsignedInt> outputEntryTableLinesLength,
-    Pointer<UnsignedChar> uidsPointer,
+    Pointer<Uint8> outputEntryTableLinesPointer,
+    Pointer<Uint32> outputEntryTableLinesLength,
+    Pointer<Uint8> uidsPointer,
     int uidsNumber,
   ) {
     return Findex.wrapAsyncFetchCallback(
@@ -268,9 +313,9 @@ class FindexRedisImplementation {
   }
 
   static int fetchChainsCallback(
-    Pointer<UnsignedChar> outputChainTableLinesPointer,
-    Pointer<UnsignedInt> outputChainTableLinesLength,
-    Pointer<UnsignedChar> uidsPointer,
+    Pointer<Uint8> outputChainTableLinesPointer,
+    Pointer<Uint32> outputChainTableLinesLength,
+    Pointer<Uint8> uidsPointer,
     int uidsNumber,
   ) {
     return Findex.wrapAsyncFetchCallback(
@@ -283,29 +328,65 @@ class FindexRedisImplementation {
   }
 
   static int upsertEntriesCallback(
-    Pointer<UnsignedChar> outputRejectedEntriesListPointer,
-    Pointer<UnsignedInt> outputRejectedEntriesListLength,
-    Pointer<UnsignedChar> entriesListPointer,
-    int entriesListLength,
+    Pointer<Uint8> outputRejectedEntriesListPointer,
+    Pointer<Uint32> outputRejectedEntriesListLength,
+    Pointer<Uint8> oldValuesPointer,
+    int oldValuesLength,
+    Pointer<Uint8> newValuesPointer,
+    int newValuesLength,
   ) {
     return Findex.wrapAsyncUpsertEntriesCallback(
       FindexRedisImplementation.upsertEntries,
       outputRejectedEntriesListPointer,
       outputRejectedEntriesListLength,
+      oldValuesPointer,
+      oldValuesLength,
+      newValuesPointer,
+      newValuesLength,
+    );
+  }
+
+  static int insertEntriesCallback(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapAsyncInsertEntriesCallback(
+      FindexRedisImplementation.insertEntries,
       entriesListPointer,
       entriesListLength,
     );
   }
 
-  static int upsertChainsCallback(
-    Pointer<UnsignedChar> chainsListPointer,
+  static int insertChainsCallback(
+    Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
     return Findex.wrapAsyncInsertChainsCallback(
-      FindexRedisImplementation.upsertChains,
+      FindexRedisImplementation.insertChains,
       chainsListPointer,
       chainsListLength,
     );
+  }
+
+  static int deleteEntriesCallback(
+    Pointer<Uint8> chainsListPointer,
+    int chainsListLength,
+  ) {
+    throw FindexException("not implemented");
+  }
+
+  static int deleteChainsCallback(
+    Pointer<Uint8> chainsListPointer,
+    int chainsListLength,
+  ) {
+    throw FindexException("not implemented");
+  }
+
+  static int dumpTokensCallback(
+    Pointer<Uint8> outputTokensPointer,
+    Pointer<Uint32> outputTokensLength,
+  ) {
+    throw FindexException("not implemented");
   }
 }
 

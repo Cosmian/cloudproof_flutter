@@ -38,6 +38,9 @@ jobs:
       - run: flutter pub get
       - run: python scripts/get_native_libraries.py
 
+      - name: uname
+        run: uname -a
+
       - name: Check build Android
         if: contains(runner.os, 'Linux')
         run: |
@@ -45,11 +48,40 @@ jobs:
           flutter build apk
           cd ..
 
-      - name: Check build iOS
+      # - name: Run integration tests
+      #   if: contains(runner.os, 'Linux')
+      #   # more info on https://github.com/ReactiveCircus/android-emulator-runner
+      #   uses: reactivecircus/android-emulator-runner@v2
+      #   with:
+      #     api-level: 29
+      #     arch: x86_64
+      #     profile: Nexus 6
+      #     script: flutter test integration_test --verbose
+
+      - name: List all simulators
+        if: contains(runner.os, 'macOS')
+        run: xcrun xctrace list devices
+
+      - name: Start Simulator
+        if: contains(runner.os, 'macOS')
+        # the command "xcrun simctl boot" expects a device identifier
+        # the assignment of the UUID variable consists of retrieving the ID of the simulator
+        # by extracting it from the command "xcrun xctrace list devices"
+        run: |
+          UUID=$(xcrun xctrace list devices | grep -m 1 "^iPhone 14 Pro Simulator (16.2)" | awk '{gsub(/[()]/,""); print $NF}')
+          echo $UUID
+          xcrun simctl boot "${UUID:?No Simulator with this name found}"
+
+      - name: Display exported functions in universal lib
+        if: contains(runner.os, 'macOS')
+        run: |
+          nm -g ios/libcloudproof.a || true
+
+      - name: Run integration tests on iOS
         if: contains(runner.os, 'macOS')
         run: |
           cd example
-          flutter build ios --release --no-codesign
+          flutter test integration_test/
           cd ..
 
       - run: flutter analyze .
@@ -91,7 +123,9 @@ jobs:
           mkdir -p ~/.config/dart
           echo "$DART_CREDENTIALS" > ~/.config/dart/pub-credentials.json
           rm -f android/src/main/jniLibs/*/.git*
-          # rm -f ios/.gitignore # du to the large size of universal lib for ios, .a must be recovered from package.cosmian.com
+          # du to the large size of universal lib for ios, .a must be recovered from package.cosmian.com
+          rm -f ios/*.a
+          rm -f ios/*.gitignore
           rm -f resources/.gitignore
           rm -f lib/src/.gitignore
           git add * || true
@@ -128,17 +162,26 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+  cloudproof_flutter_with_services:
+    if: startsWith(github.ref, 'refs/tags/') != true
+    uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_flutter.yml@develop
+    with:
+      branch: ${{ github.head_ref }}
+      target: x86_64-unknown-linux-gnu
+      extension: so
+      copy_fresh_build: false
+
   cloudproof_java:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_java_in_docker.yml@develop
     with:
-      branch: feature/multi_entry_tables
+      branch: develop
       target: x86_64-unknown-linux-gnu
       extension: so
       destination: linux-x86-64
       os: ubuntu-20.04
-      kms-version: 4.3.3
-      findex-cloud-version: 0.1.0
+      kms-version: 4.10.0
+      findex-cloud-version: 0.3.1
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json src/test/resources/cover_crypt/non_regression/js_non_regression_vector.json
@@ -148,9 +191,10 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_js.yml@develop
     with:
-      branch: feature/anonymization
+      branch: develop
       target: wasm32-unknown-unknown
-      kms-version: 4.3.3
+      kms-version: 4.10.0
+      findex-cloud-version: 0.3.1
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json tests/data/cover_crypt/non_regression/java_non_regression_vector.json
@@ -160,9 +204,10 @@ jobs:
     needs: build
     uses: Cosmian/reusable_workflows/.github/workflows/cloudproof_python.yml@develop
     with:
-      branch: feature/multi_entry_tables
+      branch: develop
       target: x86_64-unknown-linux-gnu
-      kms-version: 4.3.3
+      kms-version: 4.10.0
+      findex-cloud-version: 0.3.1
       copy_fresh_build: false
       copy_regression_files: |
         cp ./cloudproof_flutter/non_regression_vector.json tests/data/cover_crypt/non_regression/java_non_regression_vector.json
@@ -170,6 +215,7 @@ jobs:
 
   release:
     needs:
+      - cloudproof_flutter_with_services
       - cloudproof_java
       - cloudproof_js
       - cloudproof_python

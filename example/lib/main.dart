@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'cover_crypt_helper.dart';
-import 'findex_redis_implementation.dart';
+import 'redis_findex.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,11 +20,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Cloudproof Flutter Demo',
+      title: 'Cloudproof Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Cloudproof Flutter Demo'),
+      home: const MyHomePage(title: 'Cloudproof Demo'),
     );
   }
 }
@@ -41,7 +41,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool loading = true;
 
-  late FindexMasterKey masterKey;
+  late Uint8List key;
   late Uint8List label;
   late CoverCryptHelper coverCryptHelper;
 
@@ -66,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     )..addListener(() {
         setState(() {});
       });
-    controller.repeat(reverse: true);
+    // controller.repeat(reverse: true);
     coverCryptHelper = CoverCryptHelper();
     indexDataForDemo();
     super.initState();
@@ -74,10 +74,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   void indexDataForDemo() async {
     try {
-      label = Uint8List.fromList(utf8.encode("NewLabel"));
-      masterKey = FindexMasterKey(Uint8List(16));
-      await FindexRedisImplementation.init(coverCryptHelper);
-      await FindexRedisImplementation.indexAll(masterKey, label);
+      key = Uint8List(16);
+      await FindexRedisImplementation.init(coverCryptHelper, key, "NewLabel");
+      await FindexRedisImplementation.indexAll();
 
       setState(() => loading = false);
 
@@ -94,7 +93,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  List<Uint8List> getAllLocations(Iterable<List<Location>> searchResult) {
+  List<Uint8List> getAllLocations(Iterable<Set<Location>> searchResult) {
     List<Uint8List> res = [];
     for (final locations in searchResult) {
       for (final loc in locations) {
@@ -110,11 +109,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _debouncer.run(() async {
       try {
         final stopwatch = Stopwatch()..start();
-        final searchResult = await FindexRedisImplementation.search(
-          masterKey.k,
-          label,
-          [Keyword.fromString(query)],
-        );
+        final searchResult =
+            await FindexRedisImplementation.search({Keyword.fromString(query)});
 
         final newSearchDuration = stopwatch.elapsed;
 

@@ -9,7 +9,7 @@ class CoverCryptHelper {
   late CoverCryptMasterKeys masterKeys;
 
   CoverCryptHelper() {
-    policy = Policy.withMaxAttributeCreations(100)
+    policy = Policy.init()
         .addAxis(
             "Security Level",
             [

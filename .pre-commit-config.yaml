@@ -6,7 +6,7 @@
 
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-exclude: test/resources/|example/lib/users.dart|example/ios|example/macos|example/web
+exclude: test/resources/|test/findex/in_memory_users.dart|example/lib/users.dart|example/ios|example/macos|example/web
 repos:
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v2.2.0
@@ -36,6 +36,12 @@ repos:
       - id: htmlhint
       - id: dockerfile_lint
       - id: markdown-toc
+
+  - repo: https://github.com/tcort/markdown-link-check
+    rev: v3.11.2
+    hooks:
+      - id: markdown-link-check
+        args: [-q]
 
   - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
     rev: 0.2.3
@@ -72,7 +78,7 @@ repos:
       - id: shellcheck
 
   - repo: https://github.com/Cretezy/flutter-format-pre-commit
-    rev: 35be2187259c39889e2ac1936399b8a1ae6a5a00
+    rev: master
     hooks:
       - id: flutter-format
 
@@ -81,10 +87,20 @@ repos:
     hooks:
       - id: flutter-analyze
 
+  - repo: https://github.com/Cosmian/git-hooks.git
+    rev: v1.0.24
+    hooks:
+      - id: docker-compose-up
+
   - repo: https://github.com/dluksza/flutter-test-pre-commit
     rev: master
     hooks:
       - id: flutter-test
+
+  - repo: https://github.com/Cosmian/git-hooks.git
+    rev: v1.0.24
+    hooks:
+      - id: docker-compose-down
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
