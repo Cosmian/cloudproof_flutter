@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'cloudproof'
-  s.version          = '7.0.0'
+  s.version          = '8.0.0'
   s.summary          = 'Cloudproof plugin.'
   s.description      = <<-DESC
 Cloudproof plugin.
