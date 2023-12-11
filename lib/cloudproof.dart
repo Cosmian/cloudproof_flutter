@@ -9,7 +9,6 @@ export 'src/findex/findex.dart';
 export 'src/findex/uid_and_value.dart';
 export 'src/findex/upsert_data.dart';
 export 'src/findex/uids.dart';
-export 'src/findex/key.dart';
 export 'src/findex/keyword.dart';
 export 'src/findex/keywords.dart';
 export 'src/findex/location.dart';

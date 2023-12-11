@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,7 +40,7 @@ const expectedUsersIdsForFrance = [
   96
 ];
 
-Future<void> testFunction(FindexKey key, String label) async {
+Future<void> testFunction(Uint8List key, String label) async {
   FindexInMemory.init(key, label);
 
   expect(FindexInMemory.entryTable?.length, equals(0));
@@ -79,10 +79,9 @@ Future<void> testFunction(FindexKey key, String label) async {
 void main() {
   group('Findex in memory', () {
     test('in_memory', () async {
-      final findexKey = FindexKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-      await testFunction(findexKey, "Some Label");
+      await testFunction(key, "Some Label");
     }, tags: 'in_memory');
   });
 }

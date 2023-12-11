@@ -41,7 +41,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool loading = true;
 
-  late FindexKey findexKey;
+  late Uint8List key;
   late Uint8List label;
   late CoverCryptHelper coverCryptHelper;
 
@@ -74,9 +74,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   void indexDataForDemo() async {
     try {
-      findexKey = FindexKey(Uint8List(16));
-      await FindexRedisImplementation.init(
-          coverCryptHelper, findexKey, "NewLabel");
+      key = Uint8List(16);
+      await FindexRedisImplementation.init(coverCryptHelper, key, "NewLabel");
       await FindexRedisImplementation.indexAll();
 
       setState(() => loading = false);

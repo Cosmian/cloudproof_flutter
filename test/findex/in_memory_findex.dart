@@ -45,11 +45,11 @@ class FindexInMemory {
   static Map<Uint8List, Uint8List>? entryTable;
   static Map<Uint8List, Uint8List>? chainTable;
 
-  static void init(FindexKey findexKey, String label) {
+  static void init(Uint8List key, String label) {
     entryTable = {};
     chainTable = {};
     Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallback,
@@ -85,7 +85,7 @@ class FindexInMemory {
         ));
   }
 
-  static Future<Set<Keyword>> indexAll(FindexKey findexKey) async {
+  static Future<Set<Keyword>> indexAll(Uint8List key) async {
     final indexedValuesAndKeywords = {
       for (final user in Users.getUsers())
         IndexedValue.fromLocation(user.location): user.indexedWords,

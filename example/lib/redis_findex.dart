@@ -14,8 +14,8 @@ const redisHost = "192.168.1.100";
 const redisPort = 6379;
 
 class FindexRedisImplementation {
-  static Future<void> init(CoverCryptHelper coverCryptHelper,
-      FindexKey findexKey, String label) async {
+  static Future<void> init(
+      CoverCryptHelper coverCryptHelper, Uint8List key, String label) async {
     final db = await FindexRedisImplementation.db;
 
     for (final userKey
@@ -46,7 +46,7 @@ class FindexRedisImplementation {
           db, RedisTable.users, Uint8List.fromList([user.id]), ciphertext);
     }
     Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallback,

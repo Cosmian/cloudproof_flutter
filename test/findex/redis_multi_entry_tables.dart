@@ -26,7 +26,7 @@ class RedisMultiEntryTables {
     await File(RedisMultiEntryTables.throwInsideFetchFilepath).delete();
   }
 
-  static Future<Tuple3> init(FindexKey findexKey, String label) async {
+  static Future<Tuple3> init(Uint8List key, String label) async {
     final db = await RedisMultiEntryTables.db;
 
     for (final userKey in await RedisMultiEntryTables.keys(RedisTables.users)) {
@@ -61,12 +61,12 @@ class RedisMultiEntryTables {
           Uint8List.fromList([0, 0, 0, user['id']]),
           Uint8List.fromList(utf8.encode(jsonEncode(user))));
     }
-    return RedisMultiEntryTables.instantiateFindex(findexKey, label);
+    return RedisMultiEntryTables.instantiateFindex(key, label);
   }
 
-  static Tuple3 instantiateFindex(FindexKey findexKey, String label) {
+  static Tuple3 instantiateFindex(Uint8List key, String label) {
     int findexHandle1 = Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallbackDb1,
@@ -102,7 +102,7 @@ class RedisMultiEntryTables {
         ));
 
     int findexHandle2 = Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallbackDb2,
@@ -137,7 +137,7 @@ class RedisMultiEntryTables {
           errorCodeInCaseOfCallbackException,
         ));
     int findexHandle3 = Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallback,

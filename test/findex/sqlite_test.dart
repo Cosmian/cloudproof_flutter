@@ -47,9 +47,8 @@ void main() {
     test('errors', () async {
       const dbPath = "./build/sqlite2.db";
       await initDb(dbPath);
-      final findexKey = FindexKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
-      SqliteFindex.init(dbPath, findexKey, "Some Label");
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
+      SqliteFindex.init(dbPath, key, "Some Label");
 
       final upsertResults = await SqliteFindex.indexAll();
       expect(upsertResults.length, 583);
@@ -78,7 +77,7 @@ void main() {
         expect(
           stacktrace.toString(),
           contains(
-              "test/findex/sqlite_findex.dart:231:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
+              "test/findex/sqlite_findex.dart:232:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
@@ -150,10 +149,9 @@ void main() {
 
       await initDb(dbPath);
 
-      final findexKey = FindexKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-      SqliteFindex.init(dbPath, findexKey, "Some Label");
+      SqliteFindex.init(dbPath, key, "Some Label");
 
       expect(SqliteFindex.count('entry_table'), equals(0));
       expect(SqliteFindex.count('chain_table'), equals(0));

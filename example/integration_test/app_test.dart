@@ -29,7 +29,7 @@ void main() {
 
       expect(result.plaintext, equals(plaintext));
 
-      final findexKey = FindexKey(base64Decode("6hb1TznoNQFvCWisGWajkA=="));
+      final findexKey = base64Decode("6hb1TznoNQFvCWisGWajkA==");
       await testFunction(findexKey, "Some Label");
 
       print("findex and cover_crypt OK");

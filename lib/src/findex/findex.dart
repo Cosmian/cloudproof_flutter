@@ -70,7 +70,7 @@ class Findex {
   // FFI functions
   //
   static int instantiateFindex(
-      FindexKey key,
+      Uint8List key,
       String label,
       Fetch fetchEntries,
       Fetch fetchChains,
@@ -86,7 +86,7 @@ class Findex {
     //
     // Master key
     final Pointer<Uint8> findexKeyPointer =
-        key.key.allocateInt8Pointer().cast<Uint8>();
+        key.allocateInt8Pointer().cast<Uint8>();
 
     // Label
     final labelPointer = label.toNativeUtf8().cast<Int8>();
@@ -100,7 +100,7 @@ class Findex {
       final errorCode = library.h_instantiate_with_custom_interface(
           findexHandlePointer,
           findexKeyPointer,
-          key.key.length,
+          key.length,
           labelPointer,
           entryTableNumber,
           fetchEntries,
@@ -119,6 +119,7 @@ class Findex {
     } finally {
       calloc.free(findexHandlePointer);
       calloc.free(findexKeyPointer);
+      calloc.free(labelPointer);
     }
   }
 
@@ -203,7 +204,7 @@ class Findex {
     final associationsPointer = associationsBytes.allocateUint8Pointer();
     log("delete: serialization associations OK: $associationsSerializedSize");
 
-    log("delete: associations len: ${associationsBytes.length}");
+    log("delete: deletions len: ${associationsBytes.length}");
 
     //
     // FFI OUTPUT parameters

@@ -26,7 +26,7 @@ class FindexRedisImplementation {
     await File(FindexRedisImplementation.throwInsideFetchFilepath).delete();
   }
 
-  static Future<void> init(FindexKey findexKey, String label) async {
+  static Future<void> init(Uint8List key, String label) async {
     final db = await FindexRedisImplementation.db;
 
     for (final userKey
@@ -55,7 +55,7 @@ class FindexRedisImplementation {
           Uint8List.fromList(utf8.encode(jsonEncode(user))));
     }
     Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallback,

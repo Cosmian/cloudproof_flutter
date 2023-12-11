@@ -44,10 +44,9 @@ const expectedUsersIdsForFrance = [
 void main() {
   group('Findex Redis', () {
     test('search/upsert', () async {
-      final findexKey = FindexKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-      await FindexRedisImplementation.init(findexKey, "Some Label");
+      await FindexRedisImplementation.init(key, "Some Label");
 
       expect(
           await FindexRedisImplementation.count(RedisTable.users), equals(100));
@@ -81,10 +80,9 @@ void main() {
     }, tags: 'redis');
 
     test('exceptions', () async {
-      final findexKey = FindexKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-      await FindexRedisImplementation.init(findexKey, "Some Label");
+      await FindexRedisImplementation.init(key, "Some Label");
       final upsertResults = await FindexRedisImplementation.indexAll();
       expect(upsertResults.length, 583);
 
@@ -123,10 +121,9 @@ void main() {
     }, tags: 'redis');
 
     test('redis multi entry tables', () async {
-      final findexKey = FindexKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-      final handles = await RedisMultiEntryTables.init(findexKey, "Some Label");
+      final handles = await RedisMultiEntryTables.init(key, "Some Label");
       log("handles: $handles");
 
       expect(await RedisMultiEntryTables.count(RedisTables.users), equals(100));
