@@ -9,32 +9,31 @@
 #include <stdint.h>
 #include <stdlib.h>
 #define DEFINE_FFI 1
-#define DEFINE_BACKEND_FFI
 
-#if defined(DEFINE_BACKEND_REST)
+#if defined(DEFINE_REST_INTERFACE)
 /**
- * The number of seconds of validity of the requests to the `FindexREST` server.
- * After this time, the request cannot be accepted by the backend. This is done
- * to prevent replay attacks.
+ * The number of seconds of validity of the requests to the `FindexREST`
+ * server. After this time, the request cannot be accepted by the backend. This
+ * is done to prevent replay attacks.
  */
 #define REQUEST_SIGNATURE_TIMEOUT_AS_SECS 60
 #endif
 
-#if defined(DEFINE_BACKEND_REST)
+#if defined(DEFINE_REST_INTERFACE)
 /**
  * Callback signature length.
  */
 #define SIGNATURE_LENGTH 32
 #endif
 
-#if defined(DEFINE_BACKEND_REST)
+#if defined(DEFINE_REST_INTERFACE)
 /**
  * Seed used to generate KMAC keys.
  */
 #define SIGNATURE_SEED_LENGTH 16
 #endif
 
-#if defined(DEFINE_BACKEND_REST)
+#if defined(DEFINE_REST_INTERFACE)
 #define INDEX_ID_LENGTH 5
 #endif
 
@@ -48,7 +47,7 @@
  */
 #define RECOMMENDED_THRESHOLD 1000000
 
-#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
+#if ((defined(DEFINE_WASM) || defined(DEFINE_PYTHON) || defined(DEFINE_FFI)) && defined(DEFINE_FFI))
 /**
  * # Serialization
  *
@@ -64,7 +63,7 @@ typedef int32_t (*Fetch)(uint8_t *output_ptr,
                          uint32_t uids_len);
 #endif
 
-#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
+#if ((defined(DEFINE_WASM) || defined(DEFINE_PYTHON) || defined(DEFINE_FFI)) && defined(DEFINE_FFI))
 /**
  * # Serialization
  *
@@ -82,7 +81,7 @@ typedef int32_t (*Upsert)(uint8_t *indexed_values_ptr,
                           uint32_t new_values_len);
 #endif
 
-#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
+#if ((defined(DEFINE_WASM) || defined(DEFINE_PYTHON) || defined(DEFINE_FFI)) && defined(DEFINE_FFI))
 /**
  * # Serialization
  *
@@ -92,7 +91,7 @@ typedef int32_t (*Upsert)(uint8_t *indexed_values_ptr,
 typedef int32_t (*Insert)(const uint8_t *input_ptr, uint32_t input_len);
 #endif
 
-#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
+#if ((defined(DEFINE_WASM) || defined(DEFINE_PYTHON) || defined(DEFINE_FFI)) && defined(DEFINE_FFI))
 /**
  * # Serialization
  *
@@ -102,7 +101,7 @@ typedef int32_t (*Insert)(const uint8_t *input_ptr, uint32_t input_len);
 typedef int32_t (*Delete)(const uint8_t *input_ptr, uint32_t input_len);
 #endif
 
-#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
+#if ((defined(DEFINE_WASM) || defined(DEFINE_PYTHON) || defined(DEFINE_FFI)) && defined(DEFINE_FFI))
 /**
  * # Serialization
  *
@@ -111,12 +110,12 @@ typedef int32_t (*Delete)(const uint8_t *input_ptr, uint32_t input_len);
 typedef int32_t (*DumpTokens)(uint8_t *uids_ptr, uint32_t *uids_len);
 #endif
 
-#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
+#if ((defined(DEFINE_WASM) || defined(DEFINE_PYTHON) || defined(DEFINE_FFI)) && defined(DEFINE_FFI))
 typedef int32_t (*Interrupt)(const uint8_t *intermediate_results_ptr,
                              uint32_t intermediate_results_len);
 #endif
 
-#if ((defined(DEFINE_BACKEND_WASM) || defined(DEFINE_BACKEND_PYTHON) || defined(DEFINE_BACKEND_FFI)) && defined(DEFINE_BACKEND_FFI))
+#if ((defined(DEFINE_WASM) || defined(DEFINE_PYTHON) || defined(DEFINE_FFI)) && defined(DEFINE_FFI))
 typedef int32_t (*FilterObsoleteData)(uint8_t *output_locations_ptr,
                                       uint32_t *output_locations_len,
                                       const uint8_t *locations_ptr,
@@ -658,19 +657,19 @@ int32_t h_ecies_salsa_seal_box_decrypt(uint8_t *output_ptr,
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_instantiate_with_ffi_backend(int32_t *findex_handle,
-                                       const uint8_t *key_ptr,
-                                       int32_t key_len,
-                                       const uint8_t *label_ptr,
-                                       int32_t label_len,
-                                       uint32_t entry_table_number,
-                                       Fetch fetch_entry,
-                                       Fetch fetch_chain,
-                                       Upsert upsert_entry,
-                                       Insert insert_chain,
-                                       Delete delete_entry,
-                                       Delete delete_chain,
-                                       DumpTokens dump_tokens);
+int32_t h_instantiate_with_custom_interface(int32_t *findex_handle,
+                                            const uint8_t *key_ptr,
+                                            int32_t key_len,
+                                            const int8_t *label_ptr,
+                                            uint32_t entry_table_number,
+                                            Fetch fetch_entry,
+                                            Fetch fetch_chain,
+                                            Upsert upsert_entry,
+                                            Insert insert_entry,
+                                            Insert insert_chain,
+                                            Delete delete_entry,
+                                            Delete delete_chain,
+                                            DumpTokens dump_tokens);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
@@ -687,19 +686,43 @@ int32_t h_instantiate_with_ffi_backend(int32_t *findex_handle,
  *
  * Cannot be safe since using FFI.
  */
-int32_t h_instantiate_with_rest_backend(int32_t *findex_handle,
-                                        const uint8_t *label_ptr,
-                                        int32_t label_len,
-                                        const int8_t *token_ptr,
-                                        const int8_t *url_ptr);
+int32_t h_instantiate_with_rest_interface(int32_t *findex_handle,
+                                          const int8_t *label_ptr,
+                                          const int8_t *token_ptr,
+                                          const int8_t *entry_url_ptr,
+                                          const int8_t *chain_url_ptr);
+#endif
+
+#if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
+/**
+ * Instantiate a Findex using a Redis backend.
+ *
+ * # Parameters
+ *
+ * - `key`                     : Findex key
+ * - `label`                   : label used by Findex
+ * - `entry_table_redis_url`   : Redis entry table URL
+ * - `chain_table_redis_url`   : Redis chain table URL
+ *
+ * # Safety
+ *
+ * Cannot be safe since using FFI.
+ */
+int32_t h_instantiate_with_redis_interface(int32_t *findex_handle,
+                                           const uint8_t *key_ptr,
+                                           int32_t key_len,
+                                           const int8_t *label_ptr,
+                                           const int8_t *entry_table_redis_url_ptr,
+                                           const int8_t *chain_table_redis_url_ptr);
 #endif
 
 #if ((defined(DEFINE_FFI) || defined(DEFINE_PYTHON) || defined(DEFINE_WASM)) && defined(DEFINE_FFI))
 /**
  * Searches the index for the given keywords.
  *
- * At each search recursion, the passed `interrupt` function is called with the results from the
- * current recursion level. The search is interrupted is `true` is returned.
+ * At each search recursion, the passed `interrupt` function is called with the
+ * results from the current recursion level. The search is interrupted is
+ * `true` is returned.
  *
  * # Parameters
  *
@@ -780,9 +803,14 @@ int32_t h_delete(uint8_t *results_ptr,
  * - `findex_handle`           : Findex handle on the instance cache
  * - `new_key`                 : new Findex key
  * - `new_label`               : public information used to derive UIDs
+ * - `compacting_rate`         : see below
  * - `filter_obsolete_data`    : callback used to filter out obsolete data
  *   among indexed data
  *
+ * `compacting_rate`: if you compact the
+ * indexes every night this is the number of days to wait before
+ * being sure that a big portion of the indexes were checked
+ * (see the coupon problem to understand why it's not 100% sure)
  * # Safety
  *
  * Cannot be safe since using FFI.
@@ -790,9 +818,8 @@ int32_t h_delete(uint8_t *results_ptr,
 int32_t h_compact(int32_t findex_handle,
                   const uint8_t *new_key_ptr,
                   int32_t new_key_len,
-                  const uint8_t *new_label_ptr,
-                  int32_t new_label_len,
-                  uint32_t n_compact_to_full,
+                  const int8_t *new_label_ptr,
+                  double compacting_rate,
                   FilterObsoleteData filter_obsolete_data);
 #endif
 

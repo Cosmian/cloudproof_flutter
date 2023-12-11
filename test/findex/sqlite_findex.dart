@@ -107,16 +107,16 @@ class SqliteFindex {
   static int findexHandle = 0;
 
   static Tuple2<Database, int> init(
-      String filepath, FindexKey findexKey, Uint8List label) {
+      String filepath, Uint8List key, String label) {
     final newDb = sqlite3.open(filepath);
     singletonDb = newDb;
-    findexHandle = instantiateFindex(findexKey, label);
+    findexHandle = instantiateFindex(key, label);
     return Tuple2(newDb, findexHandle);
   }
 
-  static int instantiateFindex(FindexKey findexKey, Uint8List label) {
+  static int instantiateFindex(Uint8List key, String label) {
     findexHandle = Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallback,
@@ -128,6 +128,10 @@ class SqliteFindex {
         ),
         Pointer.fromFunction(
           upsertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertEntriesCallback,
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
@@ -318,6 +322,17 @@ class SqliteFindex {
     return rejectedEntries;
   }
 
+  static void insertEntries(List<UidAndValue> entries) {
+    final stmt = db.prepare(
+        'INSERT OR REPLACE INTO entry_table (uid, value) VALUES (?, ?)');
+    for (final entry in entries) {
+      stmt.execute([
+        entry.uid,
+        entry.value,
+      ]);
+    }
+  }
+
   static void insertChains(List<UidAndValue> chains) {
     final stmt = db.prepare(
         'INSERT OR REPLACE INTO chain_table (uid, value) VALUES (?, ?)');
@@ -393,6 +408,17 @@ class SqliteFindex {
     );
   }
 
+  static int insertEntriesCallback(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapSyncInsertEntriesCallback(
+      SqliteFindex.insertEntries,
+      entriesListPointer,
+      entriesListLength,
+    );
+  }
+
   static int insertChainsCallback(
     Pointer<Uint8> chainsListPointer,
     int chainsListLength,
@@ -426,11 +452,9 @@ class SqliteFindex {
   }
 
   static Future<void> verify(String dbPath) async {
-    final findexKey = FindexKey.fromJson(jsonDecode(
-        await File('test/resources/findex/master_key.json').readAsString()));
-    final label = Uint8List.fromList(utf8.encode("Some Label"));
+    final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-    init(dbPath, findexKey, label);
+    init(dbPath, key, "Some Label");
 
     expect(SqliteFindex.count('entry_table'), greaterThan(0));
     expect(SqliteFindex.count('chain_table'), greaterThan(0));

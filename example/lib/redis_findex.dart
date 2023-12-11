@@ -14,8 +14,8 @@ const redisHost = "192.168.1.100";
 const redisPort = 6379;
 
 class FindexRedisImplementation {
-  static Future<void> init(CoverCryptHelper coverCryptHelper,
-      FindexKey findexKey, Uint8List label) async {
+  static Future<void> init(
+      CoverCryptHelper coverCryptHelper, Uint8List key, String label) async {
     final db = await FindexRedisImplementation.db;
 
     for (final userKey
@@ -46,7 +46,7 @@ class FindexRedisImplementation {
           db, RedisTable.users, Uint8List.fromList([user.id]), ciphertext);
     }
     Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallback,
@@ -58,6 +58,10 @@ class FindexRedisImplementation {
         ),
         Pointer.fromFunction(
           upsertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertEntriesCallback,
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
@@ -156,6 +160,19 @@ class FindexRedisImplementation {
     return [];
   }
 
+  static Future<void> msetInsertEntries(
+      Command db, RedisTable table, List<UidAndValue> entries) async {
+    log("insert: mset2: nb of entries: ${entries.length}");
+    if (entries.isEmpty) {
+      return;
+    }
+    await execute(db, [
+      "MSET",
+      ...entries.expand(
+          (entry) => [RedisBulk(key(table, entry.uid)), RedisBulk(entry.value)])
+    ]);
+  }
+
   static Future<void> msetInsertChains(
       Command db, RedisTable table, List<UidAndValue> chains) async {
     log("insert: mset2: nb of entries: ${chains.length}");
@@ -240,6 +257,10 @@ class FindexRedisImplementation {
     return await mset(await db, RedisTable.entries, entries);
   }
 
+  static Future<void> insertEntries(List<UidAndValue> entries) async {
+    await msetInsertEntries(await db, RedisTable.entries, entries);
+  }
+
   static Future<void> insertChains(List<UidAndValue> chains) async {
     await msetInsertChains(await db, RedisTable.chains, chains);
   }
@@ -306,6 +327,17 @@ class FindexRedisImplementation {
       oldValuesLength,
       newValuesPointer,
       newValuesLength,
+    );
+  }
+
+  static int insertEntriesCallback(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapAsyncInsertEntriesCallback(
+      FindexRedisImplementation.insertEntries,
+      entriesListPointer,
+      entriesListLength,
     );
   }
 

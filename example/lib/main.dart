@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'cover_crypt_helper.dart';
-import 'findex_redis_implementation.dart';
+import 'redis_findex.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,7 +41,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   bool loading = true;
 
-  late FindexKey findexKey;
+  late Uint8List key;
   late Uint8List label;
   late CoverCryptHelper coverCryptHelper;
 
@@ -74,9 +74,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   void indexDataForDemo() async {
     try {
-      label = Uint8List.fromList(utf8.encode("NewLabel"));
-      findexKey = FindexKey(Uint8List(16));
-      await FindexRedisImplementation.init(coverCryptHelper, findexKey, label);
+      key = Uint8List(16);
+      await FindexRedisImplementation.init(coverCryptHelper, key, "NewLabel");
       await FindexRedisImplementation.indexAll();
 
       setState(() => loading = false);

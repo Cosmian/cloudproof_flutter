@@ -2,14 +2,12 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:cloudproof/cloudproof.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as path;
 
 import 'sqlite_findex.dart';
-
-import 'package:path/path.dart' as path;
 
 const expectedUsersIdsForFrance = [
   4,
@@ -49,10 +47,8 @@ void main() {
     test('errors', () async {
       const dbPath = "./build/sqlite2.db";
       await initDb(dbPath);
-      final findexKey = FindexKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-      SqliteFindex.init(dbPath, findexKey, label);
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
+      SqliteFindex.init(dbPath, key, "Some Label");
 
       final upsertResults = await SqliteFindex.indexAll();
       expect(upsertResults.length, 583);
@@ -81,7 +77,7 @@ void main() {
         expect(
           stacktrace.toString(),
           contains(
-              "test/findex/sqlite_findex.dart:228:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
+              "test/findex/sqlite_findex.dart:232:7"), // When moving stuff inside this file, this assertion could fail because the line number change. Please set the line number to the line below containing :ExceptionLine
         );
       } finally {
         SqliteFindex.throwInsideFetchEntries = false;
@@ -97,8 +93,7 @@ void main() {
         expect(
             e.toString(),
             startsWith(
-              "findex `search` error: callback error: serialization: serialization error: crypto error: incorrect length for encrypted value: 32 bytes give, 114 bytes expected",
-            ));
+                "findex `search` error: database interface error: serialization: serialization error: crypto error: incorrect length for encrypted value: 32 bytes give, 114 bytes expected"));
       } finally {
         SqliteFindex.returnOnlyUidInsideFetchChains = false;
       }
@@ -128,7 +123,7 @@ void main() {
         expect(
             e.toString(),
             startsWith(
-                "findex `search` error: callback error: serialization: serialization error: crypto error: incorrect length for encrypted value: 32 bytes give, 108 bytes expected"));
+                "findex `search` error: database interface error: serialization: serialization error: crypto error: incorrect length for encrypted value: 32 bytes give, 108 bytes expected"));
       } finally {
         SqliteFindex.returnOnlyUidInsideFetchEntries = false;
       }
@@ -154,12 +149,9 @@ void main() {
 
       await initDb(dbPath);
 
-      final findexKey = FindexKey.fromJson(jsonDecode(
-          await File('test/resources/findex/master_key.json').readAsString()));
+      final key = base64Decode("6hb1TznoNQFvCWisGWajkA==");
 
-      final label = Uint8List.fromList(utf8.encode("Some Label"));
-
-      SqliteFindex.init(dbPath, findexKey, label);
+      SqliteFindex.init(dbPath, key, "Some Label");
 
       expect(SqliteFindex.count('entry_table'), equals(0));
       expect(SqliteFindex.count('chain_table'), equals(0));

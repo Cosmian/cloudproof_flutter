@@ -45,11 +45,11 @@ class FindexInMemory {
   static Map<Uint8List, Uint8List>? entryTable;
   static Map<Uint8List, Uint8List>? chainTable;
 
-  static void init(FindexKey findexKey, Uint8List label) {
+  static void init(Uint8List key, String label) {
     entryTable = {};
     chainTable = {};
     Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallback,
@@ -61,6 +61,10 @@ class FindexInMemory {
         ),
         Pointer.fromFunction(
           upsertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertEntriesCallback,
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
@@ -81,8 +85,7 @@ class FindexInMemory {
         ));
   }
 
-  static Future<Set<Keyword>> indexAll(
-      FindexKey findexKey, Uint8List label) async {
+  static Future<Set<Keyword>> indexAll(Uint8List key) async {
     final indexedValuesAndKeywords = {
       for (final user in Users.getUsers())
         IndexedValue.fromLocation(user.location): user.indexedWords,
@@ -135,6 +138,14 @@ class FindexInMemory {
       }
     }
     return rejected;
+  }
+
+  static void insertEntries(List<UidAndValue> entries) {
+    for (UidAndValue entry in entries) {
+      if (entryTable != null) {
+        entryTable?[entry.uid] = entry.value;
+      }
+    }
   }
 
   static void insertChains(List<UidAndValue> chains) {
@@ -207,6 +218,17 @@ class FindexInMemory {
       oldValuesLength,
       newValuesPointer,
       newValuesLength,
+    );
+  }
+
+  static int insertEntriesCallback(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapSyncInsertEntriesCallback(
+      FindexInMemory.insertEntries,
+      entriesListPointer,
+      entriesListLength,
     );
   }
 

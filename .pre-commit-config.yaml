@@ -87,10 +87,20 @@ repos:
     hooks:
       - id: flutter-analyze
 
+  - repo: https://github.com/Cosmian/git-hooks.git
+    rev: v1.0.24
+    hooks:
+      - id: docker-compose-up
+
   - repo: https://github.com/dluksza/flutter-test-pre-commit
     rev: master
     hooks:
       - id: flutter-test
+
+  - repo: https://github.com/Cosmian/git-hooks.git
+    rev: v1.0.24
+    hooks:
+      - id: docker-compose-down
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0

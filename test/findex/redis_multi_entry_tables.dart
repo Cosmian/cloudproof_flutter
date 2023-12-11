@@ -26,7 +26,7 @@ class RedisMultiEntryTables {
     await File(RedisMultiEntryTables.throwInsideFetchFilepath).delete();
   }
 
-  static Future<Tuple3> init(FindexKey findexKey, Uint8List label) async {
+  static Future<Tuple3> init(Uint8List key, String label) async {
     final db = await RedisMultiEntryTables.db;
 
     for (final userKey in await RedisMultiEntryTables.keys(RedisTables.users)) {
@@ -61,12 +61,12 @@ class RedisMultiEntryTables {
           Uint8List.fromList([0, 0, 0, user['id']]),
           Uint8List.fromList(utf8.encode(jsonEncode(user))));
     }
-    return RedisMultiEntryTables.instantiateFindex(findexKey, label);
+    return RedisMultiEntryTables.instantiateFindex(key, label);
   }
 
-  static Tuple3 instantiateFindex(FindexKey findexKey, Uint8List label) {
+  static Tuple3 instantiateFindex(Uint8List key, String label) {
     int findexHandle1 = Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallbackDb1,
@@ -78,6 +78,10 @@ class RedisMultiEntryTables {
         ),
         Pointer.fromFunction(
           upsertEntriesCallbackDb1,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertEntriesCallbackDb1,
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
@@ -98,7 +102,7 @@ class RedisMultiEntryTables {
         ));
 
     int findexHandle2 = Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallbackDb2,
@@ -110,6 +114,10 @@ class RedisMultiEntryTables {
         ),
         Pointer.fromFunction(
           upsertEntriesCallbackDb2,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertEntriesCallbackDb2,
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
@@ -129,7 +137,7 @@ class RedisMultiEntryTables {
           errorCodeInCaseOfCallbackException,
         ));
     int findexHandle3 = Findex.instantiateFindex(
-        findexKey,
+        key,
         label,
         Pointer.fromFunction(
           fetchEntriesCallback,
@@ -141,6 +149,10 @@ class RedisMultiEntryTables {
         ),
         Pointer.fromFunction(
           upsertEntriesCallback,
+          errorCodeInCaseOfCallbackException,
+        ),
+        Pointer.fromFunction(
+          insertEntriesCallback,
           errorCodeInCaseOfCallbackException,
         ),
         Pointer.fromFunction(
@@ -333,11 +345,19 @@ class RedisMultiEntryTables {
     return await mset(await db, RedisTables.entries_2, entries);
   }
 
-  static Future<void> upsertChains_1(List<UidAndValue> chains) async {
+  static Future<void> insertEntries_1(List<UidAndValue> entries) async {
+    await mset2(await db, RedisTables.entries_1, entries);
+  }
+
+  static Future<void> insertEntries_2(List<UidAndValue> entries) async {
+    await mset2(await db, RedisTables.entries_2, entries);
+  }
+
+  static Future<void> insertChains_1(List<UidAndValue> chains) async {
     await mset2(await db, RedisTables.chains_1, chains);
   }
 
-  static Future<void> upsertChains_2(List<UidAndValue> chains) async {
+  static Future<void> insertChains_2(List<UidAndValue> chains) async {
     await mset2(await db, RedisTables.chains_2, chains);
   }
 
@@ -459,12 +479,34 @@ class RedisMultiEntryTables {
     );
   }
 
+  static int insertEntriesCallbackDb1(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapAsyncInsertEntriesCallback(
+      RedisMultiEntryTables.insertEntries_1,
+      entriesListPointer,
+      entriesListLength,
+    );
+  }
+
+  static int insertEntriesCallbackDb2(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
+  ) {
+    return Findex.wrapAsyncInsertEntriesCallback(
+      RedisMultiEntryTables.insertEntries_2,
+      entriesListPointer,
+      entriesListLength,
+    );
+  }
+
   static int insertChainsCallbackDb1(
     Pointer<Uint8> chainsListPointer,
     int chainsListLength,
   ) {
     return Findex.wrapAsyncInsertChainsCallback(
-      RedisMultiEntryTables.upsertChains_1,
+      RedisMultiEntryTables.insertChains_1,
       chainsListPointer,
       chainsListLength,
     );
@@ -475,7 +517,7 @@ class RedisMultiEntryTables {
     int chainsListLength,
   ) {
     return Findex.wrapAsyncInsertChainsCallback(
-      RedisMultiEntryTables.upsertChains_2,
+      RedisMultiEntryTables.insertChains_2,
       chainsListPointer,
       chainsListLength,
     );
@@ -488,6 +530,13 @@ class RedisMultiEntryTables {
     int oldValuesLength,
     Pointer<Uint8> newValuesPointer,
     int newValuesLength,
+  ) {
+    throw FindexException("not implemented");
+  }
+
+  static int insertEntriesCallback(
+    Pointer<Uint8> entriesListPointer,
+    int entriesListLength,
   ) {
     throw FindexException("not implemented");
   }
