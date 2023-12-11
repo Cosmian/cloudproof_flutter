@@ -2,12 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [X.X.X] - 2023-XX-XX
+## [8.0.0] - 2023-12-11
+
+### Bug Fixes
+
+- Use only native types Uint8, Uint32, etc. in cloudproof header
 
 ### Features
 
 - Add Findex v6 support
 - Add findex in memory test
+- Covercrypt edit policy capability (#42)
 
 ### Testing
 
