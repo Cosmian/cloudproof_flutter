@@ -257,28 +257,6 @@ int32_t h_rename_policy_attribute(int8_t *updated_policy_ptr,
 /**
  * # Safety
  */
-int32_t h_rotate_attribute(int8_t *updated_policy_ptr,
-                           int32_t *updated_policy_len,
-                           const int8_t *current_policy_ptr,
-                           int32_t current_policy_len,
-                           const int8_t *attribute);
-#endif
-
-#if defined(DEFINE_FFI)
-/**
- * # Safety
- */
-int32_t h_clear_old_attribute_values(int8_t *updated_policy_ptr,
-                                     int32_t *updated_policy_len,
-                                     const int8_t *current_policy_ptr,
-                                     int32_t current_policy_len,
-                                     const int8_t *attribute);
-#endif
-
-#if defined(DEFINE_FFI)
-/**
- * # Safety
- */
 int32_t h_validate_boolean_expression(const int8_t *boolean_expression_ptr);
 #endif
 
@@ -363,6 +341,67 @@ int32_t h_update_master_keys(int8_t *updated_msk_ptr,
 
 #if defined(DEFINE_FFI)
 /**
+ * Rekey the master keys according to the given access policy.
+ *
+ * Cf (`CoverCrypt::rekey_master_keys`)[`CoverCrypt::rekey_master_keys`].
+ *
+ * - `updated_msk_ptr`   : Output buffer for the updated master secret key
+ * - `updated_msk_len`   : Size of the updated master secret key output buffer
+ * - `updated_mpk_ptr`   : Output buffer for the updated master public key
+ * - `updated_mpk_len`   : Size of the updated master public key output buffer
+ * - `current_msk_ptr`   : current master secret key
+ * - `current_msk_len`   : current master secret key length
+ * - `current_mpk_ptr`   : current master public key
+ * - `current_mpk_len`   : current master public key length
+ * - `access_policy_ptr` : Policy to use to update the master keys (JSON)
+ * - `policy_ptr`        : Policy to use to update the master keys (JSON)
+ * # Safety
+ */
+int32_t h_rekey_master_keys(int8_t *updated_msk_ptr,
+                            int32_t *updated_msk_len,
+                            int8_t *updated_mpk_ptr,
+                            int32_t *updated_mpk_len,
+                            const int8_t *current_msk_ptr,
+                            int32_t current_msk_len,
+                            const int8_t *current_mpk_ptr,
+                            int32_t current_mpk_len,
+                            const int8_t *access_policy_ptr,
+                            const int8_t *policy_ptr,
+                            int32_t policy_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
+ * Removes old keys associated to the given master key from the master
+ * keys. This will permanently remove access to old ciphers.
+ *
+ * Cf (`CoverCrypt::prune_master_secret_key`)[`CoverCrypt::prune_master_secret_key`].
+ *
+ * - `updated_msk_ptr`   : Output buffer containing the updated master secret
+ *   key
+ * - `updated_msk_len`   : Size of the updated master secret key output buffer
+ * - `updated_mpk_ptr`   : Output buffer containing the updated master public
+ *   key
+ * - `updated_mpk_len`   : Size of the updated master public key output buffer
+ * - `current_msk_ptr`   : current master secret key
+ * - `current_msk_len`   : current master secret key length
+ * - `current_mpk_ptr`   : current master public key
+ * - `current_mpk_len`   : current master public key length
+ * - `access_policy_ptr` : Policy to use to update the master keys (JSON)
+ * - `policy_ptr`        : Policy to use to update the master keys (JSON)
+ * # Safety
+ */
+int32_t h_prune_master_secret_key(int8_t *updated_msk_ptr,
+                                  int32_t *updated_msk_len,
+                                  const int8_t *current_msk_ptr,
+                                  int32_t current_msk_len,
+                                  const int8_t *access_policy_ptr,
+                                  const int8_t *policy_ptr,
+                                  int32_t policy_len);
+#endif
+
+#if defined(DEFINE_FFI)
+/**
  * Refreshes the user secret key according to the given master key and access
  * policy.
  *
@@ -376,10 +415,6 @@ int32_t h_update_master_keys(int8_t *updated_msk_ptr,
  * - `msk_len`                         : master secret key length
  * - `current_usk_ptr`                 : current user secret key
  * - `current_usk_len`                 : current user secret key length
- * - `access_policy_ptr`               : Access policy of the user secret key
- *   (JSON)
- * - `policy_ptr`                      : Policy to use to update the master
- *   keys (JSON)
  * - `preserve_old_partitions_access`  : set to 1 to preserve the user access
  *   to the rotated partitions
  * # Safety
@@ -390,9 +425,6 @@ int32_t h_refresh_user_secret_key(int8_t *updated_usk_ptr,
                                   int32_t msk_len,
                                   const int8_t *current_usk_ptr,
                                   int32_t current_usk_len,
-                                  const int8_t *user_policy_ptr,
-                                  const int8_t *policy_ptr,
-                                  int32_t policy_len,
                                   int32_t preserve_old_partitions_access);
 #endif
 

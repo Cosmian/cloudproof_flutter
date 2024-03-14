@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [8.1.0] - 2024-03-13
+
+### Features
+
+- Upgrade to CoverCrypt `14.0.0`
+
+### Testing
+
+- Update benchmark key and ciphertext
+- Update integration test key and cipher
+
 ## [8.0.0] - 2023-12-11
 
 ### Bug Fixes
