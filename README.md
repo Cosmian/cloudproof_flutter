@@ -360,3 +360,4 @@ From the version 6.0.0, `cloudproof_flutter` depends on [cloudproof_rust](https:
 | 6.0.2       | 1.0.1               |
 | 7.0.0       | 2.0.1               |
 | 8.0.0       | 2.4.0               |
+| 8.1.0       | 3.0.0               |
