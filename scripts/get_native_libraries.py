@@ -96,7 +96,7 @@ def download_native_libraries(version: str) -> bool:
 
 
 if __name__ == '__main__':
-    RET = download_native_libraries('v2.4.0')
+    RET = download_native_libraries('v3.0.0')
     if RET is False and os.getenv('GITHUB_ACTIONS'):
-        download_native_libraries('last_build/fix/rename_findex_traits')
+        download_native_libraries('last_build/feature/covercrypt_rekey/')
     write_ios_cloudproof_plugin_header()
